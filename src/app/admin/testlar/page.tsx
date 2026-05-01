@@ -21,6 +21,7 @@ export default async function AdminTestsPage() {
   });
 
   const canDelete = sessionHasPermission(session, "TESTS_DELETE");
+  const canEdit = sessionHasPermission(session, "TESTS_EDIT");
 
   return (
     <div className="space-y-6">
@@ -72,6 +73,14 @@ export default async function AdminTestsPage() {
                 </div>
               </div>
               <div className="flex shrink-0 flex-wrap gap-2">
+                {canEdit ? (
+                  <Link
+                    href={`/admin/testlar/${t.id}/tahrirlash`}
+                    className="rounded-xl border border-violet-400/35 bg-violet-500/10 px-4 py-2 text-sm font-semibold text-violet-100 transition hover:bg-violet-500/20"
+                  >
+                    Tahrirlash
+                  </Link>
+                ) : null}
                 <Link
                   href={`/testlar/${t.id}`}
                   className="rounded-xl border border-cyan-400/30 bg-cyan-500/10 px-4 py-2 text-sm font-semibold text-cyan-100 transition hover:bg-cyan-500/20"

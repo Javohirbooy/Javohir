@@ -192,6 +192,7 @@ export async function importTestDraftsFromUpload(formData: FormData): Promise<Im
 
   const titleBase = String(formData.get("title") ?? "").trim() || "Import — qoralama";
   const items: { testId: string; title: string; fileName: string }[] = [];
+  const createdIds: string[] = [];
 
   for (let i = 0; i < files.length; i++) {
     const file = files[i]!;
@@ -199,11 +200,15 @@ export async function importTestDraftsFromUpload(formData: FormData): Promise<Im
     const title = files.length === 1 ? titleBase : `${titleBase} — ${stem}`;
     const r = await createDraftTestFromFile({ session, subjectId, title, file });
     if (!r.ok) {
+      if (createdIds.length) {
+        await prisma.test.deleteMany({ where: { id: { in: createdIds } } });
+      }
       return {
         ok: false,
         error: items.length ? `${r.error} (${file.name})` : r.error,
       };
     }
+    createdIds.push(r.testId);
     items.push({ testId: r.testId, title, fileName: file.name });
   }
 

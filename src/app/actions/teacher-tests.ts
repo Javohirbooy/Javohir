@@ -477,6 +477,7 @@ export async function updateTeacherTest(
   revalidatePath("/oqituvchi/testlar");
   revalidatePath(`/oqituvchi/testlar/${testId}/tahrirlash`);
   revalidatePath("/admin/testlar");
+  revalidatePath(`/admin/testlar/${testId}/tahrirlash`);
   revalidatePath(`/testlar/${testId}`);
 
   return { ok: true, code };

@@ -119,7 +119,7 @@ export const messages: Record<
       protectedPolicyPrefix: string;
     };
     difficulty: { EASY: string; MEDIUM: string; HARD: string };
-    tabPolicy: { AUTO_SUBMIT: string; WARN: string; IGNORE: string };
+    tabPolicy: { AUTO_SUBMIT: string; WARNING: string; AUTO_FAIL: string; WARN: string; IGNORE: string };
   }
 > = {
   uz: {
@@ -194,6 +194,8 @@ export const messages: Record<
     difficulty: { EASY: "Oson", MEDIUM: "O‘rta", HARD: "Qiyin" },
     tabPolicy: {
       AUTO_SUBMIT: "varaqdan chiqishda avto-yuborish",
+      WARNING: "faqat ogohlantirish (jurnalga yoziladi)",
+      AUTO_FAIL: "varaqdan chiqishda avto-yiqilish (0 ball)",
       WARN: "ogohlantirish",
       IGNORE: "e’tiborsiz qoldirish",
     },
@@ -324,6 +326,8 @@ export const messages: Record<
     difficulty: { EASY: "Лёгкий", MEDIUM: "Средний", HARD: "Сложный" },
     tabPolicy: {
       AUTO_SUBMIT: "автоотправка при уходе со вкладки",
+      WARNING: "только предупреждение (в журнал)",
+      AUTO_FAIL: "авто-срыв (0 баллов) при уходе",
       WARN: "предупреждение",
       IGNORE: "игнорировать",
     },
@@ -453,6 +457,8 @@ export const messages: Record<
     difficulty: { EASY: "Easy", MEDIUM: "Medium", HARD: "Hard" },
     tabPolicy: {
       AUTO_SUBMIT: "auto-submit on tab switch",
+      WARNING: "warn only (logged)",
+      AUTO_FAIL: "auto-fail (0 score) on tab switch",
       WARN: "warn only",
       IGNORE: "ignore",
     },

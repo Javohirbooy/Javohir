@@ -33,6 +33,8 @@ declare module "next-auth/jwt" {
     locale?: string;
     mustChangePassword?: boolean;
     studentNumber?: number;
+    /** Throttle DB refresh of `studentNumber` for students (ms since epoch). */
+    studentNumberSyncedAt?: number;
     permissionKeys?: string[];
   }
 }

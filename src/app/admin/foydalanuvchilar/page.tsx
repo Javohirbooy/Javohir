@@ -22,7 +22,7 @@ export default async function AdminUsersPage() {
 
   const users = await prisma.user.findMany({
     orderBy: { createdAt: "desc" },
-    take: 80,
+    take: 500,
     select: {
       id: true,
       email: true,
@@ -38,7 +38,7 @@ export default async function AdminUsersPage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-extrabold text-white">Foydalanuvchilar</h1>
-        <p className="mt-1 text-sm text-white/60">Rollar, holat va til (demo ro‘yxat, keyingi bosqichda CRUD).</p>
+        <p className="mt-1 text-sm text-white/60">Rollar, holat va til (so‘nggi 500 ta yozuv; keyingi bosqichda sahifalash).</p>
       </div>
       <DashboardCard className="overflow-x-auto p-0">
         <table className="w-full min-w-[640px] text-left text-sm">

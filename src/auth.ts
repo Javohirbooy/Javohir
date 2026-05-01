@@ -13,6 +13,8 @@ const credentialsSchema = z.object({
   password: z.string().min(1),
 });
 
+const STUDENT_NUMBER_JWT_SYNC_MS = 5 * 60 * 1000;
+
 export const { handlers, auth, signIn, signOut } = NextAuth({
   ...authConfig,
   providers: [
@@ -106,6 +108,26 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       },
     }),
   ],
+  callbacks: {
+    ...authConfig.callbacks,
+    async jwt(params) {
+      const inner = authConfig.callbacks.jwt;
+      const token = inner ? await inner(params) : params.token;
+      if (token.role === "STUDENT" && token.id) {
+        const now = Date.now();
+        const last = Number(token.studentNumberSyncedAt ?? 0);
+        if (now - last > STUDENT_NUMBER_JWT_SYNC_MS) {
+          const row = await prisma.user.findUnique({
+            where: { id: token.id as string },
+            select: { studentNumber: true },
+          });
+          token.studentNumber = row?.studentNumber ?? undefined;
+          token.studentNumberSyncedAt = now;
+        }
+      }
+      return token;
+    },
+  },
   events: {
     async signIn({ user }) {
       const id = user?.id;
