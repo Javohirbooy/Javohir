@@ -1,0 +1,411 @@
+@import "tailwindcss";
+@import "../styles/iq-extras.css";
+
+:root {
+  --iq-bg-0: #dff1f4;
+  --iq-bg-1: #edf7fb;
+  --iq-bg-deep: #d4ebf0;
+  --iq-accent: #16a34a;
+  --iq-accent-2: #22c55e;
+  --iq-accent-3: #f8fafc;
+  --iq-glow: rgba(22, 163, 74, 0.38);
+  --iq-glow-cyan: rgba(14, 165, 233, 0.34);
+  --iq-glow-blue: rgba(56, 189, 248, 0.31);
+  --iq-grid: rgba(14, 165, 233, 0.09);
+  --iq-glass: rgba(255, 255, 255, 0.68);
+  --iq-glass-strong: rgba(255, 255, 255, 0.84);
+  --iq-glass-border: rgba(167, 243, 208, 0.55);
+  --iq-glass-highlight: rgba(255, 255, 255, 0.95);
+  --iq-blur: 24px;
+  --iq-radius-xl: 1.5rem;
+  --iq-radius-2xl: 1.75rem;
+}
+
+@theme inline {
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-poppins), ui-sans-serif, system-ui, sans-serif;
+}
+
+@keyframes iq-aurora {
+  0% {
+    transform: translate(0, 0) scale(1);
+    opacity: 0.55;
+  }
+  33% {
+    transform: translate(4%, -3%) scale(1.05);
+    opacity: 0.7;
+  }
+  66% {
+    transform: translate(-3%, 4%) scale(0.98);
+    opacity: 0.5;
+  }
+  100% {
+    transform: translate(0, 0) scale(1);
+    opacity: 0.55;
+  }
+}
+
+@keyframes iq-shimmer {
+  0% {
+    background-position: 0% 50%;
+  }
+  100% {
+    background-position: 200% 50%;
+  }
+}
+
+@keyframes iq-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes iq-fade-scale {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes iq-pulse-glow {
+  0%,
+  100% {
+    opacity: 0.42;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.78;
+    transform: scale(1.04);
+  }
+}
+
+@keyframes iq-nav-in {
+  from {
+    opacity: 0;
+    transform: translateX(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes iq-border-glow {
+  0%,
+  100% {
+    opacity: 0.35;
+  }
+  50% {
+    opacity: 0.65;
+  }
+}
+
+@keyframes iq-icon-float {
+  0%,
+  100% {
+    transform: translateY(0) translateX(0) rotate(0deg);
+  }
+  25% {
+    transform: translateY(-2px) translateX(0.5px) rotate(-1deg);
+  }
+  50% {
+    transform: translateY(-4px) translateX(0) rotate(0deg);
+  }
+  75% {
+    transform: translateY(-2px) translateX(-0.5px) rotate(1deg);
+  }
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}
+
+body {
+  min-height: 100vh;
+  font-family: var(--font-sans);
+  color: #1f2937;
+  background-color: var(--iq-bg-deep);
+  background-image:
+    radial-gradient(ellipse 100% 80% at 50% -30%, rgba(34, 197, 94, 0.24), transparent 55%),
+    radial-gradient(ellipse 75% 60% at 100% 0%, rgba(14, 165, 233, 0.22), transparent 46%),
+    radial-gradient(ellipse 70% 55% at 0% 80%, rgba(56, 189, 248, 0.24), transparent 50%),
+    radial-gradient(ellipse 55% 45% at 85% 95%, rgba(255, 255, 255, 0.6), transparent 54%),
+    linear-gradient(180deg, var(--iq-bg-1) 0%, var(--iq-bg-0) 42%, var(--iq-bg-deep) 100%);
+  background-attachment: fixed;
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background-image:
+    linear-gradient(var(--iq-grid) 1px, transparent 1px),
+    linear-gradient(90deg, var(--iq-grid) 1px, transparent 1px);
+  background-size: 64px 64px;
+  mask-image: radial-gradient(ellipse 88% 72% at 50% 38%, black 12%, transparent 70%);
+  opacity: 0.85;
+}
+
+::selection {
+  background: rgba(34, 197, 94, 0.38);
+  color: #f8fafc;
+}
+
+/* —— Theme layer —— */
+.iq-theme {
+  font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  color: #0f172a;
+}
+
+/* Global contrast guard for light theme surfaces */
+.iq-theme .text-white,
+.iq-theme .text-white\/95,
+.iq-theme .text-white\/90,
+.iq-theme .text-white\/85,
+.iq-theme .text-white\/80 {
+  color: #0f172a !important;
+}
+
+.iq-theme .text-white\/75,
+.iq-theme .text-white\/70,
+.iq-theme .text-white\/65,
+.iq-theme .text-white\/60,
+.iq-theme .text-white\/55,
+.iq-theme .text-white\/50,
+.iq-theme .text-white\/45,
+.iq-theme .text-white\/40 {
+  color: #334155 !important;
+}
+
+.iq-theme .text-cyan-200,
+.iq-theme .text-cyan-200\/80,
+.iq-theme .text-cyan-300,
+.iq-theme .text-cyan-300\/80,
+.iq-theme .text-emerald-100,
+.iq-theme .text-emerald-100\/90,
+.iq-theme .text-emerald-200,
+.iq-theme .text-emerald-200\/90 {
+  color: #0f766e !important;
+}
+
+.iq-theme .border-white\/10,
+.iq-theme .border-white\/12,
+.iq-theme .border-white\/15,
+.iq-theme .border-white\/20 {
+  border-color: rgba(16, 185, 129, 0.22) !important;
+}
+
+.iq-content {
+  position: relative;
+  z-index: 1;
+}
+
+.iq-dashboard-main {
+  animation: iq-fade-up 0.6s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .iq-dashboard-main {
+    animation: none;
+  }
+}
+
+.font-display {
+  font-family: var(--font-display);
+}
+
+/* Glass panels (reuse in components via matching Tailwind or this class) */
+.iq-glass-panel {
+  background: linear-gradient(145deg, var(--iq-glass-strong) 0%, var(--iq-glass) 45%, rgba(236, 253, 245, 0.86) 100%);
+  border: 1px solid var(--iq-glass-border);
+  backdrop-filter: blur(var(--iq-blur)) saturate(1.35);
+  -webkit-backdrop-filter: blur(var(--iq-blur)) saturate(1.35);
+  box-shadow:
+    inset 0 1px 0 0 var(--iq-glass-highlight),
+    0 20px 56px -30px rgba(15, 23, 42, 0.2),
+    0 0 72px -44px rgba(14, 165, 233, 0.25);
+}
+
+/* Staggered children (sidebar nav) */
+.iq-stagger-children > * {
+  animation: iq-nav-in 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.iq-stagger-children > *:nth-child(1) {
+  animation-delay: 0.02s;
+}
+.iq-stagger-children > *:nth-child(2) {
+  animation-delay: 0.05s;
+}
+.iq-stagger-children > *:nth-child(3) {
+  animation-delay: 0.08s;
+}
+.iq-stagger-children > *:nth-child(4) {
+  animation-delay: 0.11s;
+}
+.iq-stagger-children > *:nth-child(5) {
+  animation-delay: 0.14s;
+}
+.iq-stagger-children > *:nth-child(6) {
+  animation-delay: 0.17s;
+}
+.iq-stagger-children > *:nth-child(7) {
+  animation-delay: 0.2s;
+}
+.iq-stagger-children > *:nth-child(8) {
+  animation-delay: 0.23s;
+}
+.iq-stagger-children > *:nth-child(9) {
+  animation-delay: 0.26s;
+}
+.iq-stagger-children > *:nth-child(10) {
+  animation-delay: 0.29s;
+}
+.iq-stagger-children > *:nth-child(11) {
+  animation-delay: 0.32s;
+}
+.iq-stagger-children > *:nth-child(12) {
+  animation-delay: 0.35s;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .iq-stagger-children > * {
+    animation: none;
+  }
+}
+
+/* Premium page titles */
+.iq-page-title {
+  font-family: var(--font-display);
+  letter-spacing: -0.02em;
+  background: linear-gradient(120deg, #14532d 0%, #166534 35%, #047857 65%, #16a34a 100%);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: iq-shimmer 10s ease-in-out infinite alternate;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .iq-page-title {
+    animation: none;
+    color: #14532d;
+    background: none;
+    -webkit-background-clip: unset;
+    background-clip: unset;
+  }
+}
+
+/* —— 3D ikonlar (glass + neon soyalar) —— */
+.iq-3d-icon-box {
+  transform-style: preserve-3d;
+  background: linear-gradient(
+    155deg,
+    rgba(255, 255, 255, 0.22) 0%,
+    rgba(255, 255, 255, 0.06) 38%,
+    rgba(15, 23, 42, 0.35) 100%
+  );
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  box-shadow:
+    inset 0 2px 4px rgba(255, 255, 255, 0.35),
+    inset 0 -4px 10px rgba(0, 0, 0, 0.35),
+    0 6px 16px rgba(0, 0, 0, 0.45),
+    0 0 22px rgba(99, 102, 241, 0.14),
+    0 0 36px rgba(34, 211, 238, 0.06);
+  transition:
+    transform 0.45s cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 0.45s ease,
+    border-color 0.35s ease;
+}
+
+.iq-3d-icon-box--idle {
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.iq-3d-icon-box--active {
+  border-color: rgba(34, 211, 238, 0.45);
+  box-shadow:
+    inset 0 2px 4px rgba(255, 255, 255, 0.4),
+    inset 0 -4px 10px rgba(0, 0, 0, 0.3),
+    0 8px 22px rgba(0, 0, 0, 0.45),
+    0 0 28px rgba(34, 211, 238, 0.35),
+    0 0 48px rgba(139, 92, 246, 0.18);
+}
+
+.group:hover .iq-3d-icon-box--idle,
+.iq-3d-icon-box--idle:hover {
+  transform: perspective(420px) rotateX(-10deg) rotateY(14deg) translateZ(6px);
+  border-color: rgba(167, 139, 250, 0.35);
+  box-shadow:
+    inset 0 2px 5px rgba(255, 255, 255, 0.38),
+    inset 0 -5px 12px rgba(0, 0, 0, 0.38),
+    0 12px 28px rgba(0, 0, 0, 0.5),
+    0 0 32px rgba(139, 92, 246, 0.28),
+    0 0 44px rgba(34, 211, 238, 0.12);
+}
+
+.iq-3d-icon-svg {
+  color: inherit;
+  filter: drop-shadow(0 3px 4px rgba(0, 0, 0, 0.55)) drop-shadow(0 0 10px rgba(34, 211, 238, 0.18));
+  transition: transform 0.45s cubic-bezier(0.22, 1, 0.36, 1), filter 0.45s ease;
+}
+
+.group:hover .iq-3d-icon-svg,
+.iq-3d-icon-box:hover .iq-3d-icon-svg {
+  transform: perspective(180px) rotateY(-18deg) rotateX(10deg) translateZ(8px) scale(1.06);
+  filter: drop-shadow(0 8px 14px rgba(0, 0, 0, 0.55)) drop-shadow(0 0 18px rgba(139, 92, 246, 0.35));
+}
+
+.iq-3d-glyph {
+  filter: drop-shadow(0 3px 3px rgba(0, 0, 0, 0.5)) drop-shadow(0 0 12px rgba(34, 211, 238, 0.12));
+  transition: transform 0.45s cubic-bezier(0.22, 1, 0.36, 1), filter 0.45s ease;
+}
+
+.group:hover .iq-3d-glyph,
+button:hover .iq-3d-glyph,
+a:hover .iq-3d-glyph {
+  transform: perspective(220px) rotateX(10deg) rotateY(-14deg) translateZ(4px) scale(1.08);
+  filter: drop-shadow(0 6px 10px rgba(0, 0, 0, 0.5)) drop-shadow(0 0 16px rgba(167, 139, 250, 0.35));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .iq-3d-icon-box,
+  .iq-3d-icon-svg,
+  .iq-3d-glyph {
+    transition: none;
+  }
+  .group:hover .iq-3d-icon-box--idle,
+  .iq-3d-icon-box--idle:hover {
+    transform: none;
+  }
+  .group:hover .iq-3d-icon-svg,
+  .iq-3d-icon-box:hover .iq-3d-icon-svg,
+  .group:hover .iq-3d-glyph,
+  button:hover .iq-3d-glyph,
+  a:hover .iq-3d-glyph {
+    transform: none;
+  }
+}

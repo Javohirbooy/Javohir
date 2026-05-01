@@ -1,0 +1,345 @@
+// IQ Monitoring — PostgreSQL (Neon). Pooled DATABASE_URL + DIRECT_URL migratsiyalar uchun.
+
+generator client {
+  provider      = "prisma-client-js"
+  /// Vercel (Linux) + lokal Windows build
+  binaryTargets = ["native", "rhel-openssl-3.0.x"]
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  /// To‘g‘ridan-to‘g‘ri ulanish (migrate / db push). Pooled URL emas.
+  directUrl = env("DIRECT_URL")
+}
+
+/// Granular capability (e.g. USERS_CREATE). Assigned to roles via RolePermission.
+model Permission {
+  id               String           @id @default(cuid())
+  key              String           @unique
+  description      String?
+  createdAt        DateTime         @default(now())
+  rolePermissions  RolePermission[]
+}
+
+/// Maps platform role string (User.role) to Permission rows.
+model RolePermission {
+  id           String     @id @default(cuid())
+  /// SUPER_ADMIN | ADMIN | TEACHER | STUDENT
+  role         String
+  permissionId String
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@unique([role, permissionId])
+  @@index([role])
+}
+
+model User {
+  id                   String           @id @default(cuid())
+  email                String           @unique
+  passwordHash         String
+  name                 String
+  /// SUPER_ADMIN | ADMIN | TEACHER | STUDENT
+  role                 String
+  /// ACTIVE | INACTIVE | BLOCKED
+  status               String           @default("ACTIVE")
+  mustChangePassword   Boolean          @default(false)
+  /// uz | ru | en
+  locale               String           @default("uz")
+  gradeId              String?
+  avatarEmoji          String?          @default("🎓")
+  /// Last actor who issued/reset login credentials (admin or teacher).
+  credentialIssuedById String?
+  createdAt            DateTime         @default(now())
+  updatedAt            DateTime         @updatedAt
+  grade                Grade?           @relation(fields: [gradeId], references: [id])
+  teacherClasses       TeacherOnClass[]
+  teacherSubjects      TeacherSubjectAssignment[]
+  /// Students this teacher may manage (credentials, etc.)
+  managedStudentLinks  TeacherStudentLink[]       @relation("ManagingTeacher")
+  /// If set, this student is linked to exactly one managing teacher (credential scope).
+  studentManagedLink   TeacherStudentLink?        @relation("ManagedStudent")
+  results              TestResult[]
+  materials            Material[]
+  auditLogs            AuditLog[]
+  testsAuthored        Test[]                     @relation("TestAuthor")
+  testAttempts         TestAttempt[]
+}
+
+model Grade {
+  id             String           @id @default(cuid())
+  number         Int              @unique
+  name           String
+  colorKey       String           @default("emerald")
+  subjects       Subject[]
+  users          User[]
+  teacherClasses TeacherOnClass[]
+  tests          Test[]
+}
+
+model Subject {
+  id          String                     @id @default(cuid())
+  gradeId     String
+  title       String
+  description String
+  imageEmoji  String                     @default("📘")
+  order       Int                        @default(0)
+  grade       Grade                      @relation(fields: [gradeId], references: [id], onDelete: Cascade)
+  tests       Test[]
+  materials   Material[]
+  topics      Topic[]
+  teacherSubjects TeacherSubjectAssignment[]
+}
+
+model Topic {
+  id        String  @id @default(cuid())
+  subjectId String
+  title     String
+  order     Int     @default(0)
+  subject   Subject @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  tests     Test[]
+
+  @@index([subjectId])
+}
+
+model Test {
+  id               String    @id @default(cuid())
+  subjectId        String
+  title            String
+  description      String?
+  difficulty       String    @default("MEDIUM")
+  /// minutes — enforced in exam runner + server submit
+  durationMinutes  Int?
+  passScore        Float?
+  /// null = unlimited attempts (same concept as “attempt limit” in UI).
+  maxAttempts      Int?
+  isDraft          Boolean   @default(false)
+  isActive         Boolean   @default(true)
+  /// DRAFT | PUBLISHED | ARCHIVED — canonical lifecycle; kept in sync with isDraft / isActive for legacy checks.
+  status           String    @default("DRAFT")
+  /// Owning teacher user id when a TEACHER created the test; null = platform/admin catalogue test.
+  authorUserId     String?
+  /// Denormalized class/grade for filtering and teacher scope checks (must match subject.gradeId when set).
+  gradeId          String?
+  topicId          String?
+  /// Exam window (UTC). null = no lower/upper bound on that side.
+  startsAt         DateTime?
+  endsAt           DateTime?
+  /// When true, runner applies stricter browser deterrence + tab policy.
+  protectedExamMode Boolean  @default(false)
+  /// OFF | STANDARD | STRICT — policy bundle on top of protectedExamMode (STRICT forces stronger defaults on save).
+  antiCheatMode     String    @default("STANDARD")
+  /// WARNING | AUTO_FAIL | AUTO_SUBMIT (tab / visibility loss)
+  tabSwitchPolicy   String    @default("AUTO_SUBMIT")
+  shuffleQuestions  Boolean   @default(true)
+  shuffleOptions    Boolean   @default(true)
+  /// MANUAL | IMPORT_TXT | IMPORT_DOCX
+  sourceType        String    @default("MANUAL")
+  /// Original import / parser context (JSON).
+  importMetadataJson String   @default("{}")
+  /// Optional preserved source text for review (large TEXT).
+  importRawText     String?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @default(now()) @updatedAt
+  subject           Subject   @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  grade             Grade?    @relation(fields: [gradeId], references: [id], onDelete: SetNull)
+  topic             Topic?    @relation(fields: [topicId], references: [id], onDelete: SetNull)
+  author            User?     @relation("TestAuthor", fields: [authorUserId], references: [id], onDelete: SetNull)
+  questions         Question[]
+  results           TestResult[]
+  testCodes         TestCode[]
+  attempts          TestAttempt[]
+
+  @@index([difficulty])
+  @@index([authorUserId])
+  @@index([gradeId])
+  @@index([topicId])
+  @@index([status])
+}
+
+/// Teacher-issued access codes (student must enter code to open test session).
+model TestCode {
+  id         String    @id @default(cuid())
+  testId     String
+  code       String    @unique
+  maxUses    Int?
+  expiresAt  DateTime?
+  isActive   Boolean   @default(true)
+  usesCount  Int       @default(0)
+  createdAt  DateTime  @default(now())
+  /// ALL | GRADE | USERS — narrows who may redeem the code (server checks).
+  scopeType  String    @default("ALL")
+  scopeGradeId String?
+  /// JSON string[] of user ids allowed when scopeType = USERS
+  scopeUserIdsJson String @default("[]")
+  test       Test      @relation(fields: [testId], references: [id], onDelete: Cascade)
+
+  @@index([testId])
+  @@index([code])
+}
+
+model Question {
+  id           String @id @default(cuid())
+  testId       String
+  text         String
+  optionsJson  String
+  correctIndex Int
+  order        Int    @default(0)
+  /// Weight for scoring (default 1).
+  points       Float  @default(1)
+  test         Test   @relation(fields: [testId], references: [id], onDelete: Cascade)
+  testAnswers  TestAnswer[]
+}
+
+model TestResult {
+  id          String   @id @default(cuid())
+  userId      String
+  testId      String
+  score       Float
+  answersJson String
+  createdAt   DateTime @default(now())
+  attemptId   String?  @unique
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  test        Test     @relation(fields: [testId], references: [id], onDelete: Cascade)
+  attempt     TestAttempt? @relation(fields: [attemptId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([testId])
+}
+
+/// One in-progress or completed exam session (supports attempt limits + integrity logs).
+model TestAttempt {
+  id                       String          @id @default(cuid())
+  userId                   String
+  testId                   String
+  /// IN_PROGRESS | SUBMITTED | EXPIRED | TERMINATED_VIOLATION | AUTO_SUBMITTED_TIME | AUTO_SUBMITTED_TAB
+  status                   String          @default("IN_PROGRESS")
+  startedAt                DateTime        @default(now())
+  submittedAt              DateTime?
+  score                    Float?
+  /// Answers in **canonical** question order, each value = selected **canonical** option index.
+  answersJson              String?
+  /// Display order of question ids (JSON string[]).
+  questionOrderJson        String          @default("[]")
+  /// Per question id: JSON number[] permutation mapping displayed option index -> canonical index.
+  optionPermutationsJson   String          @default("{}")
+  /// Opaque value issued at begin; must match on submit (not a secret from client guess — paired with session).
+  sessionToken             String?
+  violationCount           Int             @default(0)
+  test                     Test            @relation(fields: [testId], references: [id], onDelete: Cascade)
+  user                     User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  violations               TestViolation[]
+  testResult               TestResult?
+  testAnswers              TestAnswer[]
+
+  @@index([userId, testId])
+  @@index([testId, status])
+}
+
+/// Optional normalized per-question capture for reporting/analytics; live sessions still store JSON on TestAttempt.
+model TestAnswer {
+  id             String      @id @default(cuid())
+  attemptId      String
+  questionId     String
+  selectedIndex  Int
+  createdAt      DateTime    @default(now())
+  attempt        TestAttempt @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+  question       Question    @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@unique([attemptId, questionId])
+  @@index([attemptId])
+}
+
+model TestViolation {
+  id         String      @id @default(cuid())
+  attemptId  String
+  /// VISIBILITY_HIDDEN | WINDOW_BLUR | CONTEXT_MENU | COPY_KEY | PRINT_KEY | ...
+  type       String
+  detailJson String      @default("{}")
+  createdAt  DateTime    @default(now())
+  attempt    TestAttempt @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+
+  @@index([attemptId])
+}
+
+model Material {
+  id        String   @id @default(cuid())
+  subjectId String
+  teacherId String?
+  title     String
+  url       String?
+  type      String   @default("link")
+  createdAt DateTime @default(now())
+  subject   Subject  @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  teacher   User?    @relation(fields: [teacherId], references: [id])
+}
+
+model TeacherOnClass {
+  id      String @id @default(cuid())
+  userId  String
+  gradeId String
+  user    User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  grade   Grade  @relation(fields: [gradeId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, gradeId])
+}
+
+/// Relational: which subjects a teacher may use for tests / imports.
+model TeacherSubjectAssignment {
+  id        String  @id @default(cuid())
+  userId    String
+  subjectId String
+  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  subject   Subject @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, subjectId])
+  @@index([userId])
+}
+
+/// At most one managing teacher per student (credential + scope).
+model TeacherStudentLink {
+  id            String   @id @default(cuid())
+  teacherUserId String
+  studentUserId String   @unique
+  createdAt     DateTime @default(now())
+  teacher       User     @relation("ManagingTeacher", fields: [teacherUserId], references: [id], onDelete: Cascade)
+  student       User     @relation("ManagedStudent", fields: [studentUserId], references: [id], onDelete: Cascade)
+
+  @@index([teacherUserId])
+}
+
+model SiteSetting {
+  id          String   @id @default(cuid())
+  key         String   @unique
+  /// JSON or plain string — admin UI validates shape per key
+  value       String
+  updatedAt   DateTime @updatedAt
+  updatedById String?
+}
+
+model Announcement {
+  id          String    @id @default(cuid())
+  title       String
+  body        String
+  /// ALL | STUDENTS | TEACHERS | ADMINS
+  audience    String    @default("ALL")
+  isActive    Boolean   @default(true)
+  publishedAt DateTime?
+  expiresAt   DateTime?
+  createdAt   DateTime  @default(now())
+}
+
+model AuditLog {
+  id           String   @id @default(cuid())
+  actorUserId  String?
+  action       String
+  entityType   String?
+  entityId     String?
+  metadataJson String   @default("{}")
+  createdAt    DateTime @default(now())
+  actor        User?    @relation(fields: [actorUserId], references: [id], onDelete: SetNull)
+
+  @@index([actorUserId])
+  @@index([action])
+  @@index([createdAt])
+}

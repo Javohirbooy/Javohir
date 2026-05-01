@@ -1,0 +1,205 @@
+/* Motion accents — imported from globals */
+
+@keyframes iq-shine {
+  0% {
+    transform: translateX(-120%);
+    opacity: 0;
+  }
+  20% {
+    opacity: 0.4;
+  }
+  100% {
+    transform: translateX(120%);
+    opacity: 0;
+  }
+}
+
+/* Card hover: diagonal light sweep (used with .iq-card-shine on wrapper) */
+@keyframes iq-card-sheen {
+  0% {
+    transform: translateX(-100%) skewX(-12deg);
+    opacity: 0;
+  }
+  35% {
+    opacity: 0.12;
+  }
+  100% {
+    transform: translateX(200%) skewX(-12deg);
+    opacity: 0;
+  }
+}
+
+/* --- Performance: lightweight CSS instead of JS animation libraries on marketing --- */
+
+@keyframes iq-fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.iq-anim-fade-up {
+  animation: iq-fade-in-up 0.5s ease-out both;
+}
+
+@keyframes iq-ambient-drift {
+  0%,
+  100% {
+    transform: translate(0, 0);
+  }
+  33% {
+    transform: translate(18px, -12px);
+  }
+  66% {
+    transform: translate(-14px, 10px);
+  }
+}
+
+.iq-ambient-orb {
+  opacity: 0.92;
+  animation: iq-ambient-drift var(--iq-drift-duration, 26s) ease-in-out infinite;
+  animation-delay: var(--iq-drift-delay, 0s);
+  will-change: transform;
+}
+
+@keyframes iq-ambient-sheen {
+  0% {
+    background-position: 0% 0%;
+  }
+  100% {
+    background-position: 100% 100%;
+  }
+}
+
+.iq-ambient-sheen {
+  animation: iq-ambient-sheen 18s linear infinite;
+  will-change: background-position;
+}
+
+@keyframes iq-fade-slide-in {
+  from {
+    opacity: 0;
+    transform: translateX(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.iq-stagger-in {
+  opacity: 0;
+  animation: iq-fade-slide-in 0.42s ease-out forwards;
+}
+
+@keyframes iq-scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.iq-scale-in {
+  animation: iq-scale-in 0.48s ease-out both;
+}
+
+@keyframes iq-demo-bar {
+  from {
+    width: 0%;
+  }
+  to {
+    width: 66%;
+  }
+}
+
+.iq-demo-progress-bar {
+  width: 0;
+  animation: iq-demo-bar 1s ease-out 0.15s forwards;
+}
+
+@keyframes iq-3d-float {
+  0%,
+  100% {
+    transform: translateY(0) rotateX(0deg);
+  }
+  50% {
+    transform: translateY(-3px) rotateX(7deg);
+  }
+}
+
+@keyframes iq-3d-glow {
+  0%,
+  100% {
+    text-shadow:
+      0 1px 0 rgba(255, 255, 255, 0.9),
+      0 8px 20px rgba(16, 185, 129, 0.25),
+      0 0 22px rgba(52, 211, 153, 0.18);
+  }
+  50% {
+    text-shadow:
+      0 1px 0 rgba(255, 255, 255, 0.96),
+      0 12px 28px rgba(16, 185, 129, 0.32),
+      0 0 30px rgba(52, 211, 153, 0.24);
+  }
+}
+
+.iq-text-3d {
+  transform-style: preserve-3d;
+  animation: iq-3d-float 2.8s ease-in-out infinite, iq-3d-glow 2.8s ease-in-out infinite;
+}
+
+.iq-text-3d-soft {
+  transform-style: preserve-3d;
+  animation: iq-3d-float 3.4s ease-in-out infinite, iq-3d-glow 3.4s ease-in-out infinite;
+}
+
+.iq-logo-3d {
+  transform-style: preserve-3d;
+  animation: iq-3d-float 3s ease-in-out infinite;
+}
+
+@keyframes iq-3d-card-float {
+  0%,
+  100% {
+    transform: translateY(0) rotateX(0deg) rotateY(0deg);
+  }
+  50% {
+    transform: translateY(-6px) rotateX(3deg) rotateY(-2deg);
+  }
+}
+
+@keyframes iq-3d-card-glow {
+  0%,
+  100% {
+    box-shadow:
+      0 22px 38px -26px rgba(15, 23, 42, 0.28),
+      0 0 26px -14px rgba(16, 185, 129, 0.32);
+  }
+  50% {
+    box-shadow:
+      0 26px 42px -24px rgba(15, 23, 42, 0.32),
+      0 0 34px -10px rgba(22, 163, 74, 0.42);
+  }
+}
+
+.iq-3d-card {
+  transform-style: preserve-3d;
+  transition: transform 0.35s ease, box-shadow 0.35s ease, border-color 0.35s ease;
+}
+
+.iq-3d-card:hover {
+  animation: iq-3d-card-float 2.4s ease-in-out infinite, iq-3d-card-glow 2.4s ease-in-out infinite;
+}
+
+.iq-3d-chip {
+  transform: translateZ(18px);
+  box-shadow: 0 10px 22px -14px rgba(16, 185, 129, 0.45);
+}

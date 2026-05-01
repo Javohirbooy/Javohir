@@ -1,0 +1,39 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: ".nvmrc"
+          cache: "npm"
+
+      - name: Install
+        run: npm ci
+
+      - name: Generate Prisma Client
+        run: npx prisma generate
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/ci_placeholder?schema=public
+          DIRECT_URL: postgresql://postgres:postgres@localhost:5432/ci_placeholder?schema=public
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Build
+        run: npm run build
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/ci_placeholder?schema=public
+          DIRECT_URL: postgresql://postgres:postgres@localhost:5432/ci_placeholder?schema=public
+          AUTH_SECRET: ci-build-placeholder-secret-min-32-chars-xx
+          NEXTAUTH_URL: http://localhost:3000
