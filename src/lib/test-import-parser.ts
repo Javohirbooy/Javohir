@@ -20,6 +20,36 @@ function normalizeLines(text: string) {
   return text.replace(/\r\n/g, "\n").split("\n");
 }
 
+/** Qator boshidagi “javob belgisi”dan keyin bo‘shliq (DOCX markdown: \- 34, + 68). */
+const LEADING_OPTION_MARK =
+  /^(?:\\[-+]|\+|(?:(?<![\d,])(?:[\u2212\u2013-]))(?=\s))(?=\s|\d|\(|$)/;
+
+/**
+ * Tenglama / formula davomi — ichidagi +/− ni variant ajratuvchisi deb olmaslik kerak.
+ */
+function isEquationOrQuestionStemContinuation(parsed: string): boolean {
+  const t = parsed.trim();
+  if (!t) return false;
+  const deQuote = t.replace(/^[\s>*_`'"]+/, "");
+  const looksLikeOptionStart = LEADING_OPTION_MARK.test(deQuote);
+  if (looksLikeOptionStart) return false;
+  if (t.startsWith("(")) return true;
+  if (t.includes("=") && t.length >= 6) return true;
+  if (/^\d+\s*\(/.test(t)) return true;
+  const semi = (t.match(/;/g) || []).length;
+  if (semi >= 2 && !/^\+/.test(deQuote)) return true;
+  return false;
+}
+
+function lineLooksLikeSignedOptionsRow(parsed: string): boolean {
+  if (isEquationOrQuestionStemContinuation(parsed)) return false;
+  const t = parsed.trim().replace(/^[\s>*_`'"]+/, "");
+  if (!t) return false;
+  if (/^\\?[-+]/.test(t)) return true;
+  if (/^[\u2212\u2013]/.test(t) && /\s/.test(t)) return true;
+  return false;
+}
+
 export function parseMcqTextToDraftQuestions(raw: string): ParsedDraftQuestion[] {
   const lines = normalizeLines(raw);
   const blocks: string[][] = [];
@@ -80,28 +110,30 @@ export function parseMcqTextToDraftQuestions(raw: string): ParsedDraftQuestion[]
       // Preferred split for DOCX rows where options are arranged in columns.
       // We only treat +/- as option markers when they start line OR are preceded by 2+ spaces,
       // so math like `5 + 3` inside option text is preserved.
-      const markerMatches = [...parsed.matchAll(/(?:^|\s{2,})([+-])\s*/g)];
-      if (markerMatches.length >= 2) {
-        for (let i = 0; i < markerMatches.length; i++) {
-          const cur = markerMatches[i];
-          const next = markerMatches[i + 1];
-          const start = (cur.index ?? 0) + cur[0].length;
-          const end = next ? next.index ?? parsed.length : parsed.length;
-          const text = parsed.slice(start, end).trim();
-          if (!text) continue;
-          optLines.push({ text, isCorrect: cur[1] === "+" });
+      if (lineLooksLikeSignedOptionsRow(parsed)) {
+        const markerMatches = [...parsed.matchAll(/(?:^|\s{2,})([+-])\s*/g)];
+        if (markerMatches.length >= 2) {
+          for (let i = 0; i < markerMatches.length; i++) {
+            const cur = markerMatches[i];
+            const next = markerMatches[i + 1];
+            const start = (cur.index ?? 0) + cur[0].length;
+            const end = next ? next.index ?? parsed.length : parsed.length;
+            const text = parsed.slice(start, end).trim();
+            if (!text) continue;
+            optLines.push({ text, isCorrect: cur[1] === "+" });
+          }
+          continue;
         }
-        continue;
-      }
-      // Fallback: "+ A - B - C" in one line (less reliable for formulas).
-      const signed = [...parsed.matchAll(/([+-])\s*([^+\-\n][^+\-]*?)(?=\s+[+-]\s*|$)/g)];
-      if (signed.length >= 2) {
-        for (const m of signed) {
-          const text = m[2]?.trim();
-          if (!text) continue;
-          optLines.push({ text, isCorrect: m[1] === "+" });
+        // Fallback: "+ A - B - C" in one line — faqat aniq variant qatori uchun.
+        const signed = [...parsed.matchAll(/([+-])\s*([^+\-\n][^+\-]*?)(?=\s+[+-]\s*|$)/g)];
+        if (signed.length >= 2) {
+          for (const m of signed) {
+            const text = m[2]?.trim();
+            if (!text) continue;
+            optLines.push({ text, isCorrect: m[1] === "+" });
+          }
+          continue;
         }
-        continue;
       }
       const t = parsed.trim();
       if (!t) continue;
