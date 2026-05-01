@@ -39,7 +39,7 @@ export function DashboardShell({
       <div className="pointer-events-none fixed inset-0 bg-[linear-gradient(rgba(148,163,184,0.04)_1px,transparent_1px),linear-gradient(90deg,rgba(148,163,184,0.04)_1px,transparent_1px)] bg-[length:56px_56px] opacity-45" aria-hidden />
 
       {/* Mobile top */}
-      <div className="relative z-10 mx-auto mb-5 max-w-[1400px] space-y-4 px-4 py-5 sm:px-6 lg:mb-0 lg:hidden">
+      <div className="relative z-10 mx-auto mb-5 max-w-[1400px] space-y-4 px-4 py-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] sm:px-6 lg:mb-0 lg:hidden">
         <div
           className={cn(
             "relative overflow-hidden rounded-2xl bg-gradient-to-r p-4 text-center font-display text-sm font-bold tracking-wide text-white shadow-[0_0_32px_-4px_rgba(16,185,129,0.36)] ring-1 ring-white/35",

@@ -98,6 +98,7 @@ export const messages: Record<
     };
     testRunner: {
       questionProgress: string;
+      questionNavHint: string;
       prev: string;
       next: string;
       finish: string;
@@ -169,6 +170,7 @@ export const messages: Record<
     },
     testRunner: {
       questionProgress: "Savol {current} / {total}",
+      questionNavHint: "Savollar: yashil — javob berilgan, kulrang — hali yo‘q. Raqamga bosib o‘tishingiz mumkin.",
       prev: "Oldingi",
       next: "Keyingi",
       finish: "Yakunlash",
@@ -298,6 +300,7 @@ export const messages: Record<
     },
     testRunner: {
       questionProgress: "Вопрос {current} / {total}",
+      questionNavHint: "Вопросы: зелёный — отвечен, серый — ещё нет. Нажмите номер, чтобы перейти.",
       prev: "Назад",
       next: "Далее",
       finish: "Завершить",
@@ -426,6 +429,7 @@ export const messages: Record<
     },
     testRunner: {
       questionProgress: "Question {current} / {total}",
+      questionNavHint: "Questions: green = answered, gray = not yet. Tap a number to jump.",
       prev: "Previous",
       next: "Next",
       finish: "Finish",

@@ -4,11 +4,26 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
-import { TEST_GRANT_COOKIE, type TestCodeFormState } from "@/lib/test-access";
+import {
+  TEST_GRANT_COOKIE,
+  TEST_GRANT_MAX_TESTS,
+  serializeTestGrantCookie,
+  type TestCodeFormState,
+} from "@/lib/test-access";
 import { sessionHasPermission } from "@/lib/permissions";
 
 function normalizeCode(raw: string) {
   return raw.trim().toUpperCase().replace(/\s+/g, "");
+}
+
+function parseGrantedJson(raw: string): string[] {
+  try {
+    const a = JSON.parse(raw || "[]") as unknown;
+    if (!Array.isArray(a)) return [];
+    return a.filter((x): x is string => typeof x === "string" && x.length > 0);
+  } catch {
+    return [];
+  }
 }
 
 export async function submitTestCode(_prev: TestCodeFormState, formData: FormData): Promise<TestCodeFormState> {
@@ -56,21 +71,48 @@ export async function submitTestCode(_prev: TestCodeFormState, formData: FormDat
     return { error: "Bu test sizning sinfingiz uchun mo‘ljallanmagan." };
   }
 
+  const extraIds = parseGrantedJson(tc.grantedTestIdsJson);
+  const allTestIds = [...new Set([tc.testId, ...extraIds])].slice(0, TEST_GRANT_MAX_TESTS);
+
+  const bundleRows = await prisma.test.findMany({
+    where: { id: { in: allTestIds } },
+    include: { subject: true },
+  });
+  if (bundleRows.length !== allTestIds.length) {
+    return { error: "Kod sozlamalari noto‘g‘ri: ba’zi testlar topilmadi." };
+  }
+
+  for (const t of bundleRows) {
+    if (!t.isActive || t.isDraft || t.status === "ARCHIVED") {
+      return { error: `“${t.title}” hozir ochilmagan. Administrator yoki o‘qituvchi bilan bog‘laning.` };
+    }
+    if (tc.scopeType === "GRADE") {
+      if (t.subject.gradeId !== tc.scopeGradeId) {
+        return { error: "Paketdagi testlar bu kod sinfiga mos emas." };
+      }
+    } else if (user.gradeId && t.subject.gradeId !== user.gradeId) {
+      return { error: `“${t.title}” sizning sinfingiz uchun emas.` };
+    }
+  }
+
   await prisma.testCode.update({
     where: { id: tc.id },
     data: { usesCount: { increment: 1 } },
   });
 
   const jar = await cookies();
-  jar.set(TEST_GRANT_COOKIE, tc.testId, {
+  jar.set(TEST_GRANT_COOKIE, serializeTestGrantCookie(allTestIds), {
     httpOnly: true,
     sameSite: "lax",
     path: "/",
-    maxAge: 60 * 60 * 3,
+    maxAge: 60 * 60 * 6,
   });
 
   if (nextRaw.startsWith("/testlar/")) {
     redirect(nextRaw);
+  }
+  if (allTestIds.length > 1) {
+    redirect("/oquvchi/monitoring-testlar");
   }
   redirect(`/testlar/${tc.testId}`);
 }

@@ -77,7 +77,7 @@ export function PremiumNavbar({ user, locale }: { user: UserLite; locale: AppLoc
   function linkCls(href: string, homeExact: boolean) {
     const active = isNavActive(pathname, href, homeExact);
     return cn(
-      "group inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-xl px-2 py-2 text-xs font-medium transition-all sm:gap-2 sm:px-3 sm:text-sm",
+      "group inline-flex min-h-[44px] shrink-0 items-center gap-2 whitespace-nowrap rounded-xl px-3 py-2.5 text-xs font-medium transition-all sm:min-h-0 sm:gap-2.5 sm:px-3 sm:py-2 sm:text-sm",
       active
         ? "bg-emerald-100 text-emerald-900 ring-1 ring-emerald-200 shadow-lg shadow-emerald-900/10"
         : "text-slate-700 hover:bg-emerald-50 hover:text-emerald-800",
@@ -103,7 +103,7 @@ export function PremiumNavbar({ user, locale }: { user: UserLite; locale: AppLoc
         </span>
       </Link>
 
-      <nav className="order-3 flex min-h-[2.75rem] w-full min-w-0 basis-full items-center gap-0.5 overflow-x-auto py-0.5 [-ms-overflow-style:none] [scrollbar-width:none] sm:order-none sm:min-h-0 sm:w-auto sm:flex-1 sm:basis-auto sm:justify-center sm:py-0 [&::-webkit-scrollbar]:hidden">
+      <nav className="order-3 flex min-h-[3rem] w-full min-w-0 basis-full items-center gap-1 overflow-x-auto py-1 [-ms-overflow-style:none] [scrollbar-width:none] sm:order-none sm:min-h-0 sm:w-auto sm:flex-1 sm:basis-auto sm:justify-center sm:gap-1.5 sm:py-0 [&::-webkit-scrollbar]:hidden">
         {navItems.map((it) => {
           const navActive = isNavActive(pathname, it.href, it.homeExact);
           return (

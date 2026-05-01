@@ -5,7 +5,7 @@ import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
-import { TEST_GRANT_COOKIE } from "@/lib/test-access";
+import { TEST_GRANT_COOKIE, parseTestGrantCookie } from "@/lib/test-access";
 import { sessionHasPermission } from "@/lib/permissions";
 import { buildOptionPermutation, buildQuestionShuffle } from "@/lib/exam-shuffle";
 import { writeAuditLog } from "@/lib/audit";
@@ -112,7 +112,7 @@ export async function beginTestAttempt(testId: string): Promise<BeginAttemptResu
   if (!sessionHasPermission(session, "TESTS_ATTEMPT")) return { ok: false, error: "Ruxsat yo‘q." };
 
   const jar = await cookies();
-  if (jar.get(TEST_GRANT_COOKIE)?.value !== testId) {
+  if (!parseTestGrantCookie(jar.get(TEST_GRANT_COOKIE)?.value).includes(testId)) {
     return { ok: false, error: "Test kodi bilan ruxsat oling." };
   }
 
@@ -261,7 +261,7 @@ export async function submitExamAttempt(
   if (!attempt?.test) return { ok: false, error: "Sessiya topilmadi." };
   if (attempt.sessionToken !== sessionToken) return { ok: false, error: "Sessiya yaroqsiz." };
   if (attempt.status !== "IN_PROGRESS") return { ok: false, error: "Sessiya yopilgan." };
-  if (jar.get(TEST_GRANT_COOKIE)?.value !== attempt.testId) {
+  if (!parseTestGrantCookie(jar.get(TEST_GRANT_COOKIE)?.value).includes(attempt.testId)) {
     return { ok: false, error: "Ruxsat cookie yo‘q." };
   }
 

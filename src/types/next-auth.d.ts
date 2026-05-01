@@ -9,6 +9,8 @@ declare module "next-auth" {
       status?: string;
       locale?: string;
       mustChangePassword: boolean;
+      /** O‘quvchi kabineti — bazadan keladigan doimiy raqam. */
+      studentNumber?: number;
       /** Hydrated from DB RolePermission at sign-in / session update. */
       permissionKeys: string[];
     };
@@ -19,6 +21,7 @@ declare module "next-auth" {
     status?: string;
     locale?: string;
     mustChangePassword?: boolean;
+    studentNumber?: number;
   }
 }
 
@@ -29,6 +32,7 @@ declare module "next-auth/jwt" {
     status?: string;
     locale?: string;
     mustChangePassword?: boolean;
+    studentNumber?: number;
     permissionKeys?: string[];
   }
 }

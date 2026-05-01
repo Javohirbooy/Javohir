@@ -3,6 +3,7 @@ import { DashboardShell } from "@/components/dashboard/dashboard-shell";
 const items = [
   { href: "/oquvchi", label: "Profil", icon: "user" as const },
   { href: "/oquvchi/test-kod", label: "Test kodi", icon: "activity" as const },
+  { href: "/oquvchi/monitoring-testlar", label: "Monitoring", icon: "layout" as const },
   { href: "/oquvchi/fanlar", label: "Fanlar", icon: "layers" as const },
   { href: "/oquvchi/sinflar", label: "Sinfim", icon: "school" as const },
   { href: "/oquvchi/reyting", label: "Reyting", icon: "trophy" as const },

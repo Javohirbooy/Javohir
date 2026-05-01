@@ -44,6 +44,9 @@ export default async function TeacherStudentDetailPage({ params }: Props) {
       <div>
         <h1 className="text-2xl font-extrabold text-white">O‘quvchini tahrirlash</h1>
         <p className="mt-1 text-sm text-white/60">{student.name}</p>
+        {student.studentNumber != null ? (
+          <p className="mt-1 font-mono text-sm font-semibold text-sky-200">O‘quvchi ID: {student.studentNumber}</p>
+        ) : null}
       </div>
       <TeacherStudentEditForm student={row} grades={grades} />
       <TeacherStudentResetPasswordForm studentId={student.id} />

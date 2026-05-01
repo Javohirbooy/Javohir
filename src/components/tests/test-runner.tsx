@@ -244,7 +244,7 @@ export function TestRunner({
         {show ? (
           <>
             <Card className="border-slate-200/80 bg-white text-center shadow-xl">
-              <p className="text-sm font-semibold uppercase tracking-widest text-violet-600">{tf("testRunner.resultLabel")}</p>
+              <p className="text-sm font-semibold uppercase tracking-widest text-sky-600">{tf("testRunner.resultLabel")}</p>
               {show.notice ? <p className="mt-3 text-sm text-amber-700">{show.notice}</p> : null}
               <p className="mt-2 text-5xl font-black tracking-tight text-slate-900">
                 {show.total ? `${show.score}%` : tf("testRunner.dash")}
@@ -254,7 +254,7 @@ export function TestRunner({
                   {tf("testRunner.scoreDetails", { correct: show.correct, total: show.total })}
                 </p>
               ) : null}
-              {show.total ? <ProgressBar value={show.score} className="mt-6 from-violet-500 to-cyan-400" /> : null}
+              {show.total ? <ProgressBar value={show.score} className="mt-6 from-sky-500 to-cyan-400" /> : null}
             </Card>
             <div className="space-y-4">
               <h2 className="text-xl font-bold text-white">{tf("testRunner.summaryTitle")}</h2>
@@ -309,29 +309,62 @@ export function TestRunner({
         </div>
       ) : null}
 
-      <div className="flex flex-col gap-3 rounded-3xl border border-white/30 bg-white/10 p-4 backdrop-blur-md sm:flex-row sm:items-center sm:justify-between">
-        <div className="min-w-0 flex-1">
-          <p className="text-xs font-semibold uppercase tracking-widest text-white/80">{title}</p>
-          <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-white/55">
-            {metaLine ? <span>{metaLine}</span> : null}
-            {difficulty ? (
-              <span className="rounded-full border border-emerald-300/45 bg-emerald-50/55 px-2 py-0.5 font-semibold text-emerald-800">
-                {difficultyLabel(difficulty, locale)}
+      <div className="space-y-3">
+        <div className="flex flex-col gap-3 rounded-3xl border border-white/30 bg-white/10 p-4 backdrop-blur-md sm:flex-row sm:items-center sm:justify-between">
+          <div className="min-w-0 flex-1">
+            <p className="text-xs font-semibold uppercase tracking-widest text-white/80">{title}</p>
+            <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-white/55">
+              {metaLine ? <span>{metaLine}</span> : null}
+              {difficulty ? (
+                <span className="rounded-full border border-emerald-300/45 bg-emerald-50/55 px-2 py-0.5 font-semibold text-emerald-800">
+                  {difficultyLabel(difficulty, locale)}
+                </span>
+              ) : null}
+            </div>
+            <div className="mt-3 flex items-center justify-between gap-4 text-sm text-white/90">
+              <span>
+                {tf("testRunner.questionProgress", { current: step + 1, total: questions.length })}
               </span>
-            ) : null}
+              <span>{Math.round(progress)}%</span>
+            </div>
+            <ProgressBar value={progress} trackClassName="mt-2 bg-emerald-100/80" className="from-emerald-400 via-green-400 to-teal-400" />
           </div>
-          <div className="mt-3 flex items-center justify-between gap-4 text-sm text-white/90">
-            <span>
-              {tf("testRunner.questionProgress", { current: step + 1, total: questions.length })}
-            </span>
-            <span>{Math.round(progress)}%</span>
-          </div>
-          <ProgressBar value={progress} trackClassName="mt-2 bg-emerald-100/80" className="from-emerald-400 via-green-400 to-teal-400" />
+          <TestSessionTimer
+            totalSeconds={tSec}
+            onExpire={!preview && studentExam ? handleTimerExpire : undefined}
+          />
         </div>
-        <TestSessionTimer
-          totalSeconds={tSec}
-          onExpire={!preview && studentExam ? handleTimerExpire : undefined}
-        />
+        <div className="rounded-2xl border border-white/25 bg-white/10 px-3 py-3 backdrop-blur-md sm:px-4">
+          <p className="text-[0.7rem] font-medium leading-snug text-white/85 sm:text-xs">{tf("testRunner.questionNavHint")}</p>
+          <div className="mt-3 flex max-h-[min(32vh,260px)] flex-wrap content-start gap-2.5 overflow-y-auto [-webkit-overflow-scrolling:touch] pb-1 sm:max-h-[200px]">
+            {questions.map((_, i) => {
+              const answered = (answers[i] ?? -1) >= 0;
+              const current = i === step;
+              return (
+                <button
+                  key={i}
+                  type="button"
+                  disabled={terminated}
+                  onClick={() => {
+                    if (!terminated) setStep(i);
+                  }}
+                  className={cn(
+                    "flex h-11 min-h-[44px] min-w-[44px] items-center justify-center rounded-xl border-2 text-sm font-bold transition active:scale-[0.97] disabled:opacity-50",
+                    current
+                      ? "border-sky-400 bg-sky-500/90 text-white shadow-[0_0_16px_-4px_rgba(56,189,248,0.8)] ring-2 ring-sky-300/50"
+                      : answered
+                        ? "border-emerald-400/70 bg-emerald-500/85 text-white hover:bg-emerald-500"
+                        : "border-white/35 bg-white/15 text-white/90 hover:bg-white/25",
+                  )}
+                  aria-label={`${tf("testRunner.questionProgress", { current: i + 1, total: questions.length })}`}
+                  aria-current={current ? "step" : undefined}
+                >
+                  {i + 1}
+                </button>
+              );
+            })}
+          </div>
+        </div>
       </div>
 
       <Card className="border-slate-200/80 bg-white shadow-xl">
@@ -351,14 +384,14 @@ export function TestRunner({
                 className={cn(
                   "flex gap-3 rounded-2xl border-2 px-4 py-4 text-left text-sm font-semibold transition active:scale-[0.99]",
                   selected
-                    ? "border-violet-500 bg-violet-50 text-violet-950 shadow-md ring-2 ring-violet-200/60"
-                    : "border-slate-200 bg-white text-slate-800 hover:border-violet-300 hover:bg-violet-50/50",
+                    ? "border-sky-500 bg-sky-50 text-sky-950 shadow-md ring-2 ring-sky-200/70"
+                    : "border-slate-200 bg-white text-slate-800 hover:border-sky-300 hover:bg-sky-50/60",
                 )}
               >
                 <span
                   className={cn(
                     "flex h-9 w-9 shrink-0 items-center justify-center self-start rounded-xl text-xs font-black",
-                    selected ? "bg-violet-600 text-white" : "bg-slate-100 text-slate-600",
+                    selected ? "bg-sky-600 text-white" : "bg-slate-100 text-slate-600",
                   )}
                 >
                   {letter}

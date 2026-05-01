@@ -4,7 +4,7 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { TestRunner } from "@/components/tests/test-runner";
 import { StudentExamBootstrap } from "@/components/tests/student-exam-bootstrap";
-import { TEST_GRANT_COOKIE } from "@/lib/test-access";
+import { TEST_GRANT_COOKIE, studentHasGrantForTest } from "@/lib/test-access";
 import { sessionHasPermission } from "@/lib/permissions";
 import { adminCanOpenTestRunner, teacherCanOpenTestRunner } from "@/lib/test-policy";
 import { getServerLocale } from "@/lib/i18n/resolve-locale";
@@ -22,7 +22,7 @@ export default async function TestTakePage({ params }: Props) {
     if (!sessionHasPermission(session, "TESTS_ATTEMPT")) {
       redirect("/oquvchi");
     }
-    if (grant !== testId) {
+    if (!studentHasGrantForTest(grant, testId)) {
       redirect(`/oquvchi/test-kod?next=${encodeURIComponent(`/testlar/${testId}`)}`);
     }
   }
@@ -48,7 +48,7 @@ export default async function TestTakePage({ params }: Props) {
 
   const isStudentAttempt =
     session?.user?.role === "STUDENT" &&
-    grant === testId &&
+    studentHasGrantForTest(grant, testId) &&
     sessionHasPermission(session, "TESTS_ATTEMPT");
 
   if (isStudentAttempt) {

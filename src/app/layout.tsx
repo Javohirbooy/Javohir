@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Inter, Poppins } from "next/font/google";
 import "./globals.css";
 import { AuthSessionProvider } from "@/components/providers/session-provider";
@@ -24,6 +24,13 @@ export const metadata: Metadata = {
   title: `${BRAND.name} — universal ta’lim monitoringi`,
   description:
     "Maktab fanlari, sinflar, testlar va analytics — zamonaviy, professional va production-ready ta’lim platformasi.",
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+  themeColor: "#ecfdf5",
 };
 
 export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {

@@ -38,6 +38,7 @@ export default async function AdminStudentsListPage() {
         <table className="w-full min-w-[720px] text-left text-sm">
           <thead className="border-b border-white/10 text-xs uppercase tracking-wider text-white/45">
             <tr>
+              <th className="px-4 py-3 font-semibold">ID</th>
               <th className="px-4 py-3 font-semibold">Ism</th>
               <th className="px-4 py-3 font-semibold">Email</th>
               <th className="px-4 py-3 font-semibold">Sinf</th>
@@ -49,6 +50,7 @@ export default async function AdminStudentsListPage() {
           <tbody>
             {students.map((s) => (
               <tr key={s.id} className="border-b border-white/5 text-white/85 hover:bg-white/[0.03]">
+                <td className="px-4 py-3 font-mono text-sm text-sky-200">{s.studentNumber ?? "—"}</td>
                 <td className="px-4 py-3 font-medium text-white">{s.name}</td>
                 <td className="px-4 py-3 text-white/70">{s.email}</td>
                 <td className="px-4 py-3 text-white/60">{s.grade?.name ?? "—"}</td>

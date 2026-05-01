@@ -7,6 +7,7 @@ import { prisma } from "@/lib/prisma";
 import { sessionHasPermission } from "@/lib/permissions";
 import { writeAuditLog } from "@/lib/audit";
 import { teacherManagesStudent } from "@/lib/teacher-scope";
+import { allocateNextStudentNumber } from "@/lib/student-number";
 
 export type StudentFormState = { ok: boolean; error?: string } | null;
 
@@ -61,6 +62,7 @@ export async function adminCreateStudentFormAction(_prev: StudentFormState, form
   }
 
   const passwordHash = await bcrypt.hash(password, 12);
+  const studentNumber = await allocateNextStudentNumber();
   const student = await prisma.user.create({
     data: {
       email,
@@ -69,6 +71,7 @@ export async function adminCreateStudentFormAction(_prev: StudentFormState, form
       role: "STUDENT",
       status,
       gradeId,
+      studentNumber,
       mustChangePassword: true,
       credentialIssuedById: session.user.id,
     },
@@ -121,6 +124,7 @@ export async function teacherCreateStudentFormAction(_prev: StudentFormState, fo
   if (!uniq.ok) return uniq;
 
   const passwordHash = await bcrypt.hash(password, 12);
+  const studentNumber = await allocateNextStudentNumber();
   const student = await prisma.user.create({
     data: {
       email,
@@ -129,6 +133,7 @@ export async function teacherCreateStudentFormAction(_prev: StudentFormState, fo
       role: "STUDENT",
       status,
       gradeId,
+      studentNumber,
       mustChangePassword: true,
       credentialIssuedById: session.user.id,
     },

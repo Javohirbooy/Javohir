@@ -2,6 +2,7 @@
 
 import { randomBytes } from "crypto";
 import { revalidatePath } from "next/cache";
+import type { Session } from "next-auth";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { sessionHasPermission } from "@/lib/permissions";
@@ -48,6 +49,8 @@ export type CreateTeacherTestInput = {
   testCodeScopeType?: string;
   testCodeScopeGradeId?: string | null;
   testCodeScopeUserIds?: string[];
+  /** Monitoring: asosiy testdan tashqari, bir xil sinfdagi qo‘shimcha testlar (kod barchasiga ruxsat beradi). */
+  testCodeBundleTestIds?: string[];
 };
 
 function deriveLifecycle(input: CreateTeacherTestInput): { status: string; isDraft: boolean; isActive: boolean } {
@@ -79,6 +82,56 @@ async function uniqueTestCode(): Promise<string> {
 
 function normalizeCode(raw: string) {
   return raw.trim().toUpperCase().replace(/\s+/g, "");
+}
+
+const MAX_BUNDLE_EXTRA = 11;
+
+async function resolveTestCodeBundleIds(
+  session: Session,
+  gradeId: string | null,
+  raw: string[] | undefined,
+  excludeTestId?: string,
+): Promise<{ ok: false; error: string } | { ok: true; ids: string[] }> {
+  const extra = [...new Set((raw ?? []).filter(Boolean))]
+    .filter((id) => !excludeTestId || id !== excludeTestId)
+    .slice(0, MAX_BUNDLE_EXTRA);
+  if (extra.length === 0) return { ok: true, ids: [] };
+  if (!gradeId) return { ok: false, error: "Paket testlari uchun sinf aniqlanishi kerak." };
+
+  const tests = await prisma.test.findMany({
+    where: { id: { in: extra } },
+    select: {
+      id: true,
+      gradeId: true,
+      authorUserId: true,
+      isDraft: true,
+      isActive: true,
+      status: true,
+      title: true,
+    },
+  });
+  if (tests.length !== extra.length) return { ok: false, error: "Paketdagi ba’zi testlar topilmadi." };
+
+  for (const t of tests) {
+    if (t.isDraft || !t.isActive || t.status === "ARCHIVED") {
+      return { ok: false, error: `“${t.title}” nashr etilmagan yoki yopilgan — paketga qo‘sha olmaysiz.` };
+    }
+    if (t.gradeId !== gradeId) {
+      return { ok: false, error: "Paketdagi barcha testlar bir xil sinfga tegishli bo‘lishi kerak." };
+    }
+    if (session.user.role === "TEACHER") {
+      if (t.authorUserId !== session.user.id) {
+        return { ok: false, error: "Paketga faqat o‘zingiz yaratgan testlarni qo‘shing." };
+      }
+    } else if (session.user.role === "ADMIN" || session.user.role === "SUPER_ADMIN") {
+      if (t.authorUserId !== null) {
+        return { ok: false, error: "Platforma paketiga faqat katalog (admin) testlari kiritiladi." };
+      }
+    } else {
+      return { ok: false, error: "Ruxsat yo‘q." };
+    }
+  }
+  return { ok: true, ids: extra };
 }
 
 /**
@@ -152,6 +205,10 @@ export async function createTest(input: CreateTeacherTestInput) {
   const shuffleOptions = input.shuffleOptions !== false;
   const { status, isDraft, isActive } = deriveLifecycle(input);
 
+  const bundleResolve = await resolveTestCodeBundleIds(session, gradeId, input.testCodeBundleTestIds);
+  if (!bundleResolve.ok) return { ok: false as const, error: bundleResolve.error };
+  const bundleJson = JSON.stringify(bundleResolve.ids);
+
   const test = await prisma.test.create({
     data: {
       subjectId: input.subjectId,
@@ -207,6 +264,7 @@ export async function createTest(input: CreateTeacherTestInput) {
         scopeType: input.testCodeScopeType?.trim() || "ALL",
         scopeGradeId: input.testCodeScopeGradeId ?? null,
         scopeUserIdsJson: JSON.stringify(input.testCodeScopeUserIds ?? []),
+        grantedTestIdsJson: bundleJson,
       },
     });
     code = manual;
@@ -222,6 +280,7 @@ export async function createTest(input: CreateTeacherTestInput) {
         scopeType: input.testCodeScopeType?.trim() || "ALL",
         scopeGradeId: input.testCodeScopeGradeId ?? null,
         scopeUserIdsJson: JSON.stringify(input.testCodeScopeUserIds ?? []),
+        grantedTestIdsJson: bundleJson,
       },
     });
   }
@@ -290,6 +349,10 @@ export async function updateTeacherTest(
 
   const qs = input.questions.filter((q) => q.text.trim() && q.options.filter(Boolean).length >= 2);
   if (!qs.length) return { ok: false, error: "Kamida bitta to‘liq savol kiriting." };
+
+  const bundleResolve = await resolveTestCodeBundleIds(session, gradeId, input.testCodeBundleTestIds, testId);
+  if (!bundleResolve.ok) return { ok: false, error: bundleResolve.error };
+  const bundleJson = JSON.stringify(bundleResolve.ids);
 
   let topicId: string | null = input.topicId?.trim() || null;
   const topicTitle = input.topicTitle?.trim();
@@ -375,6 +438,7 @@ export async function updateTeacherTest(
             scopeType: input.testCodeScopeType?.trim() || "ALL",
             scopeGradeId: input.testCodeScopeGradeId ?? null,
             scopeUserIdsJson: JSON.stringify(input.testCodeScopeUserIds ?? []),
+            grantedTestIdsJson: bundleJson,
           },
         });
         code = manual;
@@ -391,10 +455,16 @@ export async function updateTeacherTest(
           scopeType: input.testCodeScopeType?.trim() || "ALL",
           scopeGradeId: input.testCodeScopeGradeId ?? null,
           scopeUserIdsJson: JSON.stringify(input.testCodeScopeUserIds ?? []),
+          grantedTestIdsJson: bundleJson,
         },
       });
     }
   }
+
+  await prisma.testCode.updateMany({
+    where: { testId, isActive: true },
+    data: { grantedTestIdsJson: bundleJson },
+  });
 
   await writeAuditLog({
     actorUserId: session.user.id,

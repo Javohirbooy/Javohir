@@ -19,7 +19,8 @@
     "db:sync": "prisma db push && prisma generate",
     "db:seed": "prisma db seed",
     "seed": "tsx prisma/seed.ts",
-    "seed:demo": "tsx prisma/seed-demo.ts"
+    "seed:demo": "tsx prisma/seed-demo.ts",
+    "db:backfill-student-numbers": "tsx scripts/backfill-student-numbers.ts"
   },
   "prisma": {
     "seed": "npx tsx prisma/seed.ts"

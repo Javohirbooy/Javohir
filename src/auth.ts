@@ -101,6 +101,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           locale: user.locale,
           mustChangePassword: user.mustChangePassword,
           permissionKeys,
+          studentNumber: user.studentNumber ?? undefined,
         };
       },
     }),

@@ -50,6 +50,8 @@ model User {
   avatarEmoji          String?          @default("🎓")
   /// Last actor who issued/reset login credentials (admin or teacher).
   credentialIssuedById String?
+  /// O‘quvchi uchun ko‘rsatiladigan doimiy raqamli ID (masalan 100001). Faqat STUDENT uchun.
+  studentNumber        Int?             @unique
   createdAt            DateTime         @default(now())
   updatedAt            DateTime         @updatedAt
   grade                Grade?           @relation(fields: [gradeId], references: [id])
@@ -172,6 +174,8 @@ model TestCode {
   scopeGradeId String?
   /// JSON string[] of user ids allowed when scopeType = USERS
   scopeUserIdsJson String @default("[]")
+  /// Shu kod bilan birga ochiladigan qo‘shimcha test id-lari (asosiy testId dan tashqari). Monitoring paketi.
+  grantedTestIdsJson String @default("[]")
   test       Test      @relation(fields: [testId], references: [id], onDelete: Cascade)
 
   @@index([testId])

@@ -47,6 +47,9 @@ export function DashboardHeader({ className }: { className?: string }) {
           <div className="min-w-0 text-right">
             <p className="font-display truncate text-sm font-semibold tracking-tight text-slate-800">{user?.name ?? "Mehmon"}</p>
             <p className="truncate text-xs text-slate-500">{user?.email ?? ""}</p>
+            {user?.role === "STUDENT" && user.studentNumber != null ? (
+              <p className="mt-0.5 truncate font-mono text-[0.7rem] font-semibold text-sky-700">ID: {user.studentNumber}</p>
+            ) : null}
           </div>
           <div
             className="group/avatar relative flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-400 via-green-500 to-teal-600 font-display text-sm font-bold text-white shadow-[0_0_24px_rgba(34,197,94,0.5),0_0_20px_rgba(16,185,129,0.35)] ring-2 ring-white/25 transition-transform duration-300 hover:scale-110 motion-reduce:hover:scale-100"

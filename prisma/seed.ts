@@ -176,6 +176,7 @@ async function main() {
       status: "ACTIVE",
       gradeId: g5.id,
       avatarEmoji: "🌟",
+      studentNumber: 100_001,
     },
     update: {
       passwordHash,
@@ -184,6 +185,7 @@ async function main() {
       status: "ACTIVE",
       gradeId: g5.id,
       avatarEmoji: "🌟",
+      studentNumber: 100_001,
     },
   });
 

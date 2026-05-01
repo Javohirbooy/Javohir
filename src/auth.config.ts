@@ -21,6 +21,7 @@ export const authConfig = {
         token.status = (user as { status?: string }).status;
         token.locale = (user as { locale?: string }).locale;
         token.mustChangePassword = (user as { mustChangePassword?: boolean }).mustChangePassword;
+        token.studentNumber = (user as { studentNumber?: number | null }).studentNumber ?? undefined;
         token.permissionKeys =
           (user as { permissionKeys?: string[] }).permissionKeys ?? staticPermissionKeysForRole(String(user.role));
       }
@@ -36,6 +37,8 @@ export const authConfig = {
         session.user.status = token.status as string | undefined;
         session.user.locale = token.locale as string | undefined;
         session.user.mustChangePassword = Boolean(token.mustChangePassword);
+        session.user.studentNumber =
+          typeof token.studentNumber === "number" ? token.studentNumber : undefined;
         session.user.permissionKeys = Array.isArray(token.permissionKeys)
           ? (token.permissionKeys as string[])
           : [];
