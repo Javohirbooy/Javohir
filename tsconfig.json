@@ -39,6 +39,7 @@
   "exclude": [
     "node_modules",
     "prisma.config.ts",
-    ".next/dev"
+    ".next/dev",
+    "scripts/verify-test-code.mts"
   ]
 }

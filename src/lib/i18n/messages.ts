@@ -68,6 +68,14 @@ export const messages: Record<
       testPlByGrades: string;
       testPlDemoWindow: string;
       testPlProgress: string;
+      trustEyebrow: string;
+      trustTitle: string;
+      trust1Title: string;
+      trust1Body: string;
+      trust2Title: string;
+      trust2Body: string;
+      trust3Title: string;
+      trust3Body: string;
     };
     brand: { tagline: string };
     footer: {
@@ -252,6 +260,14 @@ export const messages: Record<
       testPlByGrades: "Sinflar bo‘yicha",
       testPlDemoWindow: "Demo test oynasi",
       testPlProgress: "Progress",
+      trustEyebrow: "Ishonch",
+      trustTitle: "Zamonaviy ta’lim uchun barqaror platforma",
+      trust1Title: "Jamoa va rollar",
+      trust1Body: "Admin, o‘qituvchi va o‘quvchi kabinetlari alohida — har bir rol o‘z vazifasiga mos interfeys.",
+      trust2Title: "Ma’lumot xavfsizligi",
+      trust2Body: "Autentifikatsiya, ruxsatlar va audit — production uchun asos solingan.",
+      trust3Title: "Maktab fanlari",
+      trust3Body: "Ko‘p fanli tuzilma, testlar va tahlil — bitta ekotizmda.",
     },
   },
   ru: {
@@ -385,6 +401,14 @@ export const messages: Record<
       testPlByGrades: "По классам",
       testPlDemoWindow: "Демо окна теста",
       testPlProgress: "Прогресс",
+      trustEyebrow: "Надёжность",
+      trustTitle: "Стабильная платформа для современного обучения",
+      trust1Title: "Команды и роли",
+      trust1Body: "Отдельные кабинеты администратора, учителя и ученика — интерфейс под каждую роль.",
+      trust2Title: "Безопасность данных",
+      trust2Body: "Аутентификация, права и аудит — основа для production.",
+      trust3Title: "Школьные предметы",
+      trust3Body: "Мультипредметная структура, тесты и аналитика в одной экосистеме.",
     },
   },
   en: {
@@ -516,6 +540,14 @@ export const messages: Record<
       testPlByGrades: "By grade",
       testPlDemoWindow: "Demo test window",
       testPlProgress: "Progress",
+      trustEyebrow: "Trust",
+      trustTitle: "A dependable platform for modern learning",
+      trust1Title: "Teams & roles",
+      trust1Body: "Separate admin, teacher, and student dashboards — each role gets a focused experience.",
+      trust2Title: "Data security",
+      trust2Body: "Authentication, permissions, and audit trails — built for production.",
+      trust3Title: "School-wide subjects",
+      trust3Body: "Multi-subject structure, tests, and analytics in one ecosystem.",
     },
   },
 };

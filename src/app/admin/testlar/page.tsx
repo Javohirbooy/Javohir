@@ -28,7 +28,7 @@ export default async function AdminTestsPage() {
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <h1 className="text-2xl font-extrabold tracking-tight text-white">Testlar</h1>
-          <p className="mt-1 text-sm text-white/60">Barcha testlar — admin yaratgan (author null) va o‘qituvchi testlari.</p>
+          <p className="mt-1 text-sm text-white/70">Barcha testlar — admin yaratgan (author null) va o‘qituvchi testlari.</p>
         </div>
         <div className="flex flex-wrap gap-2">
           <Link
@@ -49,10 +49,10 @@ export default async function AdminTestsPage() {
       <DashboardCard>
         <ul className="divide-y divide-white/10">
           {tests.map((t) => (
-            <li key={t.id} className="flex flex-wrap items-center justify-between gap-3 py-4 first:pt-0">
+            <li key={t.id} className="flex flex-wrap items-center justify-between gap-3 py-2.5 first:pt-0">
               <div className="min-w-0">
-                <p className="truncate font-semibold text-white">{t.title}</p>
-                <p className="mt-1 text-xs text-white/50">
+                <p className="truncate text-[15px] font-semibold leading-snug text-white">{t.title}</p>
+                <p className="mt-0.5 text-xs text-white/60">
                   {t.subject.title} · {t.subject.grade.name} · {t.difficulty}
                 </p>
                 <div className="mt-2 flex flex-wrap gap-2">

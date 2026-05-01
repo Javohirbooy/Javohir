@@ -4,6 +4,7 @@ import { useSession } from "next-auth/react";
 import { Bell, Search, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Icon3DGlyph } from "@/components/ui/icon-3d";
+import { ThemeToggle } from "@/components/ui/theme-toggle";
 
 export function DashboardHeader({ className }: { className?: string }) {
   const { data } = useSession();
@@ -13,7 +14,7 @@ export function DashboardHeader({ className }: { className?: string }) {
   return (
     <header
       className={cn(
-        "group/header flex flex-col gap-4 rounded-[1.75rem] border border-emerald-100 bg-gradient-to-br from-white via-emerald-50/40 to-white p-4 shadow-[0_0_48px_-22px_rgba(16,185,129,0.22),inset_0_1px_0_0_rgba(255,255,255,0.8)] backdrop-blur-[16px] backdrop-saturate-[1.1] sm:flex-row sm:items-center sm:justify-between sm:gap-6 sm:p-5",
+        "group/header flex flex-col gap-4 rounded-[1.75rem] border border-emerald-100 bg-gradient-to-br from-white via-emerald-50/40 to-white p-4 shadow-[0_0_48px_-22px_rgba(16,185,129,0.22),inset_0_1px_0_0_rgba(255,255,255,0.8)] backdrop-blur-[16px] backdrop-saturate-[1.1] dark:border-slate-600/60 dark:from-slate-900/80 dark:via-slate-900/65 dark:to-slate-900/80 dark:shadow-black/30 sm:flex-row sm:items-center sm:justify-between sm:gap-6 sm:p-5",
         "transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] hover:border-emerald-400/20 hover:shadow-[0_0_56px_-10px_rgba(34,197,94,0.22),0_0_40px_-12px_rgba(16,185,129,0.15)]",
         className,
       )}
@@ -35,6 +36,7 @@ export function DashboardHeader({ className }: { className?: string }) {
       </div>
 
       <div className="flex shrink-0 items-center gap-3">
+        <ThemeToggle size="sm" />
         <button
           type="button"
           className="group hidden rounded-2xl border border-emerald-100 bg-white p-3 text-slate-500 backdrop-blur-md transition-all duration-300 hover:scale-105 hover:border-emerald-400/40 hover:text-emerald-700 hover:shadow-[0_0_28px_-8px_rgba(34,197,94,0.25)] motion-reduce:hover:scale-100 sm:block"

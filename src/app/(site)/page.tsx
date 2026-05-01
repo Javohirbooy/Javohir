@@ -2,6 +2,7 @@ import { HeroSection } from "@/components/home/hero-section";
 import { LandingStatsSection } from "@/components/home/landing-stats-section";
 import { LandingSubjectsPreview } from "@/components/home/landing-subjects-preview";
 import { LandingTestPlatform } from "@/components/home/landing-test-platform";
+import { LandingTrustStrip } from "@/components/home/landing-trust-strip";
 import { SectionTitle } from "@/components/ui/section-title";
 import { Card } from "@/components/ui/card";
 import { getServerLocale } from "@/lib/i18n/resolve-locale";
@@ -26,6 +27,7 @@ export default async function HomePage() {
       <div className="pb-8">
         <LandingStatsSection />
       </div>
+      <LandingTrustStrip />
       <LandingSubjectsPreview />
       <LandingTestPlatform />
 

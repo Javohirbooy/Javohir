@@ -13,6 +13,7 @@ import { getRoleScopedNav, isNavActive } from "@/lib/nav-routes";
 import type { AppRole } from "@/lib/permissions";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { Icon3D, Icon3DGlyph } from "@/components/ui/icon-3d";
 import {
   Activity,
@@ -116,6 +117,7 @@ export function PremiumNavbar({ user, locale }: { user: UserLite; locale: AppLoc
       </nav>
 
       <div className="ml-auto flex min-w-0 shrink-0 items-center justify-end gap-1.5 sm:gap-2">
+        <ThemeToggle size="sm" />
         <div className="relative shrink-0">
           <button
             type="button"
@@ -123,7 +125,7 @@ export function PremiumNavbar({ user, locale }: { user: UserLite; locale: AppLoc
               setLocaleOpen((v) => !v);
               setUserMenuOpen(false);
             }}
-            className="group inline-flex h-10 w-[7.25rem] items-center justify-between rounded-xl border border-emerald-200 bg-white px-2 text-xs text-slate-700 backdrop-blur-xl sm:h-11 sm:w-[8.5rem] sm:px-3 sm:text-sm"
+            className="group inline-flex h-10 w-[7.25rem] items-center justify-between rounded-xl border border-emerald-200 bg-white px-2 text-xs text-slate-700 backdrop-blur-xl dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200 sm:h-11 sm:w-[8.5rem] sm:px-3 sm:text-sm"
           >
             <span className="inline-flex items-center gap-2">
               <Icon3DGlyph icon={Globe} size="md" className="text-emerald-600" />
@@ -134,7 +136,7 @@ export function PremiumNavbar({ user, locale }: { user: UserLite; locale: AppLoc
             </span>
           </button>
           {localeOpen ? (
-            <div className="absolute right-0 z-40 mt-2 w-[8.5rem] rounded-xl border border-emerald-200 bg-white/95 p-1 shadow-2xl shadow-emerald-900/15 backdrop-blur-2xl">
+            <div className="absolute right-0 z-40 mt-2 w-[8.5rem] rounded-xl border border-emerald-200 bg-white/95 p-1 shadow-2xl shadow-emerald-900/15 backdrop-blur-2xl dark:border-slate-600 dark:bg-slate-900/95 dark:shadow-black/40">
               {(["uz", "ru", "en"] as const).map((loc) => (
                 <form key={loc} action={setLocale}>
                   <button
@@ -168,7 +170,7 @@ export function PremiumNavbar({ user, locale }: { user: UserLite; locale: AppLoc
                   setUserMenuOpen((v) => !v);
                   setLocaleOpen(false);
                 }}
-                className="group inline-flex h-11 max-w-[15rem] items-center gap-2 rounded-xl border border-emerald-200 bg-white px-3 text-left backdrop-blur-xl"
+                className="group inline-flex h-11 max-w-[15rem] items-center gap-2 rounded-xl border border-emerald-200 bg-white px-3 text-left backdrop-blur-xl dark:border-slate-600 dark:bg-slate-800"
               >
                 <Icon3DGlyph icon={UserCircle2} size="md" className="shrink-0 text-emerald-600" />
                 <span className="min-w-0">
@@ -180,7 +182,7 @@ export function PremiumNavbar({ user, locale }: { user: UserLite; locale: AppLoc
                 </span>
               </button>
               {userMenuOpen ? (
-                <div className="absolute right-0 z-40 mt-2 w-56 rounded-xl border border-emerald-200 bg-white/95 p-2 shadow-2xl shadow-emerald-900/15 backdrop-blur-2xl">
+                <div className="absolute right-0 z-40 mt-2 w-56 rounded-xl border border-emerald-200 bg-white/95 p-2 shadow-2xl shadow-emerald-900/15 backdrop-blur-2xl dark:border-slate-600 dark:bg-slate-900/95 dark:shadow-black/40">
                   <Link
                     href={panelHref ?? "/"}
                     className="group flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-slate-700 transition hover:bg-emerald-50"
@@ -191,7 +193,7 @@ export function PremiumNavbar({ user, locale }: { user: UserLite; locale: AppLoc
                   <button
                     type="button"
                     onClick={() => signOut({ callbackUrl: "/" })}
-                    className="group mt-1 flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-rose-200 transition hover:bg-rose-500/15"
+                    className="group mt-1 flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-rose-700 transition hover:bg-rose-50 dark:text-rose-300 dark:hover:bg-rose-950/40"
                   >
                     <Icon3DGlyph icon={LogOut} size="md" className="shrink-0" />
                     {L.signOut}

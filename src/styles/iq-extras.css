@@ -60,7 +60,7 @@
 }
 
 .iq-ambient-orb {
-  opacity: 0.92;
+  opacity: 0.55;
   animation: iq-ambient-drift var(--iq-drift-duration, 26s) ease-in-out infinite;
   animation-delay: var(--iq-drift-delay, 0s);
   will-change: transform;

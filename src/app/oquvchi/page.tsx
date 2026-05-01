@@ -5,6 +5,8 @@ import Link from "next/link";
 import { DashboardCard } from "@/components/dashboard/dashboard-card";
 import { ProgressBar } from "@/components/ui/progress-bar";
 import { Button } from "@/components/ui/button";
+import { EmptyState } from "@/components/ui/empty-state";
+import { BookOpen, FileQuestion } from "lucide-react";
 
 export default async function StudentDashboardPage() {
   const session = await auth();
@@ -42,7 +44,7 @@ export default async function StudentDashboardPage() {
             {user.avatarEmoji ? <span className="mr-2">{user.avatarEmoji}</span> : null}
             Salom, {user.name}
           </h1>
-          <p className="mt-1 text-sm text-white/65">Profil, sinf va test natijalari — bitta panelda.</p>
+          <p className="mt-1 text-sm text-white/70">Profil, sinf va test natijalari — bitta panelda.</p>
         </div>
         <div className="flex flex-wrap gap-2">
           <Button href="/oquvchi/fanlar" variant="glass" className="px-4 py-2 text-sm">
@@ -86,7 +88,18 @@ export default async function StudentDashboardPage() {
         <h2 className="font-display text-lg font-semibold tracking-tight">So‘nggi test natijalari</h2>
         <ul className="mt-4 space-y-3 text-sm">
           {user.results.length === 0 ? (
-            <li className="text-white/60">Hali test topshirmagansiz — o‘qituvchi kodini kiriting.</li>
+            <li className="list-none p-0">
+              <EmptyState
+                icon={<FileQuestion className="h-10 w-10" aria-hidden />}
+                title="Hali natija yo‘q"
+                description="O‘qituvchi bergan test kodini kiriting va topshirishni boshlang."
+                action={
+                  <Button href="/oquvchi/test-kod" variant="primary" className="px-5 py-2.5 text-sm">
+                    Test kodi
+                  </Button>
+                }
+              />
+            </li>
           ) : (
             user.results.map((r) => (
               <li key={r.id} className="flex items-center justify-between gap-2 border-b border-white/10 pb-2">
@@ -101,6 +114,20 @@ export default async function StudentDashboardPage() {
       <DashboardCard>
         <h2 className="font-display text-lg font-semibold tracking-tight">Tavsiya qilingan mavzular</h2>
         <div className="mt-4 grid gap-3 sm:grid-cols-2">
+          {recommended.length === 0 ? (
+            <div className="sm:col-span-2">
+              <EmptyState
+                icon={<BookOpen className="h-10 w-10" aria-hidden />}
+                title="Tavsiyalar hozircha yo‘q"
+                description="Profilga sinf biriktirilgach, fanlar bo‘yicha tavsiyalar paydo bo‘ladi."
+                action={
+                  <Button href="/oquvchi/sinflar" variant="glass" className="px-4 py-2 text-sm">
+                    Sinfim
+                  </Button>
+                }
+              />
+            </div>
+          ) : null}
           {recommended.map((s) => (
             <div
               key={s.id}

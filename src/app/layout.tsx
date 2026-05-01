@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Inter, Poppins } from "next/font/google";
 import "./globals.css";
 import { AuthSessionProvider } from "@/components/providers/session-provider";
+import { ThemeProvider } from "@/components/providers/theme-provider";
 import { CornerClock } from "@/components/layout/corner-clock";
 import { LocaleProvider } from "@/components/providers/locale-provider";
 import { getServerLocale } from "@/lib/i18n/resolve-locale";
@@ -30,20 +31,25 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
-  themeColor: "#ecfdf5",
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#ecfdf5" },
+    { media: "(prefers-color-scheme: dark)", color: "#0f172a" },
+  ],
 };
 
 export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   const locale = await getServerLocale();
   return (
-    <html lang={locale} className={`${inter.variable} ${poppins.variable} h-full antialiased`}>
-      <body className="iq-content iq-theme min-h-full font-sans text-slate-100 antialiased">
-        <AuthSessionProvider>
-          <LocaleProvider locale={locale}>
-            {children}
-            <CornerClock />
-          </LocaleProvider>
-        </AuthSessionProvider>
+    <html lang={locale} suppressHydrationWarning className={`${inter.variable} ${poppins.variable} h-full antialiased`}>
+      <body className="iq-content iq-theme min-h-full font-sans text-slate-800 antialiased dark:text-slate-100">
+        <ThemeProvider>
+          <AuthSessionProvider>
+            <LocaleProvider locale={locale}>
+              {children}
+              <CornerClock />
+            </LocaleProvider>
+          </AuthSessionProvider>
+        </ThemeProvider>
       </body>
     </html>
   );
