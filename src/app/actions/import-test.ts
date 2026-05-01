@@ -76,7 +76,10 @@ async function createDraftTestFromFile(args: {
   const parsedFile = await parseImportFile(file);
   if (!parsedFile.ok) return parsedFile;
 
-  const parsed = parseMcqTextToDraftQuestions(parsedFile.parserSource || parsedFile.text);
+  // DOCX: extractRawText bitta qatorga yig‘adi — +/− variantlar ajralmaydi; MCQ uchun HTML→Markdown kerak.
+  const mcqSource =
+    parsedFile.sourceType === "IMPORT_DOCX" ? parsedFile.text : (parsedFile.parserSource || parsedFile.text);
+  const parsed = parseMcqTextToDraftQuestions(mcqSource);
   const authorUserId = authorIdForSession(session);
   if (authorUserId === undefined) return { ok: false, error: "Rol mos emas." };
 
