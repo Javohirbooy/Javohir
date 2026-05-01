@@ -9,6 +9,7 @@ import { sessionHasPermission } from "@/lib/permissions";
 import { canDeleteTest } from "@/lib/test-policy";
 import { teacherCanComposeTest } from "@/lib/teacher-scope";
 import { writeAuditLog } from "@/lib/audit";
+import { normalizeTestCode } from "@/lib/test-code-normalize";
 
 export type TeacherQuestionInput = {
   text: string;
@@ -78,10 +79,6 @@ async function uniqueTestCode(): Promise<string> {
     if (!exists) return code;
   }
   return genTestCode() + randomBytes(2).toString("hex").toUpperCase();
-}
-
-function normalizeCode(raw: string) {
-  return raw.trim().toUpperCase().replace(/\s+/g, "");
 }
 
 const MAX_BUNDLE_EXTRA = 11;
@@ -247,7 +244,7 @@ export async function createTest(input: CreateTeacherTestInput) {
   });
 
   let code: string | undefined;
-  const manual = normalizeCode(String(input.manualTestCode ?? ""));
+  const manual = normalizeTestCode(String(input.manualTestCode ?? ""));
   if (manual && !isDraft) {
     const clash = await prisma.testCode.findUnique({ where: { code: manual } });
     if (clash) {
@@ -418,7 +415,7 @@ export async function updateTeacherTest(
   });
 
   let code: string | undefined;
-  const manual = normalizeCode(String(input.manualTestCode ?? ""));
+  const manual = normalizeTestCode(String(input.manualTestCode ?? ""));
   const activeCodes = await prisma.testCode.count({ where: { testId, isActive: true } });
 
   if (!isDraft) {

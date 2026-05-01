@@ -11,10 +11,7 @@ import {
   type TestCodeFormState,
 } from "@/lib/test-access";
 import { sessionHasPermission } from "@/lib/permissions";
-
-function normalizeCode(raw: string) {
-  return raw.trim().toUpperCase().replace(/\s+/g, "");
-}
+import { normalizeTestCode } from "@/lib/test-code-normalize";
 
 function parseGrantedJson(raw: string): string[] {
   try {
@@ -36,7 +33,7 @@ export async function submitTestCode(_prev: TestCodeFormState, formData: FormDat
     return { error: "Sizda test topshirish huquqi yo‘q." };
   }
 
-  const code = normalizeCode(String(formData.get("code") ?? ""));
+  const code = normalizeTestCode(String(formData.get("code") ?? ""));
   const nextRaw = String(formData.get("next") ?? "").trim();
 
   if (!code) return { error: "Test kodini kiriting." };
@@ -67,9 +64,8 @@ export async function submitTestCode(_prev: TestCodeFormState, formData: FormDat
     if (!ids.includes(session.user.id)) {
       return { error: "Bu kod siz uchun mo‘ljallanmagan." };
     }
-  } else if (user.gradeId && tc.test.subject.gradeId !== user.gradeId) {
-    return { error: "Bu test sizning sinfingiz uchun mo‘ljallanmagan." };
   }
+  /** ALL: kod o‘zi ruxsat; talaba sinfi bazada noto‘g‘ri bo‘lsa ham bloklamaslik. */
 
   const extraIds = parseGrantedJson(tc.grantedTestIdsJson);
   const allTestIds = [...new Set([tc.testId, ...extraIds])].slice(0, TEST_GRANT_MAX_TESTS);
@@ -90,8 +86,6 @@ export async function submitTestCode(_prev: TestCodeFormState, formData: FormDat
       if (t.subject.gradeId !== tc.scopeGradeId) {
         return { error: "Paketdagi testlar bu kod sinfiga mos emas." };
       }
-    } else if (user.gradeId && t.subject.gradeId !== user.gradeId) {
-      return { error: `“${t.title}” sizning sinfingiz uchun emas.` };
     }
   }
 
@@ -101,9 +95,11 @@ export async function submitTestCode(_prev: TestCodeFormState, formData: FormDat
   });
 
   const jar = await cookies();
+  const isProd = process.env.NODE_ENV === "production";
   jar.set(TEST_GRANT_COOKIE, serializeTestGrantCookie(allTestIds), {
     httpOnly: true,
     sameSite: "lax",
+    secure: isProd,
     path: "/",
     maxAge: 60 * 60 * 6,
   });
