@@ -16,7 +16,7 @@ export function HeroSection() {
   ];
 
   return (
-    <section className="relative overflow-hidden px-4 pb-24 pt-12 sm:px-6 sm:pt-16">
+    <section className="relative overflow-hidden px-4 pb-28 pt-14 sm:px-6 sm:pb-32 sm:pt-20">
       <div className="pointer-events-none absolute inset-0">
         <div className="absolute left-1/2 top-0 h-[28rem] w-[min(56rem,140%)] -translate-x-1/2 rounded-full bg-gradient-to-b from-emerald-500/25 via-green-400/15 to-transparent blur-3xl" />
       </div>
@@ -30,7 +30,7 @@ export function HeroSection() {
           {tf("home.heroBadge")}
         </div>
 
-        <h1 className="mt-8 text-balance font-extrabold tracking-tight text-emerald-900 iq-anim-fade-up" style={{ animationDelay: "60ms" } as CSSProperties}>
+        <h1 className="mt-10 text-balance font-extrabold tracking-tight text-emerald-900 iq-anim-fade-up" style={{ animationDelay: "60ms" } as CSSProperties}>
           <span className="block text-4xl sm:text-6xl lg:text-7xl">
             <span className="bg-gradient-to-r from-emerald-800 via-emerald-600 to-teal-600 bg-clip-text text-transparent">{BRAND.name}</span>
           </span>
@@ -38,7 +38,7 @@ export function HeroSection() {
         </h1>
 
         <div
-          className="mt-10 flex flex-col items-center justify-center gap-3 sm:flex-row sm:flex-wrap iq-anim-fade-up"
+          className="mt-12 flex flex-col items-center justify-center gap-4 sm:mt-14 sm:flex-row sm:flex-wrap sm:gap-5 iq-anim-fade-up"
           style={{ animationDelay: "160ms" } as CSSProperties}
         >
           <Button href="/kirish" variant="primary" className="min-h-14 min-w-[12rem] rounded-2xl text-base font-bold shadow-xl">
@@ -56,18 +56,18 @@ export function HeroSection() {
           </Button>
         </div>
 
-        <div className="mx-auto mt-20 grid max-w-4xl grid-cols-1 gap-4 sm:grid-cols-3">
+        <div className="mx-auto mt-24 grid max-w-4xl grid-cols-1 gap-6 sm:mt-28 sm:grid-cols-3 sm:gap-7 lg:gap-8">
           {features.map(({ icon: Icon, titleKey, descKey }, i) => (
             <div
               key={titleKey}
-              className="rounded-3xl border border-emerald-100 bg-gradient-to-br from-white to-emerald-50/55 p-6 text-left text-slate-800 shadow-xl backdrop-blur-xl transition duration-300 hover:border-emerald-300/60 hover:shadow-emerald-500/10 iq-anim-fade-up"
+              className="rounded-3xl border border-emerald-100 bg-gradient-to-br from-white to-emerald-50/55 p-7 text-left text-slate-800 shadow-xl backdrop-blur-xl transition duration-300 hover:border-emerald-300/60 hover:shadow-emerald-500/10 sm:p-8 iq-anim-fade-up"
               style={{ animationDelay: `${280 + i * 70}ms` } as CSSProperties}
             >
               <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-500/20 to-green-500/15 ring-1 ring-emerald-200">
                 <Icon className="h-5 w-5 text-emerald-700" />
               </div>
-              <p className="mt-4 font-semibold">{tf(titleKey)}</p>
-              <p className="mt-2 text-sm leading-relaxed text-slate-600">{tf(descKey)}</p>
+              <p className="mt-5 font-semibold">{tf(titleKey)}</p>
+              <p className="mt-3 text-sm leading-relaxed text-slate-600">{tf(descKey)}</p>
             </div>
           ))}
         </div>

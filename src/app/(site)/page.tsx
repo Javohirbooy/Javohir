@@ -24,7 +24,7 @@ export default async function HomePage() {
   return (
     <>
       <HeroSection />
-      <div className="pb-8">
+      <div className="mt-8 pb-14 sm:mt-12 sm:pb-16">
         <LandingStatsSection />
       </div>
       <LandingTrustStrip />

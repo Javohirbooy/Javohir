@@ -15,7 +15,7 @@ const LANDING_STAT_ICON_MAP: Record<LandingStatIconKey, LucideIcon> = {
 export function LandingStatsGrid({ items }: { items: LandingStatItemDTO[] }) {
   return (
     <section className="mx-auto max-w-6xl px-4 sm:px-6">
-      <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-6 sm:grid-cols-2 sm:gap-7 lg:grid-cols-4 lg:gap-8">
         {items.map((s) => {
           const Icon = s.icon ? LANDING_STAT_ICON_MAP[s.icon] : undefined;
           return (

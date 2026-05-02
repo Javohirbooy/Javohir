@@ -78,7 +78,7 @@ export function PremiumNavbar({ user, locale }: { user: UserLite; locale: AppLoc
   function linkCls(href: string, homeExact: boolean) {
     const active = isNavActive(pathname, href, homeExact);
     return cn(
-      "group inline-flex min-h-[44px] shrink-0 items-center gap-2 whitespace-nowrap rounded-xl px-3 py-2.5 text-xs font-medium transition-all sm:min-h-0 sm:gap-2.5 sm:px-3 sm:py-2 sm:text-sm",
+      "group inline-flex min-h-[44px] shrink-0 items-center gap-2 whitespace-nowrap rounded-xl px-3.5 py-2.5 text-xs font-medium transition-all sm:min-h-0 sm:gap-2.5 sm:px-4 sm:py-2.5 sm:text-sm",
       active
         ? "bg-emerald-100 text-emerald-900 ring-1 ring-emerald-200 shadow-lg shadow-emerald-900/10"
         : "text-slate-700 hover:bg-emerald-50 hover:text-emerald-800",
@@ -86,7 +86,7 @@ export function PremiumNavbar({ user, locale }: { user: UserLite; locale: AppLoc
   }
 
   return (
-    <div className="relative flex min-w-0 flex-1 flex-wrap items-center gap-x-2 gap-y-2 sm:flex-nowrap sm:gap-3">
+    <div className="relative flex min-w-0 flex-1 flex-wrap items-center gap-x-3 gap-y-2 sm:flex-nowrap sm:gap-5">
       <Link href={routes.home} className="group flex min-w-0 shrink-0 items-center gap-3">
         <span className="relative h-11 w-11 overflow-hidden rounded-2xl ring-1 ring-emerald-200/70 shadow-[0_12px_24px_-10px_rgba(16,185,129,0.45)] sm:h-12 sm:w-12 iq-logo-3d">
           <Image
@@ -104,7 +104,7 @@ export function PremiumNavbar({ user, locale }: { user: UserLite; locale: AppLoc
         </span>
       </Link>
 
-      <nav className="order-3 flex min-h-[3rem] w-full min-w-0 basis-full items-center gap-1 overflow-x-auto py-1 [-ms-overflow-style:none] [scrollbar-width:none] sm:order-none sm:min-h-0 sm:w-auto sm:flex-1 sm:basis-auto sm:justify-center sm:gap-1.5 sm:py-0 [&::-webkit-scrollbar]:hidden">
+      <nav className="order-3 flex min-h-[3rem] w-full min-w-0 basis-full items-center gap-2 overflow-x-auto py-1 [-ms-overflow-style:none] [scrollbar-width:none] sm:order-none sm:min-h-0 sm:w-auto sm:flex-1 sm:basis-auto sm:justify-center sm:gap-2.5 sm:py-0 [&::-webkit-scrollbar]:hidden">
         {navItems.map((it) => {
           const navActive = isNavActive(pathname, it.href, it.homeExact);
           return (
@@ -116,7 +116,7 @@ export function PremiumNavbar({ user, locale }: { user: UserLite; locale: AppLoc
         })}
       </nav>
 
-      <div className="ml-auto flex min-w-0 shrink-0 items-center justify-end gap-1.5 sm:gap-2">
+      <div className="ml-auto flex min-w-0 shrink-0 items-center justify-end gap-2.5 sm:gap-4">
         <ThemeToggle size="sm" />
         <div className="relative shrink-0">
           <button

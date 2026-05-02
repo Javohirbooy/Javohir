@@ -16,7 +16,7 @@ export function StatCard({ label, value, hint, icon: Icon, className }: Props) {
   return (
     <div
       className={cn(
-        "group iq-3d-card relative overflow-hidden rounded-3xl border border-emerald-300 bg-gradient-to-br from-emerald-50/80 via-emerald-100/70 to-white p-6 shadow-[0_22px_42px_-26px_rgba(15,23,42,0.26)] backdrop-blur-xl transition duration-300 hover:border-emerald-500/65",
+        "group iq-3d-card relative overflow-hidden rounded-3xl border border-emerald-300 bg-gradient-to-br from-emerald-50/80 via-emerald-100/70 to-white p-7 shadow-[0_22px_42px_-26px_rgba(15,23,42,0.26)] backdrop-blur-xl transition duration-300 hover:border-emerald-500/65 sm:p-8",
         className,
       )}
     >
