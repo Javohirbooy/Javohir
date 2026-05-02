@@ -86,8 +86,9 @@ export function PremiumNavbar({ user, locale }: { user: UserLite; locale: AppLoc
   }
 
   return (
-    <div className="relative flex min-w-0 flex-1 flex-wrap items-center gap-x-4 gap-y-2 sm:flex-nowrap sm:gap-x-6 lg:gap-x-8">
-      <Link href={routes.home} className="group flex min-w-0 shrink-0 items-center gap-3 pr-5 sm:pr-9 lg:pr-12 xl:pr-14">
+    <div className="relative flex min-w-0 flex-1 flex-wrap items-center gap-x-3 gap-y-2 sm:flex-nowrap sm:gap-x-4 lg:gap-x-6">
+      {/* Chap burchak: faqat brend / logo */}
+      <Link href={routes.home} className="group flex min-w-0 shrink-0 items-center gap-3">
         <span className="relative h-11 w-11 overflow-hidden rounded-2xl ring-1 ring-emerald-200/70 shadow-[0_12px_24px_-10px_rgba(16,185,129,0.45)] sm:h-12 sm:w-12 iq-logo-3d">
           <Image
             src="/iq-logo-3d.png"
@@ -104,7 +105,11 @@ export function PremiumNavbar({ user, locale }: { user: UserLite; locale: AppLoc
         </span>
       </Link>
 
-      <nav className="order-3 flex min-h-[3rem] w-full min-w-0 basis-full items-center gap-3 overflow-x-auto py-1 [-ms-overflow-style:none] [scrollbar-width:none] sm:order-none sm:min-h-0 sm:w-auto sm:flex-1 sm:basis-auto sm:justify-center sm:gap-4 sm:py-0 md:gap-5 lg:gap-6 [&::-webkit-scrollbar]:hidden">
+      {/* Logo'dan keyin tartib bilan: Bosh sahifa → ... — markazga yig'maydi */}
+      <nav
+        aria-label="Main"
+        className="order-3 flex min-h-[3rem] w-full min-w-0 basis-full items-center justify-start gap-3 overflow-x-auto py-1 [-ms-overflow-style:none] [scrollbar-width:none] sm:order-none sm:min-h-0 sm:flex-1 sm:basis-auto sm:gap-3 sm:py-0 md:gap-4 lg:gap-5 [&::-webkit-scrollbar]:hidden"
+      >
         {navItems.map((it) => {
           const navActive = isNavActive(pathname, it.href, it.homeExact);
           return (
@@ -116,7 +121,8 @@ export function PremiumNavbar({ user, locale }: { user: UserLite; locale: AppLoc
         })}
       </nav>
 
-      <div className="ml-auto flex min-w-0 shrink-0 items-center justify-end gap-3 sm:gap-5 lg:gap-6">
+      {/* O'ng: tema, til, kirish */}
+      <div className="ml-auto flex min-w-0 shrink-0 items-center justify-end gap-3 sm:ml-0 sm:gap-4 lg:gap-5">
         <ThemeToggle size="sm" />
         <div className="relative shrink-0">
           <button
