@@ -87,7 +87,7 @@ export function PremiumNavbar({ user, locale }: { user: UserLite; locale: AppLoc
 
   return (
     <div className="relative flex min-w-0 flex-1 flex-wrap items-center gap-x-4 gap-y-2 sm:flex-nowrap sm:gap-x-6 lg:gap-x-8">
-      <Link href={routes.home} className="group flex min-w-0 shrink-0 items-center gap-3">
+      <Link href={routes.home} className="group flex min-w-0 shrink-0 items-center gap-3 pr-5 sm:pr-9 lg:pr-12 xl:pr-14">
         <span className="relative h-11 w-11 overflow-hidden rounded-2xl ring-1 ring-emerald-200/70 shadow-[0_12px_24px_-10px_rgba(16,185,129,0.45)] sm:h-12 sm:w-12 iq-logo-3d">
           <Image
             src="/iq-logo-3d.png"

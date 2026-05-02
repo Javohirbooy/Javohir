@@ -16,7 +16,7 @@ export function HeroSection() {
   ];
 
   return (
-    <section className="relative overflow-hidden px-4 pb-28 pt-14 sm:px-6 sm:pb-32 sm:pt-20">
+    <section className="relative overflow-hidden px-4 pb-28 pt-16 sm:px-6 sm:pb-32 sm:pt-24">
       <div className="pointer-events-none absolute inset-0">
         <div className="absolute left-1/2 top-0 h-[28rem] w-[min(56rem,140%)] -translate-x-1/2 rounded-full bg-gradient-to-b from-emerald-500/25 via-green-400/15 to-transparent blur-3xl" />
       </div>
