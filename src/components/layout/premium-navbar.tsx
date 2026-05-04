@@ -68,10 +68,15 @@ export function PremiumNavbar({ user, locale }: { user: UserLite; locale: AppLoc
 
   useEffect(() => {
     if (!sectionsOpen) return;
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
+    const html = document.documentElement;
+    const body = document.body;
+    const prevBody = body.style.overflow;
+    const prevHtml = html.style.overflow;
+    body.style.overflow = "hidden";
+    html.style.overflow = "hidden";
     return () => {
-      document.body.style.overflow = prev;
+      body.style.overflow = prevBody;
+      html.style.overflow = prevHtml;
     };
   }, [sectionsOpen]);
 
@@ -141,12 +146,12 @@ export function PremiumNavbar({ user, locale }: { user: UserLite; locale: AppLoc
 
   return (
     <>
-      <div className="relative flex w-full min-w-0 flex-1 flex-nowrap items-center gap-2 sm:gap-3 md:gap-4 lg:gap-5">
+      <div className="relative flex w-full min-w-0 flex-1 flex-nowrap items-center gap-1.5 sm:gap-3 md:gap-4 lg:gap-5">
         {/* Chap: uch chiziq + logo */}
-        <div className="flex min-w-0 shrink-0 items-center gap-2 sm:gap-3">
+        <div className="flex min-w-0 shrink-0 items-center gap-1.5 sm:gap-3">
           <button
             type="button"
-            className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-emerald-200 bg-white text-slate-800 shadow-sm transition hover:bg-emerald-50 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700 sm:h-11 sm:w-11"
+            className="inline-flex h-11 min-h-[44px] w-11 min-w-[44px] shrink-0 items-center justify-center rounded-xl border border-emerald-200 bg-white text-slate-800 shadow-sm transition hover:bg-emerald-50 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700"
             aria-expanded={sectionsOpen}
             aria-controls="premium-site-sections"
             aria-label={L.menu}
@@ -164,8 +169,8 @@ export function PremiumNavbar({ user, locale }: { user: UserLite; locale: AppLoc
         <div className="min-w-0 flex-1" aria-hidden />
 
         {/* O‘ng: tema → til → kabinet/kirish */}
-        <div className="flex shrink-0 flex-nowrap items-center gap-x-2 sm:gap-x-3 lg:gap-x-4">
-          <ThemeToggle size="sm" />
+        <div className="flex min-w-0 shrink-0 flex-nowrap items-center gap-x-1.5 sm:gap-x-3 lg:gap-x-4">
+          <ThemeToggle size="sm" className="h-11 min-h-[44px] min-w-[44px] w-11 sm:h-9 sm:min-h-9 sm:min-w-9 sm:w-9" />
           <div className="relative shrink-0">
           <button
             type="button"
@@ -174,13 +179,15 @@ export function PremiumNavbar({ user, locale }: { user: UserLite; locale: AppLoc
               setUserMenuOpen(false);
               setSectionsOpen(false);
             }}
-            className="group inline-flex h-10 w-[7.25rem] items-center justify-between rounded-xl border border-emerald-200 bg-white px-2 text-xs text-slate-700 backdrop-blur-xl dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200 sm:h-11 sm:w-[8.5rem] sm:px-3 sm:text-sm"
+            className="group inline-flex h-11 min-h-[44px] w-11 min-w-[44px] items-center justify-center rounded-xl border border-emerald-200 bg-white px-0 text-xs text-slate-700 backdrop-blur-xl dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200 sm:h-11 sm:min-h-0 sm:w-[8.5rem] sm:min-w-[8.5rem] sm:justify-between sm:px-3 sm:text-sm"
+            aria-label={L.localeLabel}
           >
-            <span className="inline-flex items-center gap-2">
+            <span className="hidden items-center gap-2 sm:inline-flex">
               <Icon3DGlyph icon={Globe} size="md" className="text-emerald-600" />
               {locale.toUpperCase()}
             </span>
-            <span className={cn("inline-flex transition-transform duration-300", localeOpen && "rotate-180")}>
+            <span className="text-xs font-extrabold tabular-nums sm:hidden">{locale.toUpperCase()}</span>
+            <span className={cn("hidden transition-transform duration-300 sm:inline-flex", localeOpen && "rotate-180")}>
               <Icon3DGlyph icon={ChevronDown} size="md" />
             </span>
           </button>
@@ -208,7 +215,7 @@ export function PremiumNavbar({ user, locale }: { user: UserLite; locale: AppLoc
           {user ? (
             <>
               {panelHref ? (
-                <Button href={panelHref} variant="glass" className="h-11 shrink-0 border-emerald-300/60 px-4 text-slate-800">
+                <Button href={panelHref} variant="glass" className="h-10 max-sm:min-h-10 max-sm:px-3 max-sm:text-xs sm:h-11 sm:shrink-0 sm:px-4">
                   {L.cabinet}
                 </Button>
               ) : null}
@@ -253,7 +260,7 @@ export function PremiumNavbar({ user, locale }: { user: UserLite; locale: AppLoc
               </div>
             </>
           ) : (
-            <Button href="/kirish" variant="primary" className="h-11 shrink-0 px-5 text-sm shadow-violet-600/30">
+            <Button href="/kirish" variant="primary" className="h-11 min-h-[44px] max-w-full shrink-0 px-4 text-xs shadow-violet-600/30 sm:h-11 sm:px-5 sm:text-sm">
               {L.login}
             </Button>
           )}
@@ -265,7 +272,7 @@ export function PremiumNavbar({ user, locale }: { user: UserLite; locale: AppLoc
             <>
               <button
                 type="button"
-                className="fixed inset-0 z-[90] cursor-default border-0 bg-slate-950/45 p-0 backdrop-blur-[2px] dark:bg-slate-950/60"
+                className="fixed inset-0 z-[199] cursor-default border-0 bg-slate-950/45 p-0 backdrop-blur-[2px] dark:bg-slate-950/60"
                 aria-label={L.closeMenu}
                 onClick={() => setSectionsOpen(false)}
               />
@@ -274,9 +281,10 @@ export function PremiumNavbar({ user, locale }: { user: UserLite; locale: AppLoc
                 role="dialog"
                 aria-modal="true"
                 aria-labelledby="premium-site-sections-title"
-                className="fixed inset-y-0 left-0 z-[100] flex h-dvh w-[min(22rem,90vw)] max-w-full flex-col border-r border-emerald-100/90 bg-white shadow-2xl dark:border-slate-700 dark:bg-slate-950"
+                className="fixed inset-y-0 left-0 z-[200] flex w-[min(22rem,90vw)] max-w-full flex-col border-r border-emerald-100/90 bg-white shadow-2xl dark:border-slate-700 dark:bg-slate-950"
+                style={{ paddingTop: "env(safe-area-inset-top, 0px)" }}
               >
-                <div className="flex shrink-0 items-center justify-between gap-3 border-b border-emerald-100 px-4 py-4 dark:border-slate-800">
+                <div className="flex shrink-0 items-center justify-between gap-3 border-b border-emerald-100 px-4 py-3 sm:py-4 dark:border-slate-800">
                   <h2 id="premium-site-sections-title" className="text-base font-bold text-slate-900 dark:text-slate-100">
                     {L.menu}
                   </h2>
@@ -289,7 +297,10 @@ export function PremiumNavbar({ user, locale }: { user: UserLite; locale: AppLoc
                     <X className="h-5 w-5" aria-hidden />
                   </button>
                 </div>
-                <nav className="flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto p-3" aria-label="Main">
+                <nav
+                  className="flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto overflow-x-hidden overscroll-y-contain p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]"
+                  aria-label="Main"
+                >
                   {navItems.map((it) => {
                     const navActive = isNavActive(pathname, it.href, it.homeExact);
                     return (

@@ -20,7 +20,13 @@ export function CornerClock() {
   }, []);
 
   return (
-    <div className="pointer-events-none fixed bottom-3 right-3 z-[90] rounded-xl border border-emerald-400/35 bg-white/85 px-2.5 py-1 font-mono text-xs font-semibold text-emerald-900 shadow-[0_10px_24px_-12px_rgba(16,185,129,0.45)] backdrop-blur-md">
+    <div
+      className="pointer-events-none fixed z-[80] hidden rounded-xl border border-emerald-400/35 bg-white/85 px-2.5 py-1 font-mono text-xs font-semibold text-emerald-900 shadow-[0_10px_24px_-12px_rgba(16,185,129,0.45)] backdrop-blur-md sm:block"
+      style={{
+        bottom: "max(1rem, env(safe-area-inset-bottom, 0px))",
+        right: "max(1rem, env(safe-area-inset-right, 0px))",
+      }}
+    >
       <span suppressHydrationWarning>{fmtNow(now)}</span>
     </div>
   );

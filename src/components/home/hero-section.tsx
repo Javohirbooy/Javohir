@@ -23,7 +23,7 @@ export function HeroSection() {
 
       <div className="relative mx-auto max-w-5xl text-center">
         <div
-          className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-white/80 px-4 py-2 text-xs font-semibold uppercase tracking-[0.22em] text-emerald-800 backdrop-blur-xl iq-anim-fade-up"
+          className="inline-flex max-w-full items-center justify-center gap-2 rounded-full border border-emerald-200 bg-white/80 px-3 py-2 text-center text-[0.65rem] font-semibold uppercase leading-snug tracking-[0.12em] text-emerald-800 backdrop-blur-xl sm:px-4 sm:text-xs sm:tracking-[0.22em] iq-anim-fade-up"
           style={{ animationDelay: "0ms" } as CSSProperties}
         >
           <Sparkles className="h-4 w-4 text-emerald-500" aria-hidden />
@@ -38,20 +38,20 @@ export function HeroSection() {
         </h1>
 
         <div
-          className="mt-12 flex flex-col items-center justify-center gap-4 sm:mt-14 sm:flex-row sm:flex-wrap sm:gap-5 iq-anim-fade-up"
+          className="mt-12 flex w-full max-w-xl flex-col items-stretch justify-center gap-3 sm:mx-auto sm:mt-14 sm:max-w-none sm:flex-row sm:flex-wrap sm:items-center sm:gap-5 iq-anim-fade-up"
           style={{ animationDelay: "160ms" } as CSSProperties}
         >
-          <Button href="/kirish" variant="primary" className="min-h-14 min-w-[12rem] rounded-2xl text-base font-bold shadow-xl">
-            <Zap className="h-5 w-5" />
+          <Button href="/kirish" variant="primary" className="min-h-12 w-full min-w-0 rounded-2xl text-sm font-bold shadow-xl sm:min-h-14 sm:min-w-[12rem] sm:text-base">
+            <Zap className="h-5 w-5 shrink-0" />
             {tf("tests.startCta")}
           </Button>
-          <Button href="/fanlar" variant="glass" className="min-h-14 min-w-[12rem] rounded-2xl text-base">
+          <Button href="/fanlar" variant="glass" className="min-h-12 w-full min-w-0 rounded-2xl text-sm sm:min-h-14 sm:min-w-[12rem] sm:text-base">
             {tf("nav.subjects")}
           </Button>
-          <Button href="/sinflar" variant="outline" className="min-h-14 min-w-[12rem] rounded-2xl text-base">
+          <Button href="/sinflar" variant="outline" className="min-h-12 w-full min-w-0 rounded-2xl text-sm sm:min-h-14 sm:min-w-[12rem] sm:text-base">
             {tf("nav.grades")}
           </Button>
-          <Button href="/testlar" variant="outline" className="min-h-14 min-w-[12rem] rounded-2xl text-base">
+          <Button href="/testlar" variant="outline" className="min-h-12 w-full min-w-0 rounded-2xl text-sm sm:min-h-14 sm:min-w-[12rem] sm:text-base">
             {tf("nav.tests")}
           </Button>
         </div>
