@@ -5,6 +5,8 @@ export const messages: Record<
   AppLocale,
   {
     nav: {
+      menu: string;
+      closeMenu: string;
       home: string;
       subjects: string;
       grades: string;
@@ -131,6 +133,8 @@ export const messages: Record<
 > = {
   uz: {
     nav: {
+      menu: "Bo‘limlar",
+      closeMenu: "Yopish",
       home: "Bosh sahifa",
       subjects: "Fanlar",
       grades: "Sinflar",
@@ -270,6 +274,8 @@ export const messages: Record<
   },
   ru: {
     nav: {
+      menu: "Разделы",
+      closeMenu: "Закрыть",
       home: "Главная",
       subjects: "Предметы",
       grades: "Классы",
@@ -411,6 +417,8 @@ export const messages: Record<
   },
   en: {
     nav: {
+      menu: "Sections",
+      closeMenu: "Close",
       home: "Home",
       subjects: "Subjects",
       grades: "Grades",
