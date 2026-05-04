@@ -5,7 +5,7 @@ import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
-import { TEST_GRANT_COOKIE, parseTestGrantCookie } from "@/lib/test-access";
+import { TEST_GRANT_COOKIE, studentCanOpenStudentTest } from "@/lib/test-access";
 import { sessionHasPermission } from "@/lib/permissions";
 import { buildOptionPermutation, buildQuestionShuffle } from "@/lib/exam-shuffle";
 import { writeAuditLog } from "@/lib/audit";
@@ -112,15 +112,21 @@ export async function beginTestAttempt(testId: string): Promise<BeginAttemptResu
   if (!sessionHasPermission(session, "TESTS_ATTEMPT")) return { ok: false, error: "Ruxsat yo‘q." };
 
   const jar = await cookies();
-  if (!parseTestGrantCookie(jar.get(TEST_GRANT_COOKIE)?.value).includes(testId)) {
-    return { ok: false, error: "Test kodi bilan ruxsat oling." };
-  }
+  const grantRaw = jar.get(TEST_GRANT_COOKIE)?.value;
 
   const test = await prisma.test.findUnique({
     where: { id: testId },
     include: { subject: { include: { grade: true } }, questions: { orderBy: { order: "asc" } } },
   });
   if (!test?.questions.length) return { ok: false, error: "Test topilmadi." };
+
+  const userRow = await prisma.user.findUnique({
+    where: { id: session.user.id },
+    select: { gradeId: true },
+  });
+  if (!studentCanOpenStudentTest(grantRaw, userRow?.gradeId, test)) {
+    return { ok: false, error: "Bu test uchun ruxsat yo‘q (sinf yoki nashr)." };
+  }
   if (!test.isActive || test.isDraft || test.status === "ARCHIVED") {
     return { ok: false, error: "Test hozir ochilmagan." };
   }
@@ -256,13 +262,18 @@ export async function submitExamAttempt(
   const jar = await cookies();
   const attempt = await prisma.testAttempt.findFirst({
     where: { id: attemptId, userId: session.user.id },
-    include: { test: { include: { questions: { orderBy: { order: "asc" } } } } },
+    include: { test: { include: { subject: true, questions: { orderBy: { order: "asc" } } } } },
   });
   if (!attempt?.test) return { ok: false, error: "Sessiya topilmadi." };
   if (attempt.sessionToken !== sessionToken) return { ok: false, error: "Sessiya yaroqsiz." };
   if (attempt.status !== "IN_PROGRESS") return { ok: false, error: "Sessiya yopilgan." };
-  if (!parseTestGrantCookie(jar.get(TEST_GRANT_COOKIE)?.value).includes(attempt.testId)) {
-    return { ok: false, error: "Ruxsat cookie yo‘q." };
+
+  const userRow = await prisma.user.findUnique({
+    where: { id: session.user.id },
+    select: { gradeId: true },
+  });
+  if (!studentCanOpenStudentTest(jar.get(TEST_GRANT_COOKIE)?.value, userRow?.gradeId, attempt.test)) {
+    return { ok: false, error: "Ruxsat yo‘q." };
   }
 
   const test = attempt.test;

@@ -50,11 +50,8 @@ export default async function StudentSubjectsPage() {
                 {s.topics.length ? (
                   <p className="mt-3 text-xs text-white/40">Mavzular: {s.topics.map((t) => t.title).join(" · ")}</p>
                 ) : null}
-                <Link
-                  href="/oquvchi/test-kod"
-                  className="mt-4 inline-flex text-sm font-semibold text-cyan-300 hover:text-cyan-200"
-                >
-                  Test kodi orqali topshirish →
+                <Link href="/testlar" className="mt-4 inline-flex text-sm font-semibold text-cyan-300 hover:text-cyan-200">
+                  Testlar ro‘yxati →
                 </Link>
               </div>
             </div>

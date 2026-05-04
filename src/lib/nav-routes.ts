@@ -48,7 +48,7 @@ export function getRoleScopedNav(role: AppRole | undefined | null): RoleScopedNa
     home: "/oquvchi",
     subjects: "/oquvchi/fanlar",
     grades: "/oquvchi/sinflar",
-    tests: "/oquvchi/test-kod",
+    tests: "/testlar",
     ranking: "/oquvchi/reyting",
     about: "/biz-haqimizda",
   };

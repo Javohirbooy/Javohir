@@ -50,8 +50,8 @@ export default async function StudentDashboardPage() {
           <Button href="/oquvchi/fanlar" variant="glass" className="px-4 py-2 text-sm">
             Fanlarim
           </Button>
-          <Button href="/oquvchi/test-kod" variant="primary" className="px-5 py-2 text-sm">
-            Test kodi
+          <Button href="/testlar" variant="primary" className="px-5 py-2 text-sm">
+            Testlar
           </Button>
         </div>
       </div>
@@ -92,10 +92,10 @@ export default async function StudentDashboardPage() {
               <EmptyState
                 icon={<FileQuestion className="h-10 w-10" aria-hidden />}
                 title="Hali natija yo‘q"
-                description="O‘qituvchi bergan test kodini kiriting va topshirishni boshlang."
+                description="Sinfingizga mos testlarni ro‘yxatdan tanlang va topshirishni boshlang."
                 action={
-                  <Button href="/oquvchi/test-kod" variant="primary" className="px-5 py-2.5 text-sm">
-                    Test kodi
+                  <Button href="/testlar" variant="primary" className="px-5 py-2.5 text-sm">
+                    Testlar
                   </Button>
                 }
               />
@@ -137,8 +137,8 @@ export default async function StudentDashboardPage() {
                 {s.imageEmoji} <span className="font-bold">{s.title}</span>
               </p>
               <p className="mt-1 line-clamp-2 text-xs text-white/60">{s.description}</p>
-              <Link className="mt-3 inline-block text-sm font-semibold text-cyan-300 hover:underline" href="/oquvchi/test-kod">
-                Test kodi kiriting →
+              <Link className="mt-3 inline-block text-sm font-semibold text-cyan-300 hover:underline" href="/testlar">
+                Testlarni ko‘rish →
               </Link>
             </div>
           ))}

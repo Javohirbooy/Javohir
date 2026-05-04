@@ -4,7 +4,7 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { TestRunner } from "@/components/tests/test-runner";
 import { StudentExamBootstrap } from "@/components/tests/student-exam-bootstrap";
-import { TEST_GRANT_COOKIE, studentHasGrantForTest } from "@/lib/test-access";
+import { TEST_GRANT_COOKIE, studentCanOpenStudentTest } from "@/lib/test-access";
 import { sessionHasPermission } from "@/lib/permissions";
 import { adminCanOpenTestRunner, teacherCanOpenTestRunner } from "@/lib/test-policy";
 import { getServerLocale } from "@/lib/i18n/resolve-locale";
@@ -18,15 +18,6 @@ export default async function TestTakePage({ params }: Props) {
   const session = await auth();
   const grant = (await cookies()).get(TEST_GRANT_COOKIE)?.value;
 
-  if (session?.user?.role === "STUDENT") {
-    if (!sessionHasPermission(session, "TESTS_ATTEMPT")) {
-      redirect("/oquvchi");
-    }
-    if (!studentHasGrantForTest(grant, testId)) {
-      redirect(`/oquvchi/test-kod?next=${encodeURIComponent(`/testlar/${testId}`)}`);
-    }
-  }
-
   const test = await prisma.test.findUnique({
     where: { id: testId },
     include: {
@@ -35,6 +26,19 @@ export default async function TestTakePage({ params }: Props) {
     },
   });
   if (!test) notFound();
+
+  if (session?.user?.role === "STUDENT") {
+    if (!sessionHasPermission(session, "TESTS_ATTEMPT")) {
+      redirect("/oquvchi");
+    }
+    const userRow = await prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: { gradeId: true },
+    });
+    if (!studentCanOpenStudentTest(grant, userRow?.gradeId, test)) {
+      redirect("/testlar");
+    }
+  }
 
   if (session?.user?.role === "TEACHER") {
     if (!teacherCanOpenTestRunner(session, test)) {
@@ -47,9 +51,7 @@ export default async function TestTakePage({ params }: Props) {
   }
 
   const isStudentAttempt =
-    session?.user?.role === "STUDENT" &&
-    studentHasGrantForTest(grant, testId) &&
-    sessionHasPermission(session, "TESTS_ATTEMPT");
+    session?.user?.role === "STUDENT" && sessionHasPermission(session, "TESTS_ATTEMPT");
 
   if (isStudentAttempt) {
     return (

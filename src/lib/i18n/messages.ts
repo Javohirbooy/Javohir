@@ -10,7 +10,6 @@ export const messages: Record<
       grades: string;
       tests: string;
       ranking: string;
-      testCode: string;
       about: string;
       login: string;
       cabinet: string;
@@ -137,7 +136,6 @@ export const messages: Record<
       grades: "Sinflar",
       tests: "Testlar",
       ranking: "Reyting",
-      testCode: "Test kodi",
       about: "Biz haqimizda",
       login: "Kirish",
       cabinet: "Kabinet",
@@ -277,7 +275,6 @@ export const messages: Record<
       grades: "Классы",
       tests: "Тесты",
       ranking: "Рейтинг",
-      testCode: "Код теста",
       about: "О нас",
       login: "Вход",
       cabinet: "Кабинет",
@@ -418,7 +415,6 @@ export const messages: Record<
       grades: "Grades",
       tests: "Tests",
       ranking: "Leaderboard",
-      testCode: "Test code",
       about: "About",
       login: "Sign in",
       cabinet: "Dashboard",

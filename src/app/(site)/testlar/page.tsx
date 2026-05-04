@@ -1,4 +1,3 @@
-import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { SectionTitle } from "@/components/ui/section-title";
@@ -15,7 +14,6 @@ type Props = { searchParams: Promise<{ q?: string; subject?: string; grade?: str
 export default async function TestsIndexPage({ searchParams }: Props) {
   const locale = await getServerLocale();
   const session = await auth();
-  if (session?.user?.role === "STUDENT") redirect("/oquvchi/test-kod");
 
   const sp = await searchParams;
   const query = sp.q?.trim() || undefined;

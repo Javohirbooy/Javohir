@@ -4,7 +4,26 @@ export const TEST_GRANT_COOKIE = "iqm_test_grant";
 /** Asosiy test + qo‘shimchalar; jami tavsiya etilgan yuqori chegarasi. */
 export const TEST_GRANT_MAX_TESTS = 12;
 
-export type TestCodeFormState = { error?: string } | null;
+/** Test ochish uchun server tekshiruvi (sinf + nashr yoki eski grant cookie). */
+export type TestShapeForStudentAccess = {
+  id: string;
+  isDraft: boolean;
+  isActive: boolean;
+  status: string;
+  subject: { gradeId: string };
+};
+
+/** O‘quvchi: (1) grant cookie shu test id; yoki (2) sinfga mos, nashr etilgan test. */
+export function studentCanOpenStudentTest(
+  grantCookieRaw: string | undefined | null,
+  userGradeId: string | null | undefined,
+  test: TestShapeForStudentAccess,
+): boolean {
+  if (studentHasGrantForTest(grantCookieRaw, test.id)) return true;
+  if (!userGradeId || userGradeId !== test.subject.gradeId) return false;
+  if (test.isDraft || !test.isActive || test.status === "ARCHIVED") return false;
+  return test.status === "PUBLISHED";
+}
 
 /** Cookie qiymatini test id ro‘yxatiga aylantiradi (legacy: bitta cuid qator). */
 export function parseTestGrantCookie(raw: string | undefined | null): string[] {

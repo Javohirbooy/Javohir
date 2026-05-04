@@ -65,7 +65,7 @@ export function PremiumNavbar({ user, locale }: { user: UserLite; locale: AppLoc
         { href: routes.grades, label: L.grades, icon: GraduationCap, homeExact: false },
         {
           href: routes.tests,
-          label: user?.role === "STUDENT" ? L.testCode : L.tests,
+          label: L.tests,
           icon: Activity,
           homeExact: false,
         },
