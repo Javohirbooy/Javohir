@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
+import { useIsClient } from "@/lib/use-is-client";
 import { createPortal } from "react-dom";
 import { signOut } from "next-auth/react";
 import { setLocale } from "@/app/actions/locale";
@@ -46,14 +47,12 @@ export function PremiumNavbar({ user, locale }: { user: UserLite; locale: AppLoc
   const [localeOpen, setLocaleOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [sectionsOpen, setSectionsOpen] = useState(false);
-  const [mounted, setMounted] = useState(false);
+  const portalReady = useIsClient();
   const L = navLabels(locale);
 
   useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  useEffect(() => {
+    /* SPA navigatsiya (orqa/oldingi): panel ochiq qolmasin */
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- pathname o‘zgarishiga bog‘liq yopish
     setSectionsOpen(false);
   }, [pathname]);
 
@@ -108,7 +107,7 @@ export function PremiumNavbar({ user, locale }: { user: UserLite; locale: AppLoc
         { href: routes.ranking, label: L.ranking, icon: Trophy, homeExact: false },
         { href: routes.about, label: L.about, icon: Info, homeExact: false },
       ] as const,
-    [L, routes, user?.role],
+    [L, routes],
   );
 
   function drawerLinkCls(href: string, homeExact: boolean) {
@@ -267,7 +266,7 @@ export function PremiumNavbar({ user, locale }: { user: UserLite; locale: AppLoc
         </div>
       </div>
 
-      {mounted && sectionsOpen
+      {portalReady && sectionsOpen
         ? createPortal(
             <>
               <button

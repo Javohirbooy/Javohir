@@ -18,6 +18,8 @@ export const messages: Record<
       localeLabel: string;
       profileDashboard: string;
       signOut: string;
+      themeLight: string;
+      themeDark: string;
     };
     home: {
       heroBadge: string;
@@ -146,6 +148,8 @@ export const messages: Record<
       localeLabel: "Til",
       profileDashboard: "Kabinet",
       signOut: "Chiqish",
+      themeLight: "Yorug‘ mavzu",
+      themeDark: "Qorong‘u mavzu",
     },
     brand: {
       tagline: "Zamonaviy maktab boshqaruvi va test platformasi.",
@@ -287,6 +291,8 @@ export const messages: Record<
       localeLabel: "Язык",
       profileDashboard: "Кабинет",
       signOut: "Выйти",
+      themeLight: "Светлая тема",
+      themeDark: "Тёмная тема",
     },
     brand: {
       tagline: "Современная школьная платформа для мониторинга и тестов.",
@@ -430,6 +436,8 @@ export const messages: Record<
       localeLabel: "Language",
       profileDashboard: "Dashboard",
       signOut: "Sign out",
+      themeLight: "Light theme",
+      themeDark: "Dark theme",
     },
     brand: {
       tagline: "Modern school monitoring and testing platform.",
