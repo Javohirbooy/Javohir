@@ -78,7 +78,7 @@ export function PremiumNavbar({ user, locale }: { user: UserLite; locale: AppLoc
   function linkCls(href: string, homeExact: boolean) {
     const active = isNavActive(pathname, href, homeExact);
     return cn(
-      "group inline-flex min-h-[44px] shrink-0 items-center gap-2.5 whitespace-nowrap rounded-xl px-3.5 py-2.5 text-xs font-medium transition-all sm:min-h-0 sm:gap-3 sm:px-4 sm:py-2.5 sm:text-sm",
+      "group inline-flex min-h-[44px] shrink-0 items-center gap-1.5 whitespace-nowrap rounded-xl px-2.5 py-2 text-xs font-medium transition-all sm:min-h-0 sm:gap-2.5 sm:px-3 sm:py-2.5 md:gap-3 md:px-3.5 md:text-sm",
       active
         ? "bg-emerald-100 text-emerald-900 ring-1 ring-emerald-200 shadow-lg shadow-emerald-900/10"
         : "text-slate-700 hover:bg-emerald-50 hover:text-emerald-800",
@@ -109,11 +109,14 @@ export function PremiumNavbar({ user, locale }: { user: UserLite; locale: AppLoc
   );
 
   return (
-    <div className="relative grid w-full min-w-0 flex-1 grid-cols-1 items-start gap-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center sm:gap-3 md:gap-4 lg:gap-6">
-      {/* Chap: barcha menyu bandlari ketma-ket, flex-wrap — kesilmaydi */}
+    <div className="relative flex w-full min-w-0 flex-1 items-center gap-2 sm:gap-3 md:gap-4 lg:gap-5">
+      {/* Eng chap: logo */}
+      <div className="shrink-0">{logoBlock}</div>
+
+      {/* O‘rta: barcha bo‘limlar bitta qatorda; tor ekranda gorizontal scroll */}
       <nav
         aria-label="Main"
-        className="flex min-h-[2.75rem] min-w-0 flex-wrap items-center gap-x-2 gap-y-2 overflow-visible sm:min-h-0 sm:gap-x-2.5 sm:gap-y-2 md:gap-x-3"
+        className="flex min-h-[2.75rem] min-w-0 flex-1 touch-pan-x flex-nowrap items-center justify-center gap-x-1 overflow-x-auto overflow-y-hidden overscroll-x-contain py-0.5 [-ms-overflow-style:none] [scrollbar-width:thin] sm:min-h-0 sm:justify-center sm:gap-x-1.5 sm:py-0 md:gap-x-2 [&::-webkit-scrollbar]:h-1 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-emerald-200/70 dark:[&::-webkit-scrollbar-thumb]:bg-slate-600"
       >
         {navItems.map((it) => {
           const navActive = isNavActive(pathname, it.href, it.homeExact);
@@ -126,8 +129,8 @@ export function PremiumNavbar({ user, locale }: { user: UserLite; locale: AppLoc
         })}
       </nav>
 
-      {/* O‘ng oxirigacha: tema → til → kirish — eng oxirida logo */}
-      <div className="flex w-full min-w-0 shrink-0 flex-wrap items-center justify-end gap-x-2 gap-y-2 sm:w-auto sm:flex-nowrap sm:justify-self-end sm:gap-x-3 lg:gap-x-4">
+      {/* O‘ng: tema → til → kabinet/kirish */}
+      <div className="flex shrink-0 flex-nowrap items-center gap-x-2 sm:gap-x-3 lg:gap-x-4">
         <ThemeToggle size="sm" />
         <div className="relative shrink-0">
           <button
@@ -218,8 +221,6 @@ export function PremiumNavbar({ user, locale }: { user: UserLite; locale: AppLoc
             {L.login}
           </Button>
         )}
-
-        {logoBlock}
       </div>
     </div>
   );
