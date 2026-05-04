@@ -78,7 +78,7 @@ export function PremiumNavbar({ user, locale }: { user: UserLite; locale: AppLoc
   function linkCls(href: string, homeExact: boolean) {
     const active = isNavActive(pathname, href, homeExact);
     return cn(
-      "group inline-flex min-h-[44px] shrink-0 items-center gap-2.5 whitespace-nowrap rounded-xl px-4 py-2.5 text-xs font-medium transition-all sm:min-h-0 sm:gap-3 sm:px-5 sm:py-2.5 sm:text-sm",
+      "group inline-flex min-h-[44px] min-w-max shrink-0 items-center gap-3 whitespace-nowrap rounded-xl px-4 py-2.5 text-xs font-medium transition-all sm:min-h-0 sm:gap-3.5 sm:px-5 sm:py-2.5 sm:text-sm lg:gap-4 lg:px-6",
       active
         ? "bg-emerald-100 text-emerald-900 ring-1 ring-emerald-200 shadow-lg shadow-emerald-900/10"
         : "text-slate-700 hover:bg-emerald-50 hover:text-emerald-800",
@@ -86,7 +86,7 @@ export function PremiumNavbar({ user, locale }: { user: UserLite; locale: AppLoc
   }
 
   return (
-    <div className="relative flex min-w-0 flex-1 flex-wrap items-center gap-x-3 gap-y-2 sm:flex-nowrap sm:gap-x-4 lg:gap-x-6">
+    <div className="relative flex min-w-0 flex-1 flex-wrap items-center gap-x-4 gap-y-3 sm:flex-nowrap sm:gap-x-6 lg:gap-x-8 xl:gap-x-10">
       {/* Chap burchak: faqat brend / logo */}
       <Link href={routes.home} className="group flex min-w-0 shrink-0 items-center gap-3">
         <span className="relative h-11 w-11 overflow-hidden rounded-2xl ring-1 ring-emerald-200/70 shadow-[0_12px_24px_-10px_rgba(16,185,129,0.45)] sm:h-12 sm:w-12 iq-logo-3d">
@@ -108,21 +108,21 @@ export function PremiumNavbar({ user, locale }: { user: UserLite; locale: AppLoc
       {/* Logo'dan keyin tartib bilan: Bosh sahifa → ... — markazga yig'maydi */}
       <nav
         aria-label="Main"
-        className="order-3 flex min-h-[3rem] w-full min-w-0 basis-full items-center justify-start gap-3 overflow-x-auto py-1 [-ms-overflow-style:none] [scrollbar-width:none] sm:order-none sm:min-h-0 sm:flex-1 sm:basis-auto sm:gap-3 sm:py-0 md:gap-4 lg:gap-5 [&::-webkit-scrollbar]:hidden"
+        className="order-3 flex min-h-[3rem] w-full min-w-0 basis-full items-center justify-start gap-4 overflow-x-auto px-1 py-1 [-ms-overflow-style:none] [scrollbar-width:none] sm:order-none sm:min-h-0 sm:flex-1 sm:basis-auto sm:gap-5 sm:px-2 sm:py-0 md:gap-6 lg:gap-7 xl:gap-8 [&::-webkit-scrollbar]:hidden"
       >
         {navItems.map((it) => {
           const navActive = isNavActive(pathname, it.href, it.homeExact);
           return (
             <Link key={it.href + it.label} href={it.href} className={linkCls(it.href, it.homeExact)}>
               <Icon3D icon={it.icon} size="md" active={navActive} />
-              <span>{it.label}</span>
+              <span className="whitespace-nowrap">{it.label}</span>
             </Link>
           );
         })}
       </nav>
 
       {/* O'ng: tema, til, kirish */}
-      <div className="ml-auto flex min-w-0 shrink-0 items-center justify-end gap-3 sm:ml-0 sm:gap-4 lg:gap-5">
+      <div className="ml-auto flex min-w-0 shrink-0 items-center justify-end gap-3 border-l border-emerald-100/90 pl-4 dark:border-slate-700 sm:ml-0 sm:gap-4 sm:pl-6 lg:gap-5 lg:pl-8">
         <ThemeToggle size="sm" />
         <div className="relative shrink-0">
           <button
