@@ -109,11 +109,11 @@ export function PremiumNavbar({ user, locale }: { user: UserLite; locale: AppLoc
   );
 
   return (
-    <div className="relative flex w-full min-w-0 flex-1 flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4 lg:gap-5">
-      {/* Chapdan tartib: barcha menyu bandlari — flex-wrap, yo‘qolib qolmaydi */}
+    <div className="relative grid w-full min-w-0 flex-1 grid-cols-1 items-start gap-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center sm:gap-3 md:gap-4 lg:gap-6">
+      {/* Chap: barcha menyu bandlari ketma-ket, flex-wrap — kesilmaydi */}
       <nav
         aria-label="Main"
-        className="flex min-h-[2.75rem] w-full min-w-0 flex-1 flex-wrap items-center gap-x-2 gap-y-2 sm:min-h-0 sm:gap-x-3 sm:gap-y-2 md:gap-x-4"
+        className="flex min-h-[2.75rem] min-w-0 flex-wrap items-center gap-x-2 gap-y-2 overflow-visible sm:min-h-0 sm:gap-x-2.5 sm:gap-y-2 md:gap-x-3"
       >
         {navItems.map((it) => {
           const navActive = isNavActive(pathname, it.href, it.homeExact);
@@ -126,8 +126,8 @@ export function PremiumNavbar({ user, locale }: { user: UserLite; locale: AppLoc
         })}
       </nav>
 
-      {/* O‘ng: tema, til, kabinet/kirish — oxirida logotip (yuqori o‘ng burchak atrofi) */}
-      <div className="flex w-full min-w-0 shrink-0 flex-wrap items-center justify-end gap-x-3 gap-y-2 sm:w-auto sm:justify-end sm:gap-x-4 lg:gap-x-5">
+      {/* O‘ng oxirigacha: tema → til → kirish — eng oxirida logo */}
+      <div className="flex w-full min-w-0 shrink-0 flex-wrap items-center justify-end gap-x-2 gap-y-2 sm:w-auto sm:flex-nowrap sm:justify-self-end sm:gap-x-3 lg:gap-x-4">
         <ThemeToggle size="sm" />
         <div className="relative shrink-0">
           <button
