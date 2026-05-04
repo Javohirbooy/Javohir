@@ -4,7 +4,7 @@ import { useState } from "react";
 import { getSession, signIn } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
+import { LogIn, Mail, Lock } from "lucide-react";
 
 export function LoginForm() {
   const router = useRouter();
@@ -52,39 +52,61 @@ export function LoginForm() {
   }
 
   return (
-    <Card className="mx-auto max-w-md border-slate-200/80 bg-white/95 text-slate-900 shadow-2xl shadow-violet-900/20 backdrop-blur-xl">
-      <h1 className="text-2xl font-extrabold text-slate-900">Kabinetga kirish</h1>
-
-      <form className="mt-6 space-y-4" onSubmit={onSubmit}>
+    <div className="rounded-3xl border border-slate-200/90 bg-white/95 p-6 shadow-2xl shadow-emerald-900/10 backdrop-blur-xl dark:border-slate-700 dark:bg-slate-900/90 dark:shadow-black/40 sm:p-8">
+      <div className="mb-6 flex items-start gap-3">
+        <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white shadow-lg ring-1 ring-emerald-200/50 dark:ring-emerald-800/50">
+          <LogIn className="h-5 w-5" aria-hidden />
+        </span>
         <div>
+          <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100">Tizimga kirish</h2>
+          <p className="mt-0.5 text-sm text-slate-600 dark:text-slate-400">Email va parolingizni kiriting.</p>
+        </div>
+      </div>
+
+      <form className="space-y-5" onSubmit={onSubmit}>
+        <div className="space-y-2">
+          <label htmlFor="email" className="flex items-center gap-2 text-sm font-medium text-slate-700 dark:text-slate-300">
+            <Mail className="h-4 w-4 text-emerald-600 dark:text-emerald-400" aria-hidden />
+            Email
+          </label>
           <input
             id="email"
             name="email"
             type="email"
             autoComplete="email"
-            placeholder="Email"
+            placeholder="siz@maktab.uz"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none ring-teal-500/0 transition focus:ring-4 focus:ring-teal-400/30"
+            required
+            className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none ring-teal-500/0 transition placeholder:text-slate-400 focus:border-emerald-400/80 focus:ring-4 focus:ring-teal-400/25 dark:border-slate-600 dark:bg-slate-950 dark:text-slate-100"
           />
         </div>
-        <div>
+        <div className="space-y-2">
+          <label htmlFor="password" className="flex items-center gap-2 text-sm font-medium text-slate-700 dark:text-slate-300">
+            <Lock className="h-4 w-4 text-emerald-600 dark:text-emerald-400" aria-hidden />
+            Parol
+          </label>
           <input
             id="password"
             name="password"
             type="password"
             autoComplete="current-password"
-            placeholder="Parol"
+            placeholder="••••••••"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none ring-teal-500/0 transition focus:ring-4 focus:ring-teal-400/30"
+            required
+            className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none ring-teal-500/0 transition placeholder:text-slate-400 focus:border-emerald-400/80 focus:ring-4 focus:ring-teal-400/25 dark:border-slate-600 dark:bg-slate-950 dark:text-slate-100"
           />
         </div>
-        {error ? <p className="text-sm font-medium text-rose-600">{error}</p> : null}
-        <Button type="submit" className="w-full py-3 text-base" disabled={loading}>
+        {error ? (
+          <p className="rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm font-medium text-rose-700 dark:border-rose-900/50 dark:bg-rose-950/40 dark:text-rose-200">
+            {error}
+          </p>
+        ) : null}
+        <Button type="submit" className="w-full py-3 text-base font-semibold" disabled={loading}>
           {loading ? "Kirilmoqda…" : "Kirish"}
         </Button>
       </form>
-    </Card>
+    </div>
   );
 }

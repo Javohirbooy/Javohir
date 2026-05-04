@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
 import {
   createTest,
   updateTeacherTest,
@@ -13,8 +13,6 @@ import { DashboardCard } from "@/components/dashboard/dashboard-card";
 
 export type SubjectOption = { id: string; title: string; gradeId: string; gradeLabel: string };
 export type GradeOption = { id: string; name: string; number: number };
-
-export type BundleTestOption = { id: string; title: string; gradeId: string; subjectTitle: string };
 
 export type TeacherTestEditInitial = {
   testId: string;
@@ -29,23 +27,17 @@ export type TeacherTestEditInitial = {
   maxAttempts: number;
   startsAt: string;
   endsAt: string;
-  manualTestCode: string;
   protectedExamMode: boolean;
   tabSwitchPolicy: string;
   antiCheatMode: string;
   shuffleQuestions: boolean;
   shuffleOptions: boolean;
-  generateCode: boolean;
   questions: TeacherQuestionInput[];
-  /** Monitoring paketi — qo‘shimcha test id-lari */
-  bundleTestIds?: string[];
 };
 
 function emptyQuestion(): TeacherQuestionInput {
   return { text: "", options: ["", "", "", ""], correctIndex: 0 };
 }
-
-const MAX_MONITORING_EXTRA = 11;
 
 export function TeacherTestCreateForm({
   variant,
@@ -55,7 +47,6 @@ export function TeacherTestCreateForm({
   defaultSubjectId,
   afterPublishHref = "/oqituvchi/testlar",
   edit,
-  bundleTestOptions = [],
 }: {
   variant: "teacher" | "admin";
   subjects: SubjectOption[];
@@ -64,13 +55,11 @@ export function TeacherTestCreateForm({
   defaultSubjectId?: string;
   afterPublishHref?: string;
   edit?: TeacherTestEditInitial;
-  /** Bir xil sinfdagi boshqa testlar (monitoring paketi uchun ro‘yxat) */
-  bundleTestOptions?: BundleTestOption[];
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
-  const [successCode, setSuccessCode] = useState<string | null>(null);
+  const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
   const initialGrade =
     edit?.gradeId ??
@@ -102,10 +91,8 @@ export function TeacherTestCreateForm({
   const [questionCountTarget, setQuestionCountTarget] = useState(10);
   const [isActive, setIsActive] = useState(true);
   const [isDraft, setIsDraft] = useState(false);
-  const [generateCode, setGenerateCode] = useState(edit?.generateCode ?? true);
   const [startsAt, setStartsAt] = useState(edit?.startsAt ?? "");
   const [endsAt, setEndsAt] = useState(edit?.endsAt ?? "");
-  const [manualTestCode, setManualTestCode] = useState(edit?.manualTestCode ?? "");
   const [protectedExamMode, setProtectedExamMode] = useState(edit?.protectedExamMode ?? false);
   const [tabSwitchPolicy, setTabSwitchPolicy] = useState(edit?.tabSwitchPolicy ?? "AUTO_SUBMIT");
   const [antiCheatMode, setAntiCheatMode] = useState(edit?.antiCheatMode ?? "STANDARD");
@@ -114,22 +101,7 @@ export function TeacherTestCreateForm({
   const [questions, setQuestions] = useState<TeacherQuestionInput[]>(
     edit?.questions?.length ? edit.questions : [emptyQuestion(), emptyQuestion(), emptyQuestion()],
   );
-  const [bundleTestIds, setBundleTestIds] = useState<string[]>(() => edit?.bundleTestIds ?? []);
-
   const topicChoices = topicsBySubjectId?.[subjectId] ?? [];
-
-  const filteredBundleOptions = useMemo(() => {
-    const g = variant === "teacher" ? gradeId : subjects.find((s) => s.id === subjectId)?.gradeId ?? "";
-    return bundleTestOptions.filter((o) => o.gradeId === g && o.id !== edit?.testId);
-  }, [bundleTestOptions, variant, gradeId, subjectId, subjects, edit?.testId]);
-
-  const toggleBundleId = useCallback((id: string) => {
-    setBundleTestIds((prev) => {
-      if (prev.includes(id)) return prev.filter((x) => x !== id);
-      if (prev.length >= MAX_MONITORING_EXTRA) return prev;
-      return [...prev, id];
-    });
-  }, []);
 
   useEffect(() => {
     if (variant !== "teacher") return;
@@ -191,23 +163,20 @@ export function TeacherTestCreateForm({
       isActive: publishIntent === "publish" ? true : isActive,
       isDraft: publishIntent === "draft",
       publishIntent,
-      generateCode: publishIntent === "publish" && generateCode && !manualTestCode.trim(),
       questions,
       startsAt: startsAt || null,
       endsAt: endsAt || null,
-      manualTestCode: manualTestCode.trim() || null,
       protectedExamMode,
       tabSwitchPolicy,
       antiCheatMode,
       shuffleQuestions,
       shuffleOptions,
-      testCodeBundleTestIds: bundleTestIds,
     };
   }
 
   function runSave(publishIntent: "draft" | "publish") {
     setError(null);
-    setSuccessCode(null);
+    setSuccessMsg(null);
     if (variant === "teacher" && !gradeId) {
       setError("Sinfni tanlang.");
       return;
@@ -223,9 +192,8 @@ export function TeacherTestCreateForm({
         setError(res.error);
         return;
       }
-      if ("code" in res && res.code) setSuccessCode(res.code);
-      else if (publishIntent === "draft") setSuccessCode("Qoralama saqlandi.");
-      else setSuccessCode("Test nashr qilindi.");
+      if (publishIntent === "draft") setSuccessMsg("Qoralama saqlandi.");
+      else setSuccessMsg(edit ? "O‘zgarishlar saqlandi." : "Test nashr qilindi.");
       router.refresh();
       if (publishIntent === "publish") {
         if (edit) router.push(`/oqituvchi/testlar/${edit.testId}/tahrirlash`);
@@ -248,10 +216,8 @@ export function TeacherTestCreateForm({
       {error ? (
         <div className="rounded-2xl border border-rose-400/30 bg-rose-500/10 px-4 py-3 text-sm text-rose-100">{error}</div>
       ) : null}
-      {successCode ? (
-        <div className="rounded-2xl border border-emerald-400/30 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-100">
-          {/^[A-F0-9]{6,}$/i.test(successCode) ? <>Test kodi: {successCode}</> : successCode}
-        </div>
+      {successMsg ? (
+        <div className="rounded-2xl border border-emerald-400/30 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-100">{successMsg}</div>
       ) : null}
 
       <DashboardCard className="border-violet-400/15">
@@ -440,7 +406,7 @@ export function TeacherTestCreateForm({
       </DashboardCard>
 
       <DashboardCard className="border-emerald-400/10">
-        <h2 className="text-lg font-bold text-white">Vaqt, kod va himoya</h2>
+        <h2 className="text-lg font-bold text-white">Vaqt va himoya</h2>
         <p className="mt-1 text-sm text-white/50">
           OS darajasida skrinshotlarni to‘liq bloklash mumkin emas — himoya brauzer darajasida. STRICT rejim qat’iyroq siyosatni majburan qo‘llaydi.
         </p>
@@ -463,53 +429,6 @@ export function TeacherTestCreateForm({
               className="w-full rounded-xl border border-white/15 bg-slate-950/60 px-3 py-2.5 text-sm text-white outline-none ring-emerald-500/25 focus:ring-2"
             />
           </label>
-          <label className="space-y-2 md:col-span-2">
-            <span className="text-xs font-semibold uppercase tracking-wide text-white/45">Qo‘lda test kodi (nashrda; bo‘sh bo‘lsa avto)</span>
-            <input
-              value={manualTestCode}
-              onChange={(e) => setManualTestCode(e.target.value)}
-              placeholder="Masalan: MATH2026"
-              className="w-full rounded-xl border border-white/15 bg-slate-950/60 px-3 py-2.5 font-mono text-sm text-white outline-none ring-emerald-500/25 focus:ring-2"
-            />
-          </label>
-          <label className="flex items-center gap-3 text-sm text-white/80 md:col-span-2">
-            <input
-              type="checkbox"
-              checked={generateCode}
-              onChange={(e) => setGenerateCode(e.target.checked)}
-              className="h-4 w-4 rounded"
-            />
-            Nashrda test kodini avtomatik generatsiya qilish (qo‘lda kod bo‘lsa o‘chiriladi)
-          </label>
-          {filteredBundleOptions.length > 0 ? (
-            <div className="space-y-2 md:col-span-2">
-              <span className="text-xs font-semibold uppercase tracking-wide text-sky-200/90">
-                Monitoring paketi (bir kod — bir nechta fan)
-              </span>
-              <p className="text-xs text-white/45">
-                Tanlangan sinf bo‘yicha boshqa testlarni belgilang. O‘quvchi bitta kod bilan barchasiga kiradi (asosiy test + yana {MAX_MONITORING_EXTRA} tagacha).
-              </p>
-              <div className="max-h-52 space-y-2 overflow-y-auto rounded-2xl border border-sky-400/20 bg-sky-500/[0.07] p-3">
-                {filteredBundleOptions.map((b) => (
-                  <label
-                    key={b.id}
-                    className="flex cursor-pointer items-start gap-3 rounded-xl border border-white/10 bg-black/25 px-3 py-2.5 text-sm text-white/88"
-                  >
-                    <input
-                      type="checkbox"
-                      checked={bundleTestIds.includes(b.id)}
-                      onChange={() => toggleBundleId(b.id)}
-                      className="mt-0.5 h-4 w-4 shrink-0 rounded border-white/20"
-                    />
-                    <span>
-                      <span className="font-semibold text-white">{b.title}</span>{" "}
-                      <span className="text-white/50">({b.subjectTitle})</span>
-                    </span>
-                  </label>
-                ))}
-              </div>
-            </div>
-          ) : null}
           <label className="space-y-2">
             <span className="text-xs font-semibold uppercase tracking-wide text-white/45">Anti-cheat profili</span>
             <select

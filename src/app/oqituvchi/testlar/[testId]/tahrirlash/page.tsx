@@ -19,7 +19,6 @@ export default async function TeacherEditTestPage({ params }: Props) {
     where: { id: testId },
     include: {
       questions: { orderBy: { order: "asc" } },
-      testCodes: { where: { isActive: true }, take: 1 },
     },
   });
   if (!test) notFound();
@@ -94,36 +93,6 @@ export default async function TeacherEditTestPage({ params }: Props) {
     return { text: q.text, options: padded, correctIndex: q.correctIndex };
   });
 
-  const rawBundle = test.testCodes[0]?.grantedTestIdsJson;
-  let bundleTestIds: string[] = [];
-  if (rawBundle) {
-    try {
-      const j = JSON.parse(rawBundle) as unknown;
-      if (Array.isArray(j)) bundleTestIds = j.filter((x): x is string => typeof x === "string");
-    } catch {
-      bundleTestIds = [];
-    }
-  }
-
-  const bundleCandidates = await prisma.test.findMany({
-    where: {
-      authorUserId: session.user.id,
-      gradeId: { in: gradeIds },
-      id: { not: testId },
-      isDraft: false,
-      isActive: true,
-      status: { not: "ARCHIVED" },
-    },
-    select: { id: true, title: true, gradeId: true, subject: { select: { title: true } } },
-    orderBy: { title: "asc" },
-  });
-  const bundleTestOptions = bundleCandidates.map((t) => ({
-    id: t.id,
-    title: t.title,
-    gradeId: t.gradeId ?? "",
-    subjectTitle: t.subject.title,
-  }));
-
   const edit: TeacherTestEditInitial = {
     testId: test.id,
     title: test.title,
@@ -137,15 +106,12 @@ export default async function TeacherEditTestPage({ params }: Props) {
     maxAttempts: test.maxAttempts ?? 1,
     startsAt: test.startsAt ? toDatetimeLocal(new Date(test.startsAt)) : "",
     endsAt: test.endsAt ? toDatetimeLocal(new Date(test.endsAt)) : "",
-    manualTestCode: "",
     protectedExamMode: test.protectedExamMode,
     tabSwitchPolicy: test.tabSwitchPolicy,
     antiCheatMode: test.antiCheatMode,
     shuffleQuestions: test.shuffleQuestions,
     shuffleOptions: test.shuffleOptions,
-    generateCode: !test.testCodes[0],
     questions,
-    bundleTestIds,
   };
 
   return (
@@ -162,7 +128,6 @@ export default async function TeacherEditTestPage({ params }: Props) {
         defaultSubjectId={test.subjectId}
         afterPublishHref="/oqituvchi/testlar"
         edit={edit}
-        bundleTestOptions={bundleTestOptions}
       />
     </div>
   );

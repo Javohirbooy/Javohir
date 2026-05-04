@@ -171,7 +171,7 @@ export const messages: Record<
       questionCount: "{n} savol",
       startCta: "Boshlash",
       previewBanner:
-        "Ko‘rish rejimi — natija bazaga yozilmaydi. O‘quvchi topshirishi uchun test kodi kerak.",
+        "Ko‘rish rejimi — natija bazaga yozilmaydi. O‘quvchi topshirishi uchun test sinf bo‘yicha nashr etilgan bo‘lishi kerak.",
       loadingSession: "Test sessiyasi tayyorlanmoqda…",
     },
     testRunner: {
@@ -188,7 +188,7 @@ export const messages: Record<
       dash: "—",
       errAnswerAll: "Barcha savollarga javob bering.",
       errNoSession: "Sessiya topilmadi. Sahifani yangilang.",
-      noticePreviewNoScore: "Bu rejimda ball hisoblanmaydi. O‘quvchi sifatida test kodi bilan kiring.",
+      noticePreviewNoScore: "Bu rejimda ball hisoblanmaydi. O‘quvchi sifatida o‘z kabinetingizdan nashr etilgan testga kiring.",
       noticePreviewNotSaved: "Ko‘rish rejimi — bazaga yozilmadi.",
       noticeTabViolation: "Qoida: varaqdan chiqish — avto-yuborish.",
       sessionEndedTitle: "Sessiya qoidalarga ko‘ra yakunlandi.",
@@ -310,7 +310,7 @@ export const messages: Record<
       questionCount: "{n} вопр.",
       startCta: "Начать",
       previewBanner:
-        "Режим просмотра — результат не сохраняется. Для ученика нужен код теста.",
+        "Режим просмотра — результат не сохраняется. Ученик может сдать тест, если он опубликован для его класса.",
       loadingSession: "Подготовка сессии теста…",
     },
     testRunner: {
@@ -327,7 +327,8 @@ export const messages: Record<
       dash: "—",
       errAnswerAll: "Ответьте на все вопросы.",
       errNoSession: "Сессия не найдена. Обновите страницу.",
-      noticePreviewNoScore: "В этом режиме баллы не считаются. Войдите как ученик с кодом теста.",
+      noticePreviewNoScore:
+        "В этом режиме баллы не считаются. Войдите как ученик и откройте опубликованный тест из каталога.",
       noticePreviewNotSaved: "Режим просмотра — не сохранено в базе.",
       noticeTabViolation: "Правило: уход со вкладки — автоотправка.",
       sessionEndedTitle: "Сессия завершена по правилам.",
@@ -448,7 +449,8 @@ export const messages: Record<
       clearFilters: "Clear filters",
       questionCount: "{n} questions",
       startCta: "Start",
-      previewBanner: "Preview mode — results are not saved. Students need a test code to submit.",
+      previewBanner:
+        "Preview mode — results are not saved. Students can submit when the test is published for their grade.",
       loadingSession: "Preparing test session…",
     },
     testRunner: {
@@ -465,7 +467,8 @@ export const messages: Record<
       dash: "—",
       errAnswerAll: "Answer every question.",
       errNoSession: "Session not found. Refresh the page.",
-      noticePreviewNoScore: "Scores are not calculated in this mode. Enter as a student with a test code.",
+      noticePreviewNoScore:
+        "Scores are not calculated in this mode. Sign in as a student and open a published test from the list.",
       noticePreviewNotSaved: "Preview mode — not saved to the database.",
       noticeTabViolation: "Rule: leaving the tab triggers auto-submit.",
       sessionEndedTitle: "Session ended per policy.",

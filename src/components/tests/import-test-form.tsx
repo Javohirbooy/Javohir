@@ -82,7 +82,12 @@ export function ImportTestForm({
         </label>
         <label className="block space-y-2">
           <span className="text-xs font-semibold uppercase tracking-wide text-white/45">Test nomi (qoralama)</span>
-          <input name="title" className="w-full rounded-xl border border-white/15 bg-slate-950/60 px-3 py-2.5 text-sm text-white outline-none ring-sky-500/30 focus:ring-2" />
+          <input
+            name="title"
+            defaultValue=""
+            placeholder="Masalan: Algebra — nazorat"
+            className="w-full rounded-xl border border-white/15 bg-slate-950/60 px-3 py-2.5 text-sm text-white outline-none ring-sky-500/30 focus:ring-2"
+          />
           <span className="text-[0.7rem] text-white/40">Bir nechta fayl bo‘lsa, nomiga fayl nomi qo‘shiladi.</span>
         </label>
         <label className="block space-y-2">
@@ -93,7 +98,7 @@ export function ImportTestForm({
             name="files"
             type="file"
             multiple
-            accept=".txt,.md,.docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain,text/markdown"
+            accept=".txt,.md,.docx,.DOCX,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain,text/markdown"
             required
             className="w-full rounded-xl border border-dashed border-white/20 bg-white/[0.04] px-3 py-6 text-sm text-white/80 file:mr-4 file:rounded-lg file:border-0 file:bg-sky-600 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white"
           />

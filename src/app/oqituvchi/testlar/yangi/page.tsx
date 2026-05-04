@@ -79,24 +79,6 @@ export default async function TeacherNewTestPage({ searchParams }: Props) {
   const resolvedDefault =
     defaultSubjectId && subjects.some((s) => s.id === defaultSubjectId) ? defaultSubjectId : undefined;
 
-  const bundleCandidates = await prisma.test.findMany({
-    where: {
-      authorUserId: session.user.id,
-      gradeId: { in: gradeIds },
-      isDraft: false,
-      isActive: true,
-      status: { not: "ARCHIVED" },
-    },
-    select: { id: true, title: true, gradeId: true, subject: { select: { title: true } } },
-    orderBy: { title: "asc" },
-  });
-  const bundleTestOptions = bundleCandidates.map((t) => ({
-    id: t.id,
-    title: t.title,
-    gradeId: t.gradeId ?? "",
-    subjectTitle: t.subject.title,
-  }));
-
   return (
     <div className="space-y-6">
       <div>
@@ -112,7 +94,6 @@ export default async function TeacherNewTestPage({ searchParams }: Props) {
         topicsBySubjectId={topicsBySubjectId}
         defaultSubjectId={resolvedDefault}
         afterPublishHref="/oqituvchi/testlar"
-        bundleTestOptions={bundleTestOptions}
       />
     </div>
   );

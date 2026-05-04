@@ -80,6 +80,13 @@ async function createDraftTestFromFile(args: {
   const mcqSource =
     parsedFile.sourceType === "IMPORT_DOCX" ? parsedFile.text : (parsedFile.parserSource || parsedFile.text);
   const parsed = parseMcqTextToDraftQuestions(mcqSource);
+  if (parsed.length === 0) {
+    return {
+      ok: false,
+      error:
+        "Fayldan savol topilmadi. Har bir savol `1.` / `?` bilan boshlanishi, variantlar `A)` yoki `+ / -` qatori bilan berilishi kerak.",
+    };
+  }
   const authorUserId = authorIdForSession(session);
   if (authorUserId === undefined) return { ok: false, error: "Rol mos emas." };
 
