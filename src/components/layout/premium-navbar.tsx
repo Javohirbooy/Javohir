@@ -78,51 +78,56 @@ export function PremiumNavbar({ user, locale }: { user: UserLite; locale: AppLoc
   function linkCls(href: string, homeExact: boolean) {
     const active = isNavActive(pathname, href, homeExact);
     return cn(
-      "group inline-flex min-h-[44px] shrink-0 items-center gap-2.5 whitespace-nowrap rounded-xl px-4 py-2.5 text-xs font-medium transition-all sm:min-h-0 sm:gap-3 sm:px-5 sm:py-2.5 sm:text-sm",
+      "group inline-flex min-h-[44px] shrink-0 items-center gap-2.5 whitespace-nowrap rounded-xl px-3.5 py-2.5 text-xs font-medium transition-all sm:min-h-0 sm:gap-3 sm:px-4 sm:py-2.5 sm:text-sm",
       active
         ? "bg-emerald-100 text-emerald-900 ring-1 ring-emerald-200 shadow-lg shadow-emerald-900/10"
         : "text-slate-700 hover:bg-emerald-50 hover:text-emerald-800",
     );
   }
 
-  return (
-    <div className="relative flex min-w-0 flex-1 flex-wrap items-center gap-x-3 gap-y-2 sm:flex-nowrap sm:gap-x-4 lg:gap-x-6">
-      {/* Chap burchak: faqat brend / logo */}
-      <Link href={routes.home} className="group flex min-w-0 shrink-0 items-center gap-3">
-        <span className="relative h-11 w-11 overflow-hidden rounded-2xl ring-1 ring-emerald-200/70 shadow-[0_12px_24px_-10px_rgba(16,185,129,0.45)] sm:h-12 sm:w-12 iq-logo-3d">
-          <Image
-            src="/iq-logo-3d.png"
-            alt="IQ logo"
-            fill
-            sizes="(max-width: 640px) 44px, 48px"
-            className="object-cover"
-            priority
-          />
-        </span>
-        <span className="hidden min-w-0 flex-col leading-tight sm:flex">
-          <span className="text-[0.65rem] font-semibold uppercase tracking-[0.2em] text-emerald-700">IQ Monitoring</span>
-          <span className="truncate text-base font-bold text-emerald-900">{BRAND.name}</span>
-        </span>
-      </Link>
+  const logoBlock = (
+    <Link
+      href={routes.home}
+      className="group flex shrink-0 items-center gap-2 rounded-xl py-1 pl-1 sm:gap-2.5"
+      aria-label={BRAND.name}
+    >
+      <span className="relative h-10 w-10 overflow-hidden rounded-2xl ring-1 ring-emerald-200/70 shadow-[0_12px_24px_-10px_rgba(16,185,129,0.45)] sm:h-11 sm:w-11 iq-logo-3d">
+        <Image
+          src="/iq-logo-3d.png"
+          alt=""
+          fill
+          sizes="(max-width: 640px) 40px, 44px"
+          className="object-cover"
+          priority
+        />
+      </span>
+      <span className="hidden flex-col leading-tight sm:flex">
+        <span className="text-[0.6rem] font-semibold uppercase tracking-[0.18em] text-emerald-700 dark:text-emerald-400">IQ Monitoring</span>
+        <span className="max-w-[9rem] truncate text-sm font-bold text-emerald-900 dark:text-emerald-100 sm:max-w-none sm:text-base">{BRAND.name}</span>
+      </span>
+    </Link>
+  );
 
-      {/* Logo'dan keyin tartib bilan: Bosh sahifa → ... — markazga yig'maydi */}
+  return (
+    <div className="relative flex w-full min-w-0 flex-1 flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4 lg:gap-5">
+      {/* Chapdan tartib: barcha menyu bandlari — flex-wrap, yo‘qolib qolmaydi */}
       <nav
         aria-label="Main"
-        className="order-3 flex min-h-[3rem] w-full min-w-0 basis-full items-center justify-start gap-3 overflow-x-auto py-1 [-ms-overflow-style:none] [scrollbar-width:none] sm:order-none sm:min-h-0 sm:flex-1 sm:basis-auto sm:gap-3 sm:py-0 md:gap-4 lg:gap-5 [&::-webkit-scrollbar]:hidden"
+        className="flex min-h-[2.75rem] w-full min-w-0 flex-1 flex-wrap items-center gap-x-2 gap-y-2 sm:min-h-0 sm:gap-x-3 sm:gap-y-2 md:gap-x-4"
       >
         {navItems.map((it) => {
           const navActive = isNavActive(pathname, it.href, it.homeExact);
           return (
             <Link key={it.href + it.label} href={it.href} className={linkCls(it.href, it.homeExact)}>
               <Icon3D icon={it.icon} size="md" active={navActive} />
-              <span>{it.label}</span>
+              <span className="whitespace-nowrap">{it.label}</span>
             </Link>
           );
         })}
       </nav>
 
-      {/* O'ng: tema, til, kirish */}
-      <div className="ml-auto flex min-w-0 shrink-0 items-center justify-end gap-3 sm:ml-0 sm:gap-4 lg:gap-5">
+      {/* O‘ng: tema, til, kabinet/kirish — oxirida logotip (yuqori o‘ng burchak atrofi) */}
+      <div className="flex w-full min-w-0 shrink-0 flex-wrap items-center justify-end gap-x-3 gap-y-2 sm:w-auto sm:justify-end sm:gap-x-4 lg:gap-x-5">
         <ThemeToggle size="sm" />
         <div className="relative shrink-0">
           <button
@@ -213,8 +218,9 @@ export function PremiumNavbar({ user, locale }: { user: UserLite; locale: AppLoc
             {L.login}
           </Button>
         )}
-      </div>
 
+        {logoBlock}
+      </div>
     </div>
   );
 }
