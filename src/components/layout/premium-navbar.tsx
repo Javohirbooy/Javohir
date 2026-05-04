@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 import { signOut } from "next-auth/react";
 import { setLocale } from "@/app/actions/locale";
 import { BRAND } from "@/lib/brand";
@@ -45,7 +46,12 @@ export function PremiumNavbar({ user, locale }: { user: UserLite; locale: AppLoc
   const [localeOpen, setLocaleOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [sectionsOpen, setSectionsOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const L = navLabels(locale);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     setSectionsOpen(false);
@@ -254,53 +260,56 @@ export function PremiumNavbar({ user, locale }: { user: UserLite; locale: AppLoc
         </div>
       </div>
 
-      {sectionsOpen ? (
-        <>
-          <button
-            type="button"
-            className="fixed inset-0 z-[90] cursor-default border-0 bg-slate-950/45 p-0 backdrop-blur-[2px] dark:bg-slate-950/60"
-            aria-label={L.closeMenu}
-            onClick={() => setSectionsOpen(false)}
-          />
-          <aside
-            id="premium-site-sections"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="premium-site-sections-title"
-            className="fixed inset-y-0 left-0 z-[100] flex w-[min(22rem,90vw)] max-w-full flex-col border-r border-emerald-100/90 bg-white shadow-2xl dark:border-slate-700 dark:bg-slate-950"
-          >
-            <div className="flex items-center justify-between gap-3 border-b border-emerald-100 px-4 py-4 dark:border-slate-800">
-              <h2 id="premium-site-sections-title" className="text-base font-bold text-slate-900 dark:text-slate-100">
-                {L.menu}
-              </h2>
+      {mounted && sectionsOpen
+        ? createPortal(
+            <>
               <button
                 type="button"
-                className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-emerald-200 bg-white text-slate-800 transition hover:bg-emerald-50 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700"
-                onClick={() => setSectionsOpen(false)}
+                className="fixed inset-0 z-[90] cursor-default border-0 bg-slate-950/45 p-0 backdrop-blur-[2px] dark:bg-slate-950/60"
                 aria-label={L.closeMenu}
+                onClick={() => setSectionsOpen(false)}
+              />
+              <aside
+                id="premium-site-sections"
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="premium-site-sections-title"
+                className="fixed inset-y-0 left-0 z-[100] flex h-dvh w-[min(22rem,90vw)] max-w-full flex-col border-r border-emerald-100/90 bg-white shadow-2xl dark:border-slate-700 dark:bg-slate-950"
               >
-                <X className="h-5 w-5" aria-hidden />
-              </button>
-            </div>
-            <nav className="flex flex-1 flex-col gap-1 overflow-y-auto p-3" aria-label="Main">
-              {navItems.map((it) => {
-                const navActive = isNavActive(pathname, it.href, it.homeExact);
-                return (
-                  <Link
-                    key={it.href + it.label}
-                    href={it.href}
-                    className={drawerLinkCls(it.href, it.homeExact)}
+                <div className="flex shrink-0 items-center justify-between gap-3 border-b border-emerald-100 px-4 py-4 dark:border-slate-800">
+                  <h2 id="premium-site-sections-title" className="text-base font-bold text-slate-900 dark:text-slate-100">
+                    {L.menu}
+                  </h2>
+                  <button
+                    type="button"
+                    className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-emerald-200 bg-white text-slate-800 transition hover:bg-emerald-50 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700"
                     onClick={() => setSectionsOpen(false)}
+                    aria-label={L.closeMenu}
                   >
-                    <Icon3D icon={it.icon} size="md" active={navActive} />
-                    <span>{it.label}</span>
-                  </Link>
-                );
-              })}
-            </nav>
-          </aside>
-        </>
-      ) : null}
+                    <X className="h-5 w-5" aria-hidden />
+                  </button>
+                </div>
+                <nav className="flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto p-3" aria-label="Main">
+                  {navItems.map((it) => {
+                    const navActive = isNavActive(pathname, it.href, it.homeExact);
+                    return (
+                      <Link
+                        key={it.href + it.label}
+                        href={it.href}
+                        className={drawerLinkCls(it.href, it.homeExact)}
+                        onClick={() => setSectionsOpen(false)}
+                      >
+                        <Icon3D icon={it.icon} size="md" active={navActive} />
+                        <span>{it.label}</span>
+                      </Link>
+                    );
+                  })}
+                </nav>
+              </aside>
+            </>,
+            document.body,
+          )
+        : null}
     </>
   );
 }
