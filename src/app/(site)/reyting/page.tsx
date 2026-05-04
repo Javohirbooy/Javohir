@@ -46,7 +46,7 @@ export default async function LeaderboardPage() {
                 <div className="flex items-center justify-between text-sm font-semibold text-slate-800">
                   <span className="flex items-center gap-1 text-emerald-700">
                     <Trophy className="h-4 w-4 text-amber-400" />
-                    {Math.round(r.score)}%
+                    {Math.round(r.score)} ball
                   </span>
                 </div>
                 <ProgressBar value={r.score} className="mt-2 from-emerald-500 to-green-500" trackClassName="bg-emerald-100" />

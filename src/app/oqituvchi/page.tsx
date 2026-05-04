@@ -18,8 +18,8 @@ export default async function TeacherDashboardPage() {
   const gradeIds = classes.map((c) => c.gradeId);
   const recent = await prisma.testResult.findMany({
     where: { test: { subject: { gradeId: { in: gradeIds } } } },
-    orderBy: { createdAt: "desc" },
-    take: 12,
+    orderBy: [{ score: "desc" }, { createdAt: "desc" }],
+    take: 15,
     include: { user: true, test: { include: { subject: { include: { grade: true } } } } },
   });
 
@@ -79,27 +79,20 @@ export default async function TeacherDashboardPage() {
           <ClientMiniBar data={chartData.length ? chartData : [{ name: "—", value: 0 }]} />
         </DashboardCard>
         <DashboardCard>
-          <h2 className="text-lg font-bold">So‘nggi natijalar</h2>
+          <h2 className="text-lg font-bold">Natijalar (eng yuqori ball birinchi)</h2>
           <ul className="mt-4 space-y-3 text-sm">
             {recent.map((r) => (
               <li key={r.id} className="flex items-center justify-between gap-2 border-b border-white/10 pb-2">
                 <span className="text-white/85">
                   {r.user.name} · {r.test.subject.title}
                 </span>
-                <span className="font-bold text-emerald-300">{Math.round(r.score)}%</span>
+                <span className="font-bold tabular-nums text-emerald-300">{Math.round(r.score)} ball</span>
               </li>
             ))}
           </ul>
         </DashboardCard>
       </div>
 
-      <DashboardCard>
-        <h2 className="text-lg font-bold">O‘quv materiallari</h2>
-        <p className="mt-2 text-sm text-white/65">
-          Materiallarni joylash va tahrirlash uchun keyingi bosqichda fayl yuklash va mazmun menejeri qo‘shiladi. Hozir demo linklar
-          `Material` jadvalida mavjud.
-        </p>
-      </DashboardCard>
     </div>
   );
 }

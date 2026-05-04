@@ -10,8 +10,8 @@ export default async function StudentRankingPage() {
 
   const mine = await prisma.testResult.findMany({
     where: { userId: session.user.id },
-    orderBy: { createdAt: "desc" },
-    take: 12,
+    orderBy: [{ score: "desc" }, { createdAt: "desc" }],
+    take: 20,
     include: { test: { include: { subject: true } } },
   });
 
@@ -19,7 +19,7 @@ export default async function StudentRankingPage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-extrabold text-slate-800">Mening natijalarim</h1>
-        <p className="mt-1 text-sm text-slate-600">So‘nggi test ballaringiz.</p>
+        <p className="mt-1 text-sm text-slate-600">Eng yuqori ball bilan boshlab tartlangan.</p>
       </div>
 
       <DashboardCard>
@@ -30,7 +30,7 @@ export default async function StudentRankingPage() {
               className="flex items-center justify-between gap-3 rounded-xl border border-emerald-100 bg-emerald-50/55 px-3 py-2.5 text-sm"
             >
               <span className="min-w-0 truncate text-slate-700">{r.test.title}</span>
-              <span className="shrink-0 font-bold text-emerald-700">{Math.round(r.score)}%</span>
+              <span className="shrink-0 font-bold tabular-nums text-emerald-700">{Math.round(r.score)} ball</span>
             </li>
           ))}
         </ul>

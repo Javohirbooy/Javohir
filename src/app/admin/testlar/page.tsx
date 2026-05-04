@@ -15,7 +15,7 @@ export default async function AdminTestsPage() {
     orderBy: { title: "asc" },
     include: {
       subject: { include: { grade: true } },
-      _count: { select: { questions: true, testCodes: true, results: true } },
+      _count: { select: { questions: true, results: true } },
     },
     take: 200,
   });
@@ -57,8 +57,7 @@ export default async function AdminTestsPage() {
                 </p>
                 <div className="mt-2 flex flex-wrap gap-2">
                   <Badge className="border-white/15 bg-white/10">{t._count.questions} savol</Badge>
-                  <Badge className="border-white/15 bg-white/10">{t._count.testCodes} kod</Badge>
-                  <Badge className="border-white/15 bg-white/10">{t._count.results} natija</Badge>
+                  <Badge className="border-white/15 bg-white/10">{t._count.results} topshirish</Badge>
                   {t.authorUserId == null ? (
                     <Badge className="border-sky-400/30 bg-sky-500/15 text-sky-100">Platforma</Badge>
                   ) : (

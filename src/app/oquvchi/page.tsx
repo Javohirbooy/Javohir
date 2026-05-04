@@ -16,7 +16,7 @@ export default async function StudentDashboardPage() {
     where: { id: session.user.id },
     include: {
       grade: true,
-      results: { orderBy: { createdAt: "desc" }, take: 8, include: { test: { include: { subject: true } } } },
+      results: { orderBy: { score: "desc" }, take: 8, include: { test: { include: { subject: true } } } },
     },
   });
   if (!user) redirect("/kirish");
@@ -69,7 +69,7 @@ export default async function StudentDashboardPage() {
               <dd className="font-semibold">{user.grade ? user.grade.name : "—"}</dd>
             </div>
             <div>
-              <dt className="text-white/55">O‘rtacha ball (demo)</dt>
+              <dt className="text-white/55">O‘rtacha ball</dt>
               <dd className="font-semibold">{avg}%</dd>
             </div>
           </dl>
@@ -85,7 +85,7 @@ export default async function StudentDashboardPage() {
       </div>
 
       <DashboardCard>
-        <h2 className="font-display text-lg font-semibold tracking-tight">So‘nggi test natijalari</h2>
+        <h2 className="font-display text-lg font-semibold tracking-tight">Test natijalari (yuqori ball bilan)</h2>
         <ul className="mt-4 space-y-3 text-sm">
           {user.results.length === 0 ? (
             <li className="list-none p-0">
@@ -104,7 +104,7 @@ export default async function StudentDashboardPage() {
             user.results.map((r) => (
               <li key={r.id} className="flex items-center justify-between gap-2 border-b border-white/10 pb-2">
                 <span className="text-white/85">{r.test.title}</span>
-                <span className="font-bold text-cyan-300">{Math.round(r.score)}%</span>
+                <span className="font-bold tabular-nums text-cyan-300">{Math.round(r.score)} ball</span>
               </li>
             ))
           )}

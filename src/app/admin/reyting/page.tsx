@@ -39,7 +39,7 @@ export default async function AdminRankingPage() {
                   </p>
                 </div>
               </div>
-              <span className="text-lg font-black text-emerald-700">{Math.round(r.score)}%</span>
+              <span className="text-lg font-black tabular-nums text-emerald-700">{Math.round(r.score)} ball</span>
             </li>
           ))}
         </ol>

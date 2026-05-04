@@ -16,8 +16,8 @@ export default async function TeacherRankingPage() {
 
   const recent = await prisma.testResult.findMany({
     where: { test: { subject: { gradeId: { in: gradeIds } } } },
-    orderBy: { createdAt: "desc" },
-    take: 20,
+    orderBy: [{ score: "desc" }, { createdAt: "desc" }],
+    take: 100,
     include: { user: true, test: { include: { subject: { include: { grade: true } } } } },
   });
 
@@ -25,7 +25,9 @@ export default async function TeacherRankingPage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-extrabold text-slate-800">Reyting</h1>
-        <p className="mt-1 text-sm text-slate-600">Sizning sinflaringiz bo‘yicha so‘nggi natijalar.</p>
+        <p className="mt-1 text-sm text-slate-600">
+          Sizning sinflaringiz bo‘yicha barcha topshirishlar — eng yuqori balldan pastga tartiblangan.
+        </p>
       </div>
 
       <DashboardCard>
@@ -33,12 +35,13 @@ export default async function TeacherRankingPage() {
           {recent.map((r, i) => (
             <li
               key={r.id}
-              className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-emerald-100 bg-emerald-50/55 px-3 py-2.5 text-sm"
+              className="flex flex-wrap items-center gap-2 rounded-xl border border-emerald-100 bg-emerald-50/55 px-3 py-2.5 text-sm"
             >
-              <span className="font-mono text-slate-500">#{i + 1}</span>
+              <span className="w-8 shrink-0 font-mono text-slate-500">{i + 1}</span>
               <span className="min-w-0 flex-1 truncate font-medium text-slate-800">{r.user.name}</span>
-              <span className="text-slate-500">{r.test.subject.grade.name}</span>
-              <span className="font-bold text-emerald-700">{Math.round(r.score)}%</span>
+              <span className="hidden min-w-0 flex-1 truncate text-slate-600 sm:inline">{r.test.title}</span>
+              <span className="shrink-0 text-xs text-slate-500">{r.test.subject.grade.name}</span>
+              <span className="shrink-0 font-bold tabular-nums text-emerald-700">{Math.round(r.score)} ball</span>
             </li>
           ))}
         </ol>

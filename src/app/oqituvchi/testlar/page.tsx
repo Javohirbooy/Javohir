@@ -29,8 +29,7 @@ export default async function TeacherTestsPage() {
     include: {
       subject: { include: { grade: true } },
       topic: true,
-      testCodes: { where: { isActive: true }, take: 1 },
-      _count: { select: { questions: true } },
+      _count: { select: { questions: true, results: true } },
     },
     take: 150,
   });
@@ -82,8 +81,8 @@ export default async function TeacherTestsPage() {
                   <p className="mt-1 text-xs text-slate-500">
                     {t._count.questions} savol
                     {t.durationMinutes != null ? ` · ${t.durationMinutes} daq` : ""}
-                    {t.testCodes[0] ? (
-                      <span className="ml-2 font-mono text-sky-700">· {t.testCodes[0].code}</span>
+                    {t._count.results > 0 ? (
+                      <span className="ml-2 text-emerald-700">· {t._count.results} ta topshirish</span>
                     ) : null}
                   </p>
                 </td>
@@ -99,6 +98,12 @@ export default async function TeacherTestsPage() {
                 </td>
                 <td className="px-4 py-4 text-right">
                   <div className="flex flex-wrap justify-end gap-2">
+                    <Link
+                      href={`/oqituvchi/testlar/${t.id}/natijalar`}
+                      className="rounded-xl border border-emerald-300/80 bg-emerald-100/90 px-3 py-2 text-xs font-semibold text-emerald-900 transition hover:bg-emerald-200/90"
+                    >
+                      Natijalar
+                    </Link>
                     <Link
                       href={`/oqituvchi/testlar/${t.id}/tahrirlash`}
                       className="rounded-xl border border-emerald-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-emerald-50"
