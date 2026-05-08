@@ -10,8 +10,12 @@ const { auth } = NextAuth(authConfig);
 
 export default auth(async (req) => {
   const ctx = createEdgeContext(req);
+  const authPath = req.nextUrl.pathname;
+  const isSensitiveAuthPost =
+    req.method === "POST" &&
+    (authPath.startsWith("/api/auth/callback/") || authPath === "/api/auth/signin/credentials");
 
-  if (req.nextUrl.pathname.startsWith("/api/auth/") && req.method === "POST") {
+  if (isSensitiveAuthPost) {
     const ip = getEdgeClientIp(req);
     const rl = await takeRateLimitSlot("mw_auth_post", ip, 80, 15 * 60 * 1000, {
       requireDistributed: true,
