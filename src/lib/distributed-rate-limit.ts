@@ -6,6 +6,7 @@ import { logSecurityEvent } from "@/lib/security-events";
 import { getUpstashRedis } from "@/lib/upstash-redis";
 
 const ratelimitCache = new Map<string, Ratelimit>();
+const isBuildPhase = () => process.env.NEXT_PHASE === "phase-production-build";
 
 /** Upstash `slidingWindow` uchun `Duration` (masalan `"15 m"`, `"90 s"`). */
 export function windowMsToRatelimitDuration(windowMs: number): Duration {
@@ -26,6 +27,8 @@ function ratelimitKey(namespace: string, limit: number, windowMs: number) {
 }
 
 function getRatelimit(namespace: string, limit: number, windowMs: number): Ratelimit | null {
+  // Build/prerender bosqichida Upstash fetch ishlatmaymiz (DYNAMIC_SERVER_USAGE oldini oladi).
+  if (isBuildPhase()) return null;
   const redis = getUpstashRedis();
   if (!redis) return null;
   const ck = ratelimitKey(namespace, limit, windowMs);
