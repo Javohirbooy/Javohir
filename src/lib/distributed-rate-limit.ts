@@ -7,6 +7,17 @@ import { getUpstashRedis } from "@/lib/upstash-redis";
 
 const ratelimitCache = new Map<string, Ratelimit>();
 const isBuildPhase = () => process.env.NEXT_PHASE === "phase-production-build";
+let disableRedisTemporarily = false;
+
+function isDynamicServerUsageError(error: unknown): boolean {
+  if (!error || typeof error !== "object") return false;
+  const maybe = error as { message?: string; digest?: string; description?: string };
+  return (
+    maybe.digest === "DYNAMIC_SERVER_USAGE" ||
+    maybe.message?.includes("Dynamic server usage") === true ||
+    maybe.description?.includes("no-store fetch") === true
+  );
+}
 
 /** Upstash `slidingWindow` uchun `Duration` (masalan `"15 m"`, `"90 s"`). */
 export function windowMsToRatelimitDuration(windowMs: number): Duration {
@@ -28,7 +39,7 @@ function ratelimitKey(namespace: string, limit: number, windowMs: number) {
 
 function getRatelimit(namespace: string, limit: number, windowMs: number): Ratelimit | null {
   // Build/prerender bosqichida Upstash fetch ishlatmaymiz (DYNAMIC_SERVER_USAGE oldini oladi).
-  if (isBuildPhase()) return null;
+  if (isBuildPhase() || disableRedisTemporarily) return null;
   const redis = getUpstashRedis();
   if (!redis) return null;
   const ck = ratelimitKey(namespace, limit, windowMs);
@@ -80,6 +91,22 @@ export async function takeRateLimitSlot(
         backend: "redis",
       };
     } catch (e) {
+      if (isDynamicServerUsageError(e)) {
+        // Next.js static generation contextida Redis no-store fetch ruxsat etilmaydi.
+        // Shu process davomida Redis limiterni o‘chirib, memory fallback bilan davom etamiz.
+        disableRedisTemporarily = true;
+        logStructured("warn", "rate_limit.redis_disabled_dynamic_context", {
+          namespace,
+          requestId: options?.requestId,
+        });
+        const mem = checkRateLimit(compositeKey, limit, windowMs);
+        return {
+          ok: mem.ok,
+          retryAfterMs: mem.retryAfterMs,
+          remaining: mem.ok ? Math.max(0, limit - 1) : 0,
+          backend: "memory",
+        };
+      }
       logStructured("warn", "rate_limit.redis_error", {
         namespace,
         requireDistributed: Boolean(options?.requireDistributed),
