@@ -48,3 +48,16 @@ next-env.d.ts
 /src/generated/prisma
 
 .vercel
+
+# Playwright output
+/test-results/
+
+# Next.js
+.next/
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+

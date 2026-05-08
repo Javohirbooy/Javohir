@@ -25,6 +25,7 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    "e2e/global-setup.js",
     // Prisma 6+ config (uses `prisma/config`; excluded from app `tsconfig` while on Prisma 5)
     "prisma.config.ts",
   ]),

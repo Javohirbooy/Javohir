@@ -28,12 +28,13 @@ import {
   LayoutDashboard,
   LogOut,
   Menu,
+  Settings,
   Trophy,
   UserCircle2,
   X,
 } from "lucide-react";
 
-type UserLite = { name?: string | null; email?: string | null; role?: AppRole } | null;
+type UserLite = { name?: string | null; email?: string | null; image?: string | null; role?: AppRole } | null;
 
 const roleBadge: Record<AppRole, string> = {
   SUPER_ADMIN: "Super Admin",
@@ -246,6 +247,15 @@ export function PremiumNavbar({ user, locale }: { user: UserLite; locale: AppLoc
                       <Icon3DGlyph icon={LayoutDashboard} size="md" className="shrink-0 text-emerald-700" />
                       {L.profileDashboard}
                     </Link>
+                    {(user.role === "TEACHER" || user.role === "ADMIN") && (
+                      <Link
+                        href="/profile"
+                        className="group mt-1 flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-slate-700 transition hover:bg-emerald-50"
+                      >
+                        <Icon3DGlyph icon={Settings} size="md" className="shrink-0 text-emerald-700" />
+                        Profil sozlamalari
+                      </Link>
+                    )}
                     <button
                       type="button"
                       onClick={() => signOut({ callbackUrl: "/" })}

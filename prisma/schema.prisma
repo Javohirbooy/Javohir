@@ -41,13 +41,16 @@ model User {
   name                 String
   /// SUPER_ADMIN | ADMIN | TEACHER | STUDENT
   role                 String
-  /// ACTIVE | INACTIVE | BLOCKED
+  /// ACTIVE | INACTIVE | BLOCKED | PENDING_VERIFICATION
   status               String           @default("ACTIVE")
+  /// Yangi ro‘yxatdan o‘tganlar email tasdiqlanguncha false bo‘lishi mumkin.
+  emailVerified        Boolean          @default(true)
   mustChangePassword   Boolean          @default(false)
   /// uz | ru | en
   locale               String           @default("uz")
   gradeId              String?
   avatarEmoji          String?          @default("🎓")
+  avatarUrl            String?
   /// Last actor who issued/reset login credentials (admin or teacher).
   credentialIssuedById String?
   /// O‘quvchi uchun ko‘rsatiladigan doimiy raqamli ID (masalan 100001). Faqat STUDENT uchun.
@@ -66,6 +69,33 @@ model User {
   auditLogs            AuditLog[]
   testsAuthored        Test[]                     @relation("TestAuthor")
   testAttempts         TestAttempt[]
+  authTokens           AuthToken[]
+}
+
+/// EMAIL_VERIFY | PASSWORD_RESET — token clientga yuboriladi, DBda faqat hash saqlanadi.
+model AuthToken {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      String
+  tokenHash String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId, type])
+  @@index([expiresAt])
+}
+
+/// Aloqa / qo‘llab-quvvatlash formasi (admin paneldan keyinroq ko‘rish uchun DBda).
+model ContactMessage {
+  id        String   @id @default(cuid())
+  name      String
+  email     String
+  message   String
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
 }
 
 model Grade {

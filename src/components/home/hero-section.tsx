@@ -34,8 +34,8 @@ export function HeroSection() {
           <span className="block text-4xl sm:text-6xl lg:text-7xl">
             <span className="bg-gradient-to-r from-emerald-800 via-emerald-600 to-teal-600 bg-clip-text text-transparent">{BRAND.name}</span>
           </span>
-          <p className="mt-4 block text-sm font-semibold uppercase tracking-[0.28em] text-emerald-700 sm:text-base">{tf("home.heroKicker")}</p>
         </h1>
+        <p className="mt-4 text-sm font-semibold uppercase tracking-[0.28em] text-emerald-700 sm:text-base">{tf("home.heroKicker")}</p>
 
         <div
           className="mt-12 flex w-full max-w-xl flex-col items-stretch justify-center gap-3 sm:mx-auto sm:mt-14 sm:max-w-none sm:flex-row sm:flex-wrap sm:items-center sm:gap-5 iq-anim-fade-up"

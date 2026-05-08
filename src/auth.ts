@@ -7,13 +7,49 @@ import { writeAuditLog } from "@/lib/audit";
 import type { AppRole } from "@/lib/app-role";
 import { resolvePermissionKeysForRole } from "@/lib/permissions";
 import { authConfig } from "@/auth.config";
+import {
+  clearLoginAttempts,
+  isLoginBlocked,
+  loginFingerprint,
+  registerFailedAttempt,
+} from "@/lib/auth-lockout";
+import { takeRateLimitSlot } from "@/lib/distributed-rate-limit";
+import { validateServerEnv } from "@/lib/env";
+import { logStructured } from "@/lib/logger";
+import { getClientIpFromHeaders, getRequestIdFromHeaders } from "@/lib/request-context";
+import { logSecurityEvent } from "@/lib/security-events";
 
 const credentialsSchema = z.object({
-  email: z.string().email(),
+  identifier: z.string().trim().min(1),
   password: z.string().min(1),
 });
 
-const STUDENT_NUMBER_JWT_SYNC_MS = 5 * 60 * 1000;
+const STUDENT_NUMBER_JWT_SYNC_MS = 30 * 60 * 1000;
+const BCRYPT_PREFIX = "$2";
+const LOGIN_RATE_LIMIT_WINDOW_MS = 5 * 60 * 1000;
+const LOGIN_RATE_LIMIT_ATTEMPTS = 10;
+const LOGIN_IP_WINDOW_MS = 15 * 60 * 1000;
+const LOGIN_IP_MAX_ATTEMPTS = 60;
+const studentNumberCache = new Map<string, { value?: number; at: number }>();
+
+const envCheck = validateServerEnv();
+if (!envCheck.ok && process.env.NODE_ENV !== "production") {
+  console.warn("[env] invalid server env", envCheck.errors);
+}
+
+const authorizeUserSelect = {
+  id: true,
+  email: true,
+  name: true,
+  avatarUrl: true,
+  passwordHash: true,
+  role: true,
+  status: true,
+  locale: true,
+  mustChangePassword: true,
+  studentNumber: true,
+  emailVerified: true,
+} as const;
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   ...authConfig,
@@ -21,14 +57,14 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     Credentials({
       name: "credentials",
       credentials: {
-        email: { label: "Email", type: "email" },
+        identifier: { label: "Email yoki ism-familiya", type: "text" },
         password: { label: "Parol", type: "password" },
       },
       authorize: async (raw) => {
         if (process.env.IQM_AUTH_DEBUG === "1") {
-          const emailPreview = typeof raw?.email === "string" ? raw.email : undefined;
+          const identifierPreview = typeof raw?.identifier === "string" ? raw.identifier : undefined;
           const hasPassword = typeof raw?.password === "string" && raw.password.length > 0;
-          console.info("[iqm-auth] credentials received", { emailPreview, hasPassword });
+          console.info("[iqm-auth] credentials received", { identifierPreview, hasPassword });
         }
         const parsed = credentialsSchema.safeParse(raw);
         if (!parsed.success) {
@@ -37,67 +73,133 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           }
           return null;
         }
-        const email = parsed.data.email.trim().toLowerCase();
+        const identifier = parsed.data.identifier.trim();
+        const normalizedIdentifier = identifier.toLowerCase();
         const password = parsed.data.password;
-        const user = await prisma.user.findUnique({ where: { email } });
+
+        const [ip, requestId] = await Promise.all([getClientIpFromHeaders(), getRequestIdFromHeaders()]);
+        const fp = loginFingerprint(ip, normalizedIdentifier);
+
+        if (await isLoginBlocked(fp)) {
+          logStructured("warn", "auth.login_blocked", { fpPrefix: fp.slice(0, 8) });
+          logSecurityEvent("auth.blocked", { fpPrefix: fp.slice(0, 8) });
+          return null;
+        }
+
+        const ipRl = await takeRateLimitSlot("auth_login_ip", ip, LOGIN_IP_MAX_ATTEMPTS, LOGIN_IP_WINDOW_MS, {
+          requireDistributed: true,
+          requestId,
+        });
+        if (!ipRl.ok) {
+          logStructured("warn", "auth.login_rate_limited_ip", {
+            retryAfterMs: ipRl.retryAfterMs,
+            backend: ipRl.backend,
+          });
+          logSecurityEvent("auth.suspicious", { scope: "ip", backend: ipRl.backend });
+          return null;
+        }
+
+        const userRl = await takeRateLimitSlot("auth_login_user", normalizedIdentifier, LOGIN_RATE_LIMIT_ATTEMPTS, LOGIN_RATE_LIMIT_WINDOW_MS, {
+          requireDistributed: true,
+          requestId,
+        });
+        if (!userRl.ok) {
+          logStructured("warn", "auth.login_rate_limited_user", {
+            mode: normalizedIdentifier.includes("@") ? "email" : "name",
+            retryAfterMs: userRl.retryAfterMs,
+            backend: userRl.backend,
+          });
+          logSecurityEvent("auth.suspicious", { scope: "identifier", backend: userRl.backend });
+          return null;
+        }
+
+        const emailLike = normalizedIdentifier.includes("@");
+        const users = emailLike
+          ? await prisma.user.findMany({
+              where: { email: normalizedIdentifier },
+              take: 2,
+              select: authorizeUserSelect,
+            })
+          : await prisma.user.findMany({
+              where: { name: { equals: identifier, mode: "insensitive" } },
+              orderBy: { createdAt: "asc" },
+              take: 2,
+              select: authorizeUserSelect,
+            });
+        const user = users[0];
         if (!user) {
           if (process.env.IQM_AUTH_DEBUG === "1") {
-            console.warn("[iqm-auth] credentials: no user for email", email);
+            console.warn("[iqm-auth] credentials: no user for identifier", identifier);
+          }
+          return null;
+        }
+        if (!emailLike && users.length > 1) {
+          if (process.env.IQM_AUTH_DEBUG === "1") {
+            console.warn("[iqm-auth] credentials: ambiguous name, ask for email", identifier);
           }
           return null;
         }
         if (process.env.IQM_AUTH_DEBUG === "1") {
           console.info("[iqm-auth] user found", {
-            email,
+            identifier,
+            email: user.email,
             role: user.role,
             status: user.status ?? null,
             hasPasswordHash: Boolean(user.passwordHash),
           });
         }
+        if (user.status === "PENDING_VERIFICATION" || !user.emailVerified) {
+          if (process.env.IQM_AUTH_DEBUG === "1") {
+            console.warn("[iqm-auth] credentials: email not verified or pending", identifier);
+          }
+          return null;
+        }
         if (user.status && user.status !== "ACTIVE") {
           if (process.env.IQM_AUTH_DEBUG === "1") {
-            console.warn("[iqm-auth] credentials: user not ACTIVE", email, user.status);
+            console.warn("[iqm-auth] credentials: user not ACTIVE", identifier, user.status);
           }
           return null;
         }
         const storedPassword = user.passwordHash ?? "";
-        const mode = storedPassword.startsWith("$2") ? "bcrypt" : "plain";
-        const ok =
-          mode === "bcrypt" ? await bcrypt.compare(password, storedPassword) : password === storedPassword;
+        const isBcrypt = storedPassword.startsWith(BCRYPT_PREFIX);
+        if (!isBcrypt) {
+          // Security hardening: legacy plaintext hashes must be migrated, not accepted.
+          if (process.env.IQM_AUTH_DEBUG === "1") {
+            console.warn("[iqm-auth] rejecting non-bcrypt credential row", { identifier, userId: user.id });
+          }
+          return null;
+        }
+        const ok = await bcrypt.compare(password, storedPassword);
         if (process.env.IQM_AUTH_DEBUG === "1") {
-          console.info("[iqm-auth] password mode", { email, mode });
+          console.info("[iqm-auth] password mode", { identifier, mode: "bcrypt" });
         }
         if (!ok) {
           if (process.env.IQM_AUTH_DEBUG === "1") {
-            console.warn("[iqm-auth] credentials: password mismatch for", email);
+            console.warn("[iqm-auth] credentials: password mismatch for", identifier);
           }
-          if (
-            process.env.NODE_ENV !== "production" &&
-            password === "password" &&
-            ["super@demo.uz", "admin@demo.uz", "teacher@demo.uz", "student@demo.uz"].includes(email)
-          ) {
-            if (process.env.IQM_AUTH_DEBUG === "1") {
-              console.warn("[iqm-auth] DEV fallback accepted", email);
-            }
-          } else {
-            return null;
-          }
+          await registerFailedAttempt(fp);
+          logStructured("warn", "auth.login_failed_credentials", { fpPrefix: fp.slice(0, 8) });
+          logSecurityEvent("auth.failed", { fpPrefix: fp.slice(0, 8) });
+          return null;
         }
         if (!user.role) {
           if (process.env.IQM_AUTH_DEBUG === "1") {
-            console.warn("[iqm-auth] credentials: user role missing", email);
+            console.warn("[iqm-auth] credentials: user role missing", identifier);
           }
           return null;
         }
         if (process.env.IQM_AUTH_DEBUG === "1") {
-          console.info("[iqm-auth] credentials accepted", { email, role: user.role, status: user.status });
+          console.info("[iqm-auth] credentials accepted", { identifier, email: user.email, role: user.role, status: user.status });
         }
+        await clearLoginAttempts(fp);
+        logSecurityEvent("auth.success", { role: String(user.role) });
         const role = user.role as AppRole;
         const permissionKeys = await resolvePermissionKeysForRole(user.role);
         return {
           id: user.id,
           email: user.email,
           name: user.name,
+          image: user.avatarUrl ?? undefined,
           role,
           status: user.status,
           locale: user.locale,
@@ -117,11 +219,17 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         const now = Date.now();
         const last = Number(token.studentNumberSyncedAt ?? 0);
         if (now - last > STUDENT_NUMBER_JWT_SYNC_MS) {
-          const row = await prisma.user.findUnique({
-            where: { id: token.id as string },
-            select: { studentNumber: true },
-          });
-          token.studentNumber = row?.studentNumber ?? undefined;
+          const cached = studentNumberCache.get(token.id as string);
+          if (cached && now - cached.at <= STUDENT_NUMBER_JWT_SYNC_MS) {
+            token.studentNumber = cached.value;
+          } else {
+            const row = await prisma.user.findUnique({
+              where: { id: token.id as string },
+              select: { studentNumber: true },
+            });
+            token.studentNumber = row?.studentNumber ?? undefined;
+            studentNumberCache.set(token.id as string, { value: row?.studentNumber ?? undefined, at: now });
+          }
           token.studentNumberSyncedAt = now;
         }
       }

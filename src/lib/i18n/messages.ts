@@ -86,6 +86,8 @@ export const messages: Record<
       grades: string;
       tests: string;
       login: string;
+      register: string;
+      contact: string;
       disclaimer: string;
     };
     tests: {
@@ -159,6 +161,8 @@ export const messages: Record<
       grades: "Sinflar",
       tests: "Testlar",
       login: "Kirish",
+      register: "Ro‘yxatdan o‘tish",
+      contact: "Aloqa",
       disclaimer: "© {year} IQ Monitoring. Demo muhit — production uchun sozlamalarni yangilang.",
     },
     tests: {
@@ -302,6 +306,8 @@ export const messages: Record<
       grades: "Классы",
       tests: "Тесты",
       login: "Вход",
+      register: "Регистрация",
+      contact: "Контакты",
       disclaimer: "© {year} IQ Monitoring. Демо — обновите настройки для production.",
     },
     tests: {
@@ -447,6 +453,8 @@ export const messages: Record<
       grades: "Grades",
       tests: "Tests",
       login: "Sign in",
+      register: "Register",
+      contact: "Contact",
       disclaimer: "© {year} IQ Monitoring. Demo environment — update settings for production.",
     },
     tests: {

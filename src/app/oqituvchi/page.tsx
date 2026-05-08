@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 export default async function TeacherDashboardPage() {
   const session = await auth();
   if (!session?.user?.id) redirect("/kirish");
+  if (session.user.role !== "TEACHER") redirect("/");
 
   const classes = await prisma.teacherOnClass.findMany({
     where: { userId: session.user.id },

@@ -1,0 +1,30 @@
+"use client";
+
+import { useEffect } from "react";
+import * as Sentry from "@sentry/nextjs";
+import { Button } from "@/components/ui/button";
+
+export default function Error({
+  error,
+  reset,
+}: {
+  error: Error & { digest?: string };
+  reset: () => void;
+}) {
+  useEffect(() => {
+    console.error("[app-error]", error);
+    Sentry.captureException(error);
+  }, [error]);
+
+  return (
+    <div className="mx-auto flex min-h-[50vh] max-w-2xl flex-col items-center justify-center px-4 text-center">
+      <h2 className="text-2xl font-bold text-slate-800 dark:text-slate-100">Kutilmagan xatolik yuz berdi</h2>
+      <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">
+        Sahifani qayta yuklashga urinib ko‘ring. Muammo davom etsa, administratorga murojaat qiling.
+      </p>
+      <Button onClick={reset} className="mt-6 px-5">
+        Qayta urinish
+      </Button>
+    </div>
+  );
+}

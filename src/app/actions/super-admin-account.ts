@@ -5,22 +5,18 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { sessionHasPermission } from "@/lib/permissions";
 import { writeAuditLog } from "@/lib/audit";
+import type { ActionResult } from "@/lib/action-result";
+import { errResult, okResult } from "@/lib/action-result";
 
-export type SuperAdminAccountState =
-  | null
-  | {
-      ok?: boolean;
-      error?: string;
-      success?: string;
-    };
+export type SuperAdminAccountState = ActionResult<{ success?: string }>;
 
 export async function updateOwnCredentials(
   _prev: SuperAdminAccountState,
   formData: FormData,
 ): Promise<SuperAdminAccountState> {
   const session = await auth();
-  if (!session?.user?.id) return { error: "Kirish talab qilinadi." };
-  if (!sessionHasPermission(session, "SITE_SETTINGS_SUPER")) return { error: "Ruxsat yo‘q." };
+  if (!session?.user?.id) return errResult("Kirish talab qilinadi.", "UNAUTHENTICATED");
+  if (!sessionHasPermission(session, "SITE_SETTINGS_SUPER")) return errResult("Ruxsat yo‘q.", "FORBIDDEN");
 
   const email = String(formData.get("email") ?? "")
     .trim()
@@ -28,22 +24,22 @@ export async function updateOwnCredentials(
   const currentPassword = String(formData.get("currentPassword") ?? "");
   const newPassword = String(formData.get("newPassword") ?? "");
 
-  if (!email.includes("@")) return { error: "Email noto‘g‘ri." };
-  if (!currentPassword) return { error: "Joriy parolni kiriting." };
-  if (newPassword.length < 6) return { error: "Yangi parol kamida 6 ta belgidan iborat bo‘lsin." };
+  if (!email.includes("@")) return errResult("Email noto‘g‘ri.", "VALIDATION_ERROR");
+  if (!currentPassword) return errResult("Joriy parolni kiriting.", "VALIDATION_ERROR");
+  if (newPassword.length < 6) return errResult("Yangi parol kamida 6 ta belgidan iborat bo‘lsin.", "VALIDATION_ERROR");
 
   const me = await prisma.user.findUnique({ where: { id: session.user.id } });
-  if (!me) return { error: "Foydalanuvchi topilmadi." };
+  if (!me) return errResult("Foydalanuvchi topilmadi.", "NOT_FOUND");
 
   const stored = me.passwordHash ?? "";
   const ok = stored.startsWith("$2") ? await bcrypt.compare(currentPassword, stored) : currentPassword === stored;
-  if (!ok) return { error: "Joriy parol noto‘g‘ri." };
+  if (!ok) return errResult("Joriy parol noto‘g‘ri.", "FORBIDDEN");
 
   const clash = await prisma.user.findFirst({
     where: { email, NOT: { id: me.id } },
     select: { id: true },
   });
-  if (clash) return { error: "Bu email allaqachon band." };
+  if (clash) return errResult("Bu email allaqachon band.", "CONFLICT");
 
   const newHash = await bcrypt.hash(newPassword, 10);
   await prisma.user.update({
@@ -63,6 +59,6 @@ export async function updateOwnCredentials(
     metadata: { emailChanged: email !== me.email },
   });
 
-  return { ok: true, success: "Login va parol yangilandi." };
+  return okResult({ success: "Login va parol yangilandi." }, "OK");
 }
 

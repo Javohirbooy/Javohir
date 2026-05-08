@@ -7,6 +7,7 @@ import { DashboardCard } from "@/components/dashboard/dashboard-card";
 export default async function StudentRankingPage() {
   const session = await auth();
   if (!session?.user?.id) redirect("/kirish");
+  if (session.user.role !== "STUDENT") redirect("/");
 
   const mine = await prisma.testResult.findMany({
     where: { userId: session.user.id },

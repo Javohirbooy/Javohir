@@ -7,15 +7,17 @@ import { writeAuditLog } from "@/lib/audit";
 import type { AppRole } from "@/lib/permissions";
 import { MATRIX_ROLES, parseMatrixInput } from "@/lib/role-permissions-matrix";
 import { ensurePermissionCatalogRows } from "@/lib/role-permissions-service";
+import type { ActionResult } from "@/lib/action-result";
+import { errResult, okResult } from "@/lib/action-result";
 
-export type SaveRoleMatrixResult = { ok: true } | { ok: false; error: string };
+export type SaveRoleMatrixResult = ActionResult;
 
 export async function saveRolePermissionMatrix(payload: unknown): Promise<SaveRoleMatrixResult> {
   const session = await auth();
   requirePermission(session, "PERMISSIONS_MANAGE", { redirectTo: "/admin" });
 
   const parsed = parseMatrixInput(payload);
-  if (!parsed.ok) return { ok: false, error: parsed.error };
+  if (!parsed.ok) return errResult(parsed.error, "VALIDATION_ERROR");
 
   await ensurePermissionCatalogRows();
 
@@ -41,7 +43,7 @@ export async function saveRolePermissionMatrix(payload: unknown): Promise<SaveRo
       }
     });
   } catch {
-    return { ok: false, error: "Saqlashda xatolik yuz berdi." };
+    return errResult("Saqlashda xatolik yuz berdi.", "INTERNAL_ERROR");
   }
 
   await writeAuditLog({
@@ -55,5 +57,5 @@ export async function saveRolePermissionMatrix(payload: unknown): Promise<SaveRo
     },
   });
 
-  return { ok: true };
+  return okResult(undefined, "OK");
 }

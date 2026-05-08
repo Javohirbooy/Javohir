@@ -6,9 +6,32 @@ on:
   pull_request:
     branches: [main, master]
 
+env:
+  DATABASE_URL: postgresql://postgres:postgres@localhost:5432/edu_ci?schema=ci_${{ github.run_id }}
+  DIRECT_URL: postgresql://postgres:postgres@localhost:5432/edu_ci?schema=ci_${{ github.run_id }}
+  AUTH_SECRET: ci-build-placeholder-secret-min-32-chars-xx
+  NEXTAUTH_URL: http://localhost:3000
+  NEXT_PUBLIC_SITE_URL: http://localhost:3000
+
 jobs:
   build:
     runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        ports:
+          - 5432:5432
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: edu_ci
+        options: >-
+          --health-cmd "pg_isready -U postgres -d edu_ci"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
     steps:
       - uses: actions/checkout@v4
 
@@ -21,19 +44,32 @@ jobs:
       - name: Install
         run: npm ci
 
+      - name: Prisma migrate
+        run: npx prisma migrate deploy
+
       - name: Generate Prisma Client
         run: npx prisma generate
-        env:
-          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/ci_placeholder?schema=public
-          DIRECT_URL: postgresql://postgres:postgres@localhost:5432/ci_placeholder?schema=public
+
+      - name: Validate Prisma schema
+        run: npx prisma validate
 
       - name: Lint
         run: npm run lint
 
+      - name: Typecheck
+        run: npm run typecheck
+
       - name: Build
         run: npm run build
-        env:
-          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/ci_placeholder?schema=public
-          DIRECT_URL: postgresql://postgres:postgres@localhost:5432/ci_placeholder?schema=public
-          AUTH_SECRET: ci-build-placeholder-secret-min-32-chars-xx
-          NEXTAUTH_URL: http://localhost:3000
+
+      - name: Install Playwright (Chromium)
+        run: npx playwright install --with-deps chromium
+
+      - name: E2E
+        run: npm run test:e2e
+
+      - name: E2E rate-limit stress
+        run: npm run test:e2e:stress
+
+      - name: Docker build
+        run: docker build --build-arg DATABASE_URL="$DATABASE_URL" -t edu-platform:ci .

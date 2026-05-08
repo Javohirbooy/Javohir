@@ -7,6 +7,8 @@ import { sessionHasPermission } from "@/lib/permissions";
 import { canDeleteTest } from "@/lib/test-policy";
 import { teacherCanComposeTest } from "@/lib/teacher-scope";
 import { writeAuditLog } from "@/lib/audit";
+import type { ActionResult } from "@/lib/action-result";
+import { errResult, okResult } from "@/lib/action-result";
 
 export type TeacherQuestionInput = {
   text: string;
@@ -56,6 +58,21 @@ function normalizeAntiCheat(raw: string | undefined): string {
   return "STANDARD";
 }
 
+function parseSchedule(startsAtRaw?: string | null, endsAtRaw?: string | null) {
+  const startsAt = startsAtRaw ? new Date(startsAtRaw) : null;
+  const endsAt = endsAtRaw ? new Date(endsAtRaw) : null;
+  if (startsAt && Number.isNaN(startsAt.getTime())) {
+    return { ok: false as const, error: "Boshlanish vaqti noto‘g‘ri formatda." };
+  }
+  if (endsAt && Number.isNaN(endsAt.getTime())) {
+    return { ok: false as const, error: "Yakunlanish vaqti noto‘g‘ri formatda." };
+  }
+  if (startsAt && endsAt && endsAt <= startsAt) {
+    return { ok: false as const, error: "Yakunlanish vaqti boshlanishdan keyin bo‘lishi kerak." };
+  }
+  return { ok: true as const, startsAt, endsAt };
+}
+
 /**
  * Creates a test. Session role decides ownership:
  * - TEACHER → `authorUserId` = self (must have relational class + subject assignment).
@@ -63,20 +80,20 @@ function normalizeAntiCheat(raw: string | undefined): string {
  */
 export async function createTest(input: CreateTeacherTestInput) {
   const session = await auth();
-  if (!session?.user?.id) return { ok: false as const, error: "Kirish talab qilinadi." };
+  if (!session?.user?.id) return errResult("Kirish talab qilinadi.", "UNAUTHENTICATED");
   if (!sessionHasPermission(session, "TESTS_CREATE")) {
-    return { ok: false as const, error: "Test yaratish huquqi yo‘q." };
+    return errResult("Test yaratish huquqi yo‘q.", "FORBIDDEN");
   }
 
   const title = input.title.trim();
-  if (!title) return { ok: false as const, error: "Test nomi majburiy." };
-  if (!input.subjectId) return { ok: false as const, error: "Fan tanlanishi kerak." };
+  if (!title) return errResult("Test nomi majburiy.", "VALIDATION_ERROR");
+  if (!input.subjectId) return errResult("Fan tanlanishi kerak.", "VALIDATION_ERROR");
 
   const subjectRow = await prisma.subject.findUnique({
     where: { id: input.subjectId },
     select: { id: true, gradeId: true },
   });
-  if (!subjectRow) return { ok: false as const, error: "Fan topilmadi." };
+  if (!subjectRow) return errResult("Fan topilmadi.", "NOT_FOUND");
 
   const role = session.user.role;
   let authorUserId: string | null = null;
@@ -84,24 +101,24 @@ export async function createTest(input: CreateTeacherTestInput) {
 
   if (role === "TEACHER") {
     const gid = String(input.gradeId ?? "").trim();
-    if (!gid) return { ok: false as const, error: "Sinf tanlanishi kerak." };
+    if (!gid) return errResult("Sinf tanlanishi kerak.", "VALIDATION_ERROR");
     const scope = await teacherCanComposeTest(session.user.id, {
       gradeId: gid,
       subjectId: input.subjectId,
       topicId: input.topicId ?? undefined,
     });
-    if (!scope.ok) return { ok: false as const, error: scope.error };
+    if (!scope.ok) return errResult(scope.error, "FORBIDDEN");
     authorUserId = session.user.id;
     gradeId = gid;
   } else if (role === "ADMIN" || role === "SUPER_ADMIN") {
     authorUserId = null;
     gradeId = subjectRow.gradeId;
   } else {
-    return { ok: false as const, error: "Bu amal uchun rol mos emas." };
+    return errResult("Bu amal uchun rol mos emas.", "FORBIDDEN");
   }
 
   const qs = input.questions.filter((q) => q.text.trim() && q.options.filter(Boolean).length >= 2);
-  if (!qs.length) return { ok: false as const, error: "Kamida bitta to‘liq savol kiriting." };
+  if (!qs.length) return errResult("Kamida bitta to‘liq savol kiriting.", "VALIDATION_ERROR");
 
   let topicId: string | null = input.topicId?.trim() || null;
   const topicTitle = input.topicTitle?.trim();
@@ -112,8 +129,9 @@ export async function createTest(input: CreateTeacherTestInput) {
     topicId = created.id;
   }
 
-  const startsAt = input.startsAt ? new Date(input.startsAt) : null;
-  const endsAt = input.endsAt ? new Date(input.endsAt) : null;
+  const schedule = parseSchedule(input.startsAt, input.endsAt);
+  if (!schedule.ok) return errResult(schedule.error, "VALIDATION_ERROR");
+  const { startsAt, endsAt } = schedule;
   const maxAttempts = input.maxAttempts > 0 ? input.maxAttempts : null;
   const antiCheatMode = normalizeAntiCheat(input.antiCheatMode);
   let protectedExamMode = Boolean(input.protectedExamMode);
@@ -143,8 +161,8 @@ export async function createTest(input: CreateTeacherTestInput) {
       status,
       authorUserId,
       antiCheatMode,
-      startsAt: startsAt && !Number.isNaN(startsAt.getTime()) ? startsAt : null,
-      endsAt: endsAt && !Number.isNaN(endsAt.getTime()) ? endsAt : null,
+      startsAt,
+      endsAt,
       protectedExamMode,
       tabSwitchPolicy,
       shuffleQuestions,
@@ -177,57 +195,57 @@ export async function createTest(input: CreateTeacherTestInput) {
   revalidatePath("/admin/testlar");
   revalidatePath("/admin");
 
-  return { ok: true as const, testId: test.id };
+  return okResult({ testId: test.id }, "OK");
 }
 
 export async function updateTeacherTest(
   testId: string,
   input: CreateTeacherTestInput,
-): Promise<{ ok: true } | { ok: false; error: string }> {
+): Promise<ActionResult> {
   const session = await auth();
-  if (!session?.user?.id) return { ok: false, error: "Kirish talab qilinadi." };
-  if (!sessionHasPermission(session, "TESTS_EDIT")) return { ok: false, error: "Tahrirlash huquqi yo‘q." };
+  if (!session?.user?.id) return errResult("Kirish talab qilinadi.", "UNAUTHENTICATED");
+  if (!sessionHasPermission(session, "TESTS_EDIT")) return errResult("Tahrirlash huquqi yo‘q.", "FORBIDDEN");
 
   const existing = await prisma.test.findUnique({
     where: { id: testId },
     select: { id: true, authorUserId: true },
   });
-  if (!existing) return { ok: false, error: "Test topilmadi." };
+  if (!existing) return errResult("Test topilmadi.", "NOT_FOUND");
 
   const role = session.user.role;
   if (role === "TEACHER") {
-    if (existing.authorUserId !== session.user.id) return { ok: false, error: "Bu test sizga tegishli emas." };
+    if (existing.authorUserId !== session.user.id) return errResult("Bu test sizga tegishli emas.", "FORBIDDEN");
   } else if (role !== "ADMIN" && role !== "SUPER_ADMIN") {
-    return { ok: false, error: "Rol mos emas." };
+    return errResult("Rol mos emas.", "FORBIDDEN");
   }
 
   const title = input.title.trim();
-  if (!title) return { ok: false, error: "Test nomi majburiy." };
-  if (!input.subjectId) return { ok: false, error: "Fan tanlanishi kerak." };
+  if (!title) return errResult("Test nomi majburiy.", "VALIDATION_ERROR");
+  if (!input.subjectId) return errResult("Fan tanlanishi kerak.", "VALIDATION_ERROR");
 
   const subjectRow = await prisma.subject.findUnique({
     where: { id: input.subjectId },
     select: { id: true, gradeId: true },
   });
-  if (!subjectRow) return { ok: false, error: "Fan topilmadi." };
+  if (!subjectRow) return errResult("Fan topilmadi.", "NOT_FOUND");
 
   let gradeId: string | null = null;
   if (role === "TEACHER") {
     const gid = String(input.gradeId ?? "").trim();
-    if (!gid) return { ok: false, error: "Sinf tanlanishi kerak." };
+    if (!gid) return errResult("Sinf tanlanishi kerak.", "VALIDATION_ERROR");
     const scope = await teacherCanComposeTest(session.user.id, {
       gradeId: gid,
       subjectId: input.subjectId,
       topicId: input.topicId ?? undefined,
     });
-    if (!scope.ok) return { ok: false, error: scope.error };
+    if (!scope.ok) return errResult(scope.error, "FORBIDDEN");
     gradeId = gid;
   } else {
     gradeId = subjectRow.gradeId;
   }
 
   const qs = input.questions.filter((q) => q.text.trim() && q.options.filter(Boolean).length >= 2);
-  if (!qs.length) return { ok: false, error: "Kamida bitta to‘liq savol kiriting." };
+  if (!qs.length) return errResult("Kamida bitta to‘liq savol kiriting.", "VALIDATION_ERROR");
 
   let topicId: string | null = input.topicId?.trim() || null;
   const topicTitle = input.topicTitle?.trim();
@@ -238,8 +256,9 @@ export async function updateTeacherTest(
     topicId = created.id;
   }
 
-  const startsAt = input.startsAt ? new Date(input.startsAt) : null;
-  const endsAt = input.endsAt ? new Date(input.endsAt) : null;
+  const schedule = parseSchedule(input.startsAt, input.endsAt);
+  if (!schedule.ok) return errResult(schedule.error, "VALIDATION_ERROR");
+  const { startsAt, endsAt } = schedule;
   const maxAttempts = input.maxAttempts > 0 ? input.maxAttempts : null;
   const antiCheatMode = normalizeAntiCheat(input.antiCheatMode);
   let protectedExamMode = Boolean(input.protectedExamMode);
@@ -271,8 +290,8 @@ export async function updateTeacherTest(
         isActive,
         status,
         antiCheatMode,
-        startsAt: startsAt && !Number.isNaN(startsAt.getTime()) ? startsAt : null,
-        endsAt: endsAt && !Number.isNaN(endsAt.getTime()) ? endsAt : null,
+        startsAt,
+        endsAt,
         protectedExamMode,
         tabSwitchPolicy,
         shuffleQuestions,
@@ -306,7 +325,7 @@ export async function updateTeacherTest(
   revalidatePath(`/admin/testlar/${testId}/tahrirlash`);
   revalidatePath(`/testlar/${testId}`);
 
-  return { ok: true };
+  return okResult(undefined, "OK");
 }
 
 export async function deleteTest(formData: FormData): Promise<void> {

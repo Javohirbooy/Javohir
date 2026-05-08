@@ -8,6 +8,11 @@ export async function setLocale(formData: FormData) {
   const raw = String(formData.get("locale") ?? "");
   if (!isAppLocale(raw)) return;
   const jar = await cookies();
-  jar.set(IQM_LOCALE_COOKIE, raw, { path: "/", maxAge: 60 * 60 * 24 * 365, sameSite: "lax" });
+  jar.set(IQM_LOCALE_COOKIE, raw, {
+    path: "/",
+    maxAge: 60 * 60 * 24 * 365,
+    sameSite: "lax",
+    secure: process.env.NODE_ENV === "production",
+  });
   revalidatePath("/", "layout");
 }

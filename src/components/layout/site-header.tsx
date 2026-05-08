@@ -6,7 +6,7 @@ import type { AppRole } from "@/lib/permissions";
 export async function SiteHeader() {
   const [session, locale] = await Promise.all([auth(), getServerLocale()]);
   const sessionLite = session?.user
-    ? { name: session.user.name, email: session.user.email, role: session.user.role as AppRole }
+    ? { name: session.user.name, email: session.user.email, image: session.user.image, role: session.user.role as AppRole }
     : null;
 
   return (

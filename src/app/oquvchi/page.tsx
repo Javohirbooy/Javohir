@@ -11,6 +11,7 @@ import { BookOpen, FileQuestion } from "lucide-react";
 export default async function StudentDashboardPage() {
   const session = await auth();
   if (!session?.user?.id) redirect("/kirish");
+  if (session.user.role !== "STUDENT") redirect("/");
 
   const user = await prisma.user.findUnique({
     where: { id: session.user.id },

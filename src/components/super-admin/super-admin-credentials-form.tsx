@@ -5,7 +5,7 @@ import { updateOwnCredentials, type SuperAdminAccountState } from "@/app/actions
 import { Button } from "@/components/ui/button";
 
 export function SuperAdminCredentialsForm({ initialEmail }: { initialEmail: string }) {
-  const [state, action, pending] = useActionState(updateOwnCredentials, null as SuperAdminAccountState);
+  const [state, action, pending] = useActionState(updateOwnCredentials, null as unknown as SuperAdminAccountState);
 
   return (
     <form action={action} className="mt-4 space-y-3">
@@ -35,8 +35,8 @@ export function SuperAdminCredentialsForm({ initialEmail }: { initialEmail: stri
         />
       </div>
 
-      {state?.error ? <p className="text-sm font-medium text-rose-700">{state.error}</p> : null}
-      {state?.success ? <p className="text-sm font-medium text-emerald-700">{state.success}</p> : null}
+      {!state?.ok && state?.error ? <p className="text-sm font-medium text-rose-700">{state.error}</p> : null}
+      {state?.ok && state?.data?.success ? <p className="text-sm font-medium text-emerald-700">{state.data.success}</p> : null}
 
       <Button type="submit" className="w-full" disabled={pending}>
         {pending ? "Saqlanmoqda..." : "Login/parolni yangilash"}

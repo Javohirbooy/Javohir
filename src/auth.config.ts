@@ -18,6 +18,9 @@ export const authConfig = {
       if (user) {
         token.id = user.id;
         token.role = user.role as AppRole;
+        token.name = user.name;
+        token.email = user.email;
+        token.picture = user.image;
         token.status = (user as { status?: string }).status;
         token.locale = (user as { locale?: string }).locale;
         token.mustChangePassword = (user as { mustChangePassword?: boolean }).mustChangePassword;
@@ -33,6 +36,9 @@ export const authConfig = {
     session({ session, token }) {
       if (session.user) {
         session.user.id = token.id as string;
+        session.user.name = typeof token.name === "string" ? token.name : session.user.name;
+        session.user.email = typeof token.email === "string" ? token.email : session.user.email;
+        session.user.image = typeof token.picture === "string" ? token.picture : session.user.image;
         session.user.role = token.role as AppRole;
         session.user.status = token.status as string | undefined;
         session.user.locale = token.locale as string | undefined;

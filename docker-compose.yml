@@ -1,16 +1,38 @@
-# Ixtiyoriy: faqat lokal PostgreSQL kerak bo‘lsa (Neon ishlatilsa, `docker compose up` shart emas).
+# Migratsiya: entrypoint avtomatik `prisma migrate deploy` (SKIP_DB_MIGRATE=1 bilan o‘chirish mumkin).
 services:
-  postgres:
+  db:
     image: postgres:16-alpine
     restart: unless-stopped
     environment:
-      POSTGRES_USER: edu
-      POSTGRES_PASSWORD: edu
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
       POSTGRES_DB: edu_platform
     ports:
       - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  app:
+    build:
+      context: .
+      args:
+        DATABASE_URL: postgresql://postgres:postgres@db:5432/edu_platform?schema=public
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@db:5432/edu_platform?schema=public
+      AUTH_SECRET: ${AUTH_SECRET:-change-this-secret-min-32-chars-long!!}
+      NEXTAUTH_URL: ${NEXTAUTH_URL:-http://localhost:3000}
+      NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:-http://localhost:3000}
+    depends_on:
+      db:
+        condition: service_healthy
 
 volumes:
   pgdata:

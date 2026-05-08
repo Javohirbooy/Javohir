@@ -6,6 +6,8 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { sessionHasPermission } from "@/lib/permissions";
 import { writeAuditLog } from "@/lib/audit";
+import type { ActionResult } from "@/lib/action-result";
+import { errResult, okResult } from "@/lib/action-result";
 
 function normalizeEmail(e: string) {
   return e.trim().toLowerCase();
@@ -72,6 +74,67 @@ export async function adminCreateTeacherWithAssignments(formData: FormData): Pro
 
   revalidatePath("/admin/foydalanuvchilar");
   revalidatePath("/admin/ustozlar/yangi");
+}
+
+/** Standard contract wrapper (preferred). */
+export async function adminCreateTeacherWithAssignmentsResult(formData: FormData): Promise<ActionResult> {
+  const session = await auth();
+  if (!session?.user?.id) return errResult("Kirish talab qilinadi.", "UNAUTHENTICATED");
+  if (session.user.role !== "ADMIN" && session.user.role !== "SUPER_ADMIN") return errResult("Ruxsat yo‘q.", "FORBIDDEN");
+  if (!sessionHasPermission(session, "USERS_CREATE")) return errResult("Ruxsat yo‘q.", "FORBIDDEN");
+
+  const email = normalizeEmail(String(formData.get("email") ?? ""));
+  const name = String(formData.get("name") ?? "").trim();
+  const password = String(formData.get("password") ?? "");
+  if (!email || !name || !password) return errResult("Email, ism va parol majburiy.", "VALIDATION_ERROR");
+
+  const gradeIds = [...new Set(formData.getAll("gradeIds").map(String).filter(Boolean))];
+  const subjectIds = [...new Set(formData.getAll("subjectIds").map(String).filter(Boolean))];
+  if (!gradeIds.length || !subjectIds.length) return errResult("Kamida bitta sinf va bitta fan tanlang.", "VALIDATION_ERROR");
+
+  const subjects = await prisma.subject.findMany({
+    where: { id: { in: subjectIds } },
+    select: { id: true, gradeId: true },
+  });
+  const gradeSet = new Set(gradeIds);
+  for (const s of subjects) {
+    if (!gradeSet.has(s.gradeId)) return errResult("Fan va sinf mos emas.", "VALIDATION_ERROR");
+  }
+
+  const exists = await prisma.user.findUnique({ where: { email } });
+  if (exists) return errResult("Bu email allaqachon ishlatilgan.", "CONFLICT");
+
+  const passwordHash = await bcrypt.hash(password, 12);
+  const teacher = await prisma.user.create({
+    data: {
+      email,
+      name,
+      passwordHash,
+      role: "TEACHER",
+      status: "ACTIVE",
+      mustChangePassword: true,
+      credentialIssuedById: session.user.id,
+    },
+  });
+
+  await prisma.teacherOnClass.createMany({
+    data: gradeIds.map((gradeId) => ({ userId: teacher.id, gradeId })),
+  });
+  await prisma.teacherSubjectAssignment.createMany({
+    data: subjectIds.map((subjectId) => ({ userId: teacher.id, subjectId })),
+  });
+
+  await writeAuditLog({
+    actorUserId: session.user.id,
+    action: "TEACHER_PROVISION",
+    entityType: "User",
+    entityId: teacher.id,
+    metadata: { gradeIds, subjectIds },
+  });
+
+  revalidatePath("/admin/foydalanuvchilar");
+  revalidatePath("/admin/ustozlar/yangi");
+  return okResult(undefined, "OK");
 }
 
 export type TeacherProvisionState = { ok: boolean; error?: string } | null;
