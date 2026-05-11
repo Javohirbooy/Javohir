@@ -18,6 +18,12 @@ import { validateServerEnv } from "@/lib/env";
 import { logStructured } from "@/lib/logger";
 import { getClientIpFromHeaders, getRequestIdFromHeaders } from "@/lib/request-context";
 import { logSecurityEvent } from "@/lib/security-events";
+import {
+  LOGIN_IP_MAX_ATTEMPTS,
+  LOGIN_IP_WINDOW_MS,
+  LOGIN_RATE_LIMIT_ATTEMPTS,
+  LOGIN_RATE_LIMIT_WINDOW_MS,
+} from "@/lib/auth-rate-limits";
 
 const credentialsSchema = z.object({
   identifier: z.string().trim().min(1),
@@ -26,10 +32,6 @@ const credentialsSchema = z.object({
 
 const STUDENT_NUMBER_JWT_SYNC_MS = 30 * 60 * 1000;
 const BCRYPT_PREFIX = "$2";
-const LOGIN_RATE_LIMIT_WINDOW_MS = 5 * 60 * 1000;
-const LOGIN_RATE_LIMIT_ATTEMPTS = 10;
-const LOGIN_IP_WINDOW_MS = 15 * 60 * 1000;
-const LOGIN_IP_MAX_ATTEMPTS = 60;
 const studentNumberCache = new Map<string, { value?: number; at: number }>();
 
 const envCheck = validateServerEnv();
@@ -79,6 +81,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
         const [ip, requestId] = await Promise.all([getClientIpFromHeaders(), getRequestIdFromHeaders()]);
         const fp = loginFingerprint(ip, normalizedIdentifier);
+        const ipRlCap = ip === "unknown" ? Math.max(LOGIN_IP_MAX_ATTEMPTS * 5, 2000) : LOGIN_IP_MAX_ATTEMPTS;
 
         if (await isLoginBlocked(fp)) {
           logStructured("warn", "auth.login_blocked", { fpPrefix: fp.slice(0, 8) });
@@ -86,7 +89,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           return null;
         }
 
-        const ipRl = await takeRateLimitSlot("auth_login_ip", ip, LOGIN_IP_MAX_ATTEMPTS, LOGIN_IP_WINDOW_MS, {
+        const ipRl = await takeRateLimitSlot("auth_login_ip", ip, ipRlCap, LOGIN_IP_WINDOW_MS, {
           requireDistributed: true,
           requestId,
         });

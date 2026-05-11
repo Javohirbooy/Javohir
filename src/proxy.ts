@@ -4,6 +4,7 @@ import { authConfig } from "@/auth.config";
 import { takeRateLimitSlot } from "@/lib/distributed-rate-limit";
 import { logStructured } from "@/lib/logger";
 import { createEdgeContext, getEdgeClientIp, nextWithRequestHeaders, withCsp } from "@/lib/edge/middleware-utils";
+import { MW_AUTH_POST_MAX_PER_IP, MW_AUTH_POST_WINDOW_MS } from "@/lib/auth-rate-limits";
 
 /** Edge: Prisma yuklanmasin — faqat `auth.config.ts`. To‘liq auth — `auth.ts` + API route. */
 const { auth } = NextAuth(authConfig);
@@ -17,7 +18,9 @@ export default auth(async (req) => {
 
   if (isSensitiveAuthPost) {
     const ip = getEdgeClientIp(req);
-    const rl = await takeRateLimitSlot("mw_auth_post", ip, 80, 15 * 60 * 1000, {
+    /** IP aniqlanmasa (`unknown`) — barcha mijozlar bitta kalitga tushmasligi uchun yuqori limit. */
+    const perIpLimit = ip === "unknown" ? Math.max(MW_AUTH_POST_MAX_PER_IP * 5, 2000) : MW_AUTH_POST_MAX_PER_IP;
+    const rl = await takeRateLimitSlot("mw_auth_post", ip, perIpLimit, MW_AUTH_POST_WINDOW_MS, {
       requireDistributed: true,
       requestId: ctx.requestId,
     });

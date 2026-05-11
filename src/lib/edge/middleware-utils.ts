@@ -1,6 +1,7 @@
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 import { applyCspNonceToRequestHeaders, buildContentSecurityPolicy, generateCspNonce } from "@/lib/csp";
+import { getClientIpFromHeadersGetter } from "@/lib/client-ip";
 
 export type EdgeContext = {
   nonce: string;
@@ -29,10 +30,5 @@ export function nextWithRequestHeaders(req: NextRequest, ctx: EdgeContext): Next
 }
 
 export function getEdgeClientIp(req: NextRequest): string {
-  return (
-    req.headers.get("cf-connecting-ip") ??
-    req.headers.get("x-real-ip") ??
-    req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
-    "unknown"
-  );
+  return getClientIpFromHeadersGetter((name) => req.headers.get(name));
 }
