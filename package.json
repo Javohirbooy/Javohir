@@ -24,7 +24,8 @@
     "typecheck": "tsc --noEmit",
     "test:e2e": "playwright test",
     "test:e2e:stress": "playwright test -c playwright.stress.config.ts",
-    "redis:ping": "tsx scripts/check-redis.ts"
+    "redis:ping": "tsx scripts/check-redis.ts",
+    "stress:auth-post": "tsx scripts/stress-auth-post.ts"
   },
   "prisma": {
     "seed": "npx tsx prisma/seed.ts"
