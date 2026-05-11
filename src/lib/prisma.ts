@@ -32,7 +32,26 @@ function createClient(): PrismaClient {
   });
 }
 
-/** Barcha Node server kontekstlarida bitta instansiya (har bir worker jarayoni o‘z nusxasi). */
-export const prisma =
-  globalForPrisma.__IQ_MONITORING_PRISMA__ ??
-  (globalForPrisma.__IQ_MONITORING_PRISMA__ = createClient());
+function getPrisma(): PrismaClient {
+  const existing = globalForPrisma.__IQ_MONITORING_PRISMA__;
+  if (existing) return existing;
+  const client = createClient();
+  globalForPrisma.__IQ_MONITORING_PRISMA__ = client;
+  return client;
+}
+
+/**
+ * Lazy singleton: modul importida `PrismaClient` yaratilmaydi (Next.js build / Vercelda
+ * `DATABASE_URL` ba’zan faqat runtime’da bo‘ladi). Birinchi `prisma.*` chaqiruvida ulanadi.
+ * Ishlab chiqarishda `DATABASE_URL` baribir Vercel Environment Variables da bo‘lishi kerak.
+ */
+export const prisma = new Proxy({} as PrismaClient, {
+  get(_target, prop, receiver) {
+    const client = getPrisma();
+    const value = Reflect.get(client, prop, receiver);
+    if (typeof value === "function") {
+      return value.bind(client);
+    }
+    return value;
+  },
+});
