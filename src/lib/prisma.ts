@@ -15,7 +15,9 @@ const globalForPrisma = globalThis as typeof globalThis & {
 
 function createClient(): PrismaClient {
   if (!process.env.DATABASE_URL) {
-    throw new Error("DATABASE_URL o‘rnatilmagan (.env). Neon connection string qo‘shing.");
+    throw new Error(
+      "DATABASE_URL o‘rnatilmagan. Mahalliy: `edu-platform/.env` da Neon `postgresql://...` qo‘ying. Vercel: Settings → Environment Variables → DATABASE_URL (Production/Preview).",
+    );
   }
   /** Vercelda ba’zan faqat bitta URL qo‘yiladi; `schema.prisma` `directUrl` talab qiladi. */
   if (!process.env.DIRECT_URL) {
