@@ -23,6 +23,8 @@
     "db:backfill-student-numbers": "tsx scripts/backfill-student-numbers.ts",
     "typecheck": "tsc --noEmit",
     "verify": "npm run lint && npm run typecheck && npm run test:unit && npm run build",
+    "env:bootstrap": "node scripts/bootstrap-env.mjs",
+    "env:check": "node scripts/check-local-env.mjs",
     "test:unit": "vitest run",
     "test:e2e": "playwright test",
     "test:e2e:stress": "playwright test -c playwright.stress.config.ts",
