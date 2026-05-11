@@ -11,6 +11,7 @@ import { getServerLocale } from "@/lib/i18n/resolve-locale";
 import { BRAND } from "@/lib/brand";
 import { OG_IMAGE_HEIGHT, OG_IMAGE_WIDTH } from "@/lib/og/dimensions";
 import { getSiteUrl } from "@/lib/env";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -87,6 +88,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
             </LocaleProvider>
           </AuthSessionProvider>
         </ThemeProvider>
+        <SpeedInsights />
       </body>
     </html>
   );
