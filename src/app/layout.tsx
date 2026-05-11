@@ -9,6 +9,7 @@ import { LocaleProvider } from "@/components/providers/locale-provider";
 import { ToastProvider } from "@/components/providers/toast-provider";
 import { getServerLocale } from "@/lib/i18n/resolve-locale";
 import { BRAND } from "@/lib/brand";
+import { OG_IMAGE_HEIGHT, OG_IMAGE_WIDTH } from "@/lib/og/dimensions";
 import { getSiteUrl } from "@/lib/env";
 
 const inter = Inter({
@@ -24,25 +25,39 @@ const poppins = Poppins({
   display: "swap",
 });
 
+/**
+ * Faqat umumiy defaults — har bir ochiq sahifa o‘z `generateMetadata` bilan
+ * title, description, canonical va OpenGraph ni to‘ldirib, merosdagi dublikatlarni oldini oladi.
+ */
 export const metadata: Metadata = {
   metadataBase: new URL(getSiteUrl()),
-  title: `${BRAND.name} — universal ta’lim monitoringi`,
-  description:
-    "Maktab fanlari, sinflar, testlar va analytics — zamonaviy, professional va production-ready ta’lim platformasi.",
-  alternates: { canonical: "/" },
+  title: {
+    default: BRAND.name,
+    template: `%s | ${BRAND.name}`,
+  },
+  robots: { index: true, follow: true },
   openGraph: {
-    title: `${BRAND.name} — universal ta’lim monitoringi`,
-    description:
-      "Maktab fanlari, sinflar, testlar va analytics — zamonaviy, professional va production-ready ta’lim platformasi.",
     type: "website",
-    locale: "uz_UZ",
     siteName: BRAND.name,
+    images: [
+      {
+        url: "/og",
+        width: OG_IMAGE_WIDTH,
+        height: OG_IMAGE_HEIGHT,
+        alt: BRAND.name,
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
-    title: `${BRAND.name} — universal ta’lim monitoringi`,
-    description:
-      "Maktab fanlari, sinflar, testlar va analytics — zamonaviy, professional va production-ready ta’lim platformasi.",
+    images: [
+      {
+        url: "/og",
+        width: OG_IMAGE_WIDTH,
+        height: OG_IMAGE_HEIGHT,
+        alt: BRAND.name,
+      },
+    ],
   },
 };
 

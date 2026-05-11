@@ -2,6 +2,16 @@ import Link from "next/link";
 import { Suspense } from "react";
 import { ResetPasswordForm } from "@/components/auth/reset-password-form";
 import { BRAND } from "@/lib/brand";
+import { getServerLocale } from "@/lib/i18n/resolve-locale";
+import { metadataFromSeoKey } from "@/lib/seo/public-page-metadata";
+
+export async function generateMetadata() {
+  const locale = await getServerLocale();
+  return metadataFromSeoKey(locale, "resetPassword", {
+    robots: { index: false, follow: false },
+    titleMode: "template",
+  });
+}
 
 export default function ResetPasswordPage() {
   return (

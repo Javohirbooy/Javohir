@@ -8,7 +8,8 @@ import { teacherHasSubjectAccess } from "@/lib/teacher-scope";
 import { parseMcqTextToDraftQuestions } from "@/lib/test-import-parser";
 import { docxBufferToMarkdown } from "@/lib/docx-to-markdown";
 import { writeAuditLog } from "@/lib/audit";
-import { revalidatePath } from "next/cache";
+import { PUBLIC_TESTS_DATA_TAG } from "@/lib/tests/public-test-queries";
+import { revalidatePath, revalidateTag } from "next/cache";
 
 export type ImportTestResult = { ok: false; error: string } | { ok: true; testId: string };
 
@@ -173,6 +174,7 @@ export async function importTestDraftFromUpload(formData: FormData): Promise<Imp
 
   revalidatePath("/admin/testlar");
   revalidatePath("/oqituvchi/testlar");
+  revalidateTag(PUBLIC_TESTS_DATA_TAG, "max");
   return { ok: true, testId: r.testId };
 }
 
@@ -224,5 +226,6 @@ export async function importTestDraftsFromUpload(formData: FormData): Promise<Im
 
   revalidatePath("/admin/testlar");
   revalidatePath("/oqituvchi/testlar");
+  revalidateTag(PUBLIC_TESTS_DATA_TAG, "max");
   return { ok: true, items };
 }

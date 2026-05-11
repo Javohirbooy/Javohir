@@ -1,4 +1,9 @@
+import type { Metadata } from "next";
 import { DashboardShell } from "@/components/dashboard/dashboard-shell";
+
+export const metadata: Metadata = {
+  robots: { index: false, follow: false },
+};
 
 const items = [
   { href: "/super-admin", label: "Umumiy ko‘rinish", icon: "layout" as const },

@@ -40,7 +40,12 @@ export function buildContentSecurityPolicy(nonce: string, isDev: boolean): strin
     ...(isDev ? ["'unsafe-eval'" as const] : []),
   ].join(" ");
 
-  const styleSrc = ["'self'", isDev ? "'unsafe-inline'" : `'nonce-${nonce}'`].join(" ");
+  /**
+   * Next.js / React / Tailwind va ba’zi kutubxonalar inline `<style>` yuboradi.
+   * `style-src` uchun faqat `nonce` yetarli emas — brauzer konsoli ogohlantirishlari chiqadi.
+   * Skriptlar `nonce` + `strict-dynamic` bilan qat’iy qoladi.
+   */
+  const styleSrc = ["'self'", "'unsafe-inline'", ...(isDev ? [] : [`'nonce-${nonce}'`])].join(" ");
 
   const connectSrc = ["'self'", ...cspConnectSources()].join(" ");
 

@@ -12,13 +12,20 @@ export default function GlobalError({
 }) {
   useEffect(() => {
     console.error("[global-error]", error);
-    Sentry.captureException(error);
+    Sentry.captureException(error, {
+      tags: { error_boundary: "root_global" },
+      fingerprint: error.digest ? ["global-error", error.digest] : ["global-error", "no-digest"],
+    });
   }, [error]);
 
   return (
-    <html lang="uz">
-      <body className="min-h-screen bg-slate-950 text-slate-100">
-        <main className="mx-auto flex min-h-screen max-w-3xl flex-col items-center justify-center px-6 text-center">
+    <html lang="uz" suppressHydrationWarning>
+      <body className="min-h-screen bg-slate-950 text-slate-100" suppressHydrationWarning>
+        <main
+          role="alert"
+          aria-live="assertive"
+          className="mx-auto flex min-h-screen max-w-3xl flex-col items-center justify-center px-6 text-center"
+        >
           <h1 className="text-3xl font-extrabold">Tizimda jiddiy xatolik yuz berdi</h1>
           <p className="mt-3 text-sm text-slate-300">
             Iltimos, sahifani qayta yuklang yoki birozdan keyin qayta urinib ko‘ring.

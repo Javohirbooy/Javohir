@@ -7,7 +7,14 @@ type UploadClaims = {
 };
 
 function secret(): string {
-  return process.env.AUTH_SECRET ?? "dev-upload-secret-change-me";
+  const s = process.env.AUTH_SECRET?.trim();
+  if (process.env.NODE_ENV === "production") {
+    if (!s || s.length < 32) {
+      throw new Error("[upload-signature] Production: AUTH_SECRET majburiy (kamida 32 belgi).");
+    }
+    return s;
+  }
+  return s ?? "dev-upload-secret-change-me";
 }
 
 function b64(input: string): string {

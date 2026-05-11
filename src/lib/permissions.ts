@@ -37,6 +37,12 @@ export async function resolvePermissionKeysForRole(role: string): Promise<string
   }
 
   const keys = rows.map((r) => r.permission.key).filter(isPermissionKey);
+
+  /** Seed qisman (masalan faqat admin rolidagi grantlar): DB da grant yo‘q bo‘lsa sessiya bo‘sh qolmasin. */
+  if (keys.length === 0) {
+    return staticPermissionKeysForRole(rr);
+  }
+
   if (rr === "SUPER_ADMIN") {
     const merged = new Set(keys);
     for (const k of SUPER_ADMIN_INVARIANT_KEYS) merged.add(k);

@@ -5,6 +5,7 @@ import { z } from "zod";
 import { auth } from "@/auth";
 import { writeAuditLog } from "@/lib/audit";
 import { throttleServerAction } from "@/lib/action-rate-limit";
+import { captureServerActionFailure } from "@/lib/sentry/server-action-capture";
 import { logStructuredFromRequest } from "@/lib/logger";
 import { prisma } from "@/lib/prisma";
 import type { ActionResult } from "@/lib/action-result";
@@ -63,6 +64,7 @@ export async function updateOwnProfile(input: unknown): Promise<UpdateProfileRes
     revalidatePath("/profile");
     return okResult({ fullName: updated.name, avatarUrl: updated.avatarUrl ?? null }, "OK");
   } catch (error) {
+    captureServerActionFailure("profile.updateProfile", error);
     await logStructuredFromRequest("error", "profile.update_failed");
     console.error(error);
     return errResult("Profilni saqlab bo'lmadi. Qayta urinib ko'ring.", "INTERNAL_ERROR");

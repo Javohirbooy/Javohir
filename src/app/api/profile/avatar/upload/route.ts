@@ -1,3 +1,4 @@
+import { wrapRouteHandlerWithSentry } from "@sentry/nextjs";
 import { put } from "@vercel/blob";
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
@@ -10,7 +11,7 @@ function canUpload(role: string | undefined): boolean {
   return role === "TEACHER" || role === "ADMIN";
 }
 
-export async function POST(req: Request) {
+async function postImpl(req: Request) {
   const session = await auth();
   if (!session?.user?.id) return NextResponse.json({ error: "Kirish talab qilinadi." }, { status: 401 });
   if (!canUpload(session.user.role)) return NextResponse.json({ error: "Ruxsat yo'q." }, { status: 403 });
@@ -35,3 +36,8 @@ export async function POST(req: Request) {
   const uploaded = await put(path, file, { access: "public", token: process.env.BLOB_READ_WRITE_TOKEN });
   return NextResponse.json({ url: uploaded.url });
 }
+
+export const POST = wrapRouteHandlerWithSentry(postImpl, {
+  method: "POST",
+  parameterizedRoute: "/api/profile/avatar/upload",
+});

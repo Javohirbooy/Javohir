@@ -1,10 +1,17 @@
 import Link from "next/link";
+import { getServerLocale } from "@/lib/i18n/resolve-locale";
+import { metadataFromSeoKey } from "@/lib/seo/public-page-metadata";
 import { SUBJECT_CATALOG } from "@/lib/subject-catalog";
 import { SectionTitle } from "@/components/ui/section-title";
 import { cn } from "@/lib/utils";
 import { ArrowUpRight } from "lucide-react";
 
 type Props = { searchParams: Promise<{ q?: string }> };
+
+export async function generateMetadata() {
+  const locale = await getServerLocale();
+  return metadataFromSeoKey(locale, "fanlar");
+}
 
 export default async function SubjectsPage({ searchParams }: Props) {
   const sp = await searchParams;

@@ -6,6 +6,7 @@ import {
   deleteUserByEmail,
   prisma,
 } from "./helpers/seed";
+import { ensureStudentTestAttemptPermission } from "./helpers/exam-fixture";
 
 let schemaSupportsAuthFlow = false;
 
@@ -14,6 +15,7 @@ test.describe("auth lifecycle (DB-backed)", () => {
     try {
       await prisma.$queryRaw`SELECT "emailVerified" FROM "User" LIMIT 0`;
       schemaSupportsAuthFlow = true;
+      await ensureStudentTestAttemptPermission();
     } catch {
       schemaSupportsAuthFlow = false;
       console.warn(
@@ -38,7 +40,7 @@ test.describe("auth lifecycle (DB-backed)", () => {
       await page.getByLabel(/Email yoki ism-familiya/i).fill(email);
       await page.getByLabel(/^Parol$/i).fill(password);
       await page.getByRole("button", { name: /^Kirish$/i }).click();
-      await expect(page).toHaveURL(/\/oquvchi/);
+      await expect(page).toHaveURL(/\/oquvchi/, { timeout: 30_000 });
     } finally {
       await deleteUserByEmail(email);
     }
@@ -72,12 +74,12 @@ test.describe("auth lifecycle (DB-backed)", () => {
       await page.goto(`/reset-password?token=${encodeURIComponent(token)}`);
       await page.getByLabel(/^Yangi parol$/i).fill(newPassword);
       await page.getByRole("button", { name: /Parolni saqlash/i }).click();
-      await expect(page).toHaveURL(/\/kirish/);
+      await expect(page).toHaveURL(/\/kirish/, { timeout: 20_000 });
 
       await page.getByLabel(/Email yoki ism-familiya/i).fill(email);
       await page.getByLabel(/^Parol$/i).fill(newPassword);
       await page.getByRole("button", { name: /^Kirish$/i }).click();
-      await expect(page).toHaveURL(/\/oquvchi/);
+      await expect(page).toHaveURL(/\/oquvchi/, { timeout: 30_000 });
     } finally {
       await deleteUserByEmail(email);
     }

@@ -1,7 +1,14 @@
+import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { ProfileSettingsForm } from "@/components/profile/profile-settings-form";
 import { prisma } from "@/lib/prisma";
+import { BRAND } from "@/lib/brand";
+
+export const metadata: Metadata = {
+  robots: { index: false, follow: false },
+  title: { absolute: `Profil sozlamalari | ${BRAND.name}` },
+};
 
 function isProfileRole(role: string | undefined): boolean {
   return role === "TEACHER" || role === "ADMIN";

@@ -8,6 +8,11 @@ export async function throttleServerAction(
   windowMs: number,
   options?: { requireDistributed?: boolean },
 ): Promise<{ ok: true } | { ok: false; message: string; retryAfterMs?: number }> {
+  /** Playwright `webServer.env` — bir xil IP / `unknown` uchun Upstash kaliti limitni tez to‘ldiradi. */
+  if (process.env.E2E_RELAX_SERVER_ACTION_RATE_LIMIT === "1") {
+    return { ok: true };
+  }
+
   const [ip, requestId] = await Promise.all([getClientIpFromHeaders(), getRequestIdFromHeaders()]);
   const r = await takeRateLimitSlot(`sa_${scope}`, ip, limit, windowMs, {
     requireDistributed: options?.requireDistributed,

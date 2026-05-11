@@ -8,6 +8,12 @@ import { Card } from "@/components/ui/card";
 import { getServerLocale } from "@/lib/i18n/resolve-locale";
 import { t } from "@/lib/i18n/t";
 import { Cpu, LineChart, Shield, Users } from "lucide-react";
+import { metadataFromSeoKey } from "@/lib/seo/public-page-metadata";
+
+export async function generateMetadata() {
+  const locale = await getServerLocale();
+  return metadataFromSeoKey(locale, "home");
+}
 
 /** Bosh sahifa statistikasi `unstable_cache` bilan 60s; qolgan segmentlar ham tez-yangilanadi */
 export const revalidate = 60;

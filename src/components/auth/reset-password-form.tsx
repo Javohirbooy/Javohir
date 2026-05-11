@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { resetPasswordWithToken } from "@/app/actions/auth-public";
@@ -9,7 +9,6 @@ import { useToast } from "@/components/providers/toast-provider";
 import { Lock } from "lucide-react";
 
 export function ResetPasswordForm() {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const token = searchParams.get("token") ?? "";
   const { toast } = useToast();
@@ -30,8 +29,7 @@ export function ResetPasswordForm() {
       return;
     }
     toast("Parol yangilandi. Endi kiring.", "success");
-    router.push("/kirish");
-    router.refresh();
+    window.location.assign(`${window.location.origin}/kirish`);
   }
 
   return (

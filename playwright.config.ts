@@ -22,5 +22,11 @@ export default defineConfig({
     timeout: 120_000,
     stdout: "pipe",
     stderr: "pipe",
+    env: {
+      ...process.env,
+      E2E_RELAX_SERVER_ACTION_RATE_LIMIT: "1",
+      /** `next start` production assert: http preview + no VERCEL_URL */
+      ALLOW_INSECURE_SITE_URL: "1",
+    },
   },
 });

@@ -13,11 +13,19 @@ export default function Error({
 }) {
   useEffect(() => {
     console.error("[app-error]", error);
-    Sentry.captureException(error);
+    Sentry.captureException(error, {
+      tags: { error_boundary: "app_segment" },
+      fingerprint: error.digest ? ["app-error", error.digest] : ["app-error", "no-digest"],
+    });
   }, [error]);
 
   return (
-    <div className="mx-auto flex min-h-[50vh] max-w-2xl flex-col items-center justify-center px-4 text-center">
+    <main
+      role="alert"
+      aria-live="assertive"
+      aria-atomic="true"
+      className="mx-auto flex min-h-[50vh] max-w-2xl flex-col items-center justify-center px-4 text-center"
+    >
       <h2 className="text-2xl font-bold text-slate-800 dark:text-slate-100">Kutilmagan xatolik yuz berdi</h2>
       <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">
         Sahifani qayta yuklashga urinib ko‘ring. Muammo davom etsa, administratorga murojaat qiling.
@@ -25,6 +33,6 @@ export default function Error({
       <Button onClick={reset} className="mt-6 px-5">
         Qayta urinish
       </Button>
-    </div>
+    </main>
   );
 }

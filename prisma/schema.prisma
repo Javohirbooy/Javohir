@@ -223,6 +223,8 @@ model Question {
   points       Float  @default(1)
   test         Test   @relation(fields: [testId], references: [id], onDelete: Cascade)
   testAnswers  TestAnswer[]
+
+  @@index([testId, order])
 }
 
 model TestResult {
@@ -268,6 +270,7 @@ model TestAttempt {
 
   @@index([userId, testId])
   @@index([testId, status])
+  @@index([userId, testId, status, startedAt])
 }
 
 /// Optional normalized per-question capture for reporting/analytics; live sessions still store JSON on TestAttempt.

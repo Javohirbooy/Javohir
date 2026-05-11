@@ -16,6 +16,10 @@ COPY . .
 
 ARG DATABASE_URL="postgresql://postgres:postgres@localhost:5432/placeholder?schema=public"
 ENV DATABASE_URL=$DATABASE_URL
+# `next build` production assert: image buildda haqiqiy domen yo‘q — faqat builder bosqichida.
+ARG AUTH_SECRET="docker-build-placeholder-secret-min-32-chars-xx"
+ENV AUTH_SECRET=$AUTH_SECRET
+ENV SKIP_PRODUCTION_HTTPS_ENFORCEMENT=1
 ENV NEXT_TELEMETRY_DISABLED=1
 
 RUN npx prisma generate \

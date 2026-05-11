@@ -2,13 +2,31 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { getSession, signIn } from "next-auth/react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { LogIn, Mail, Lock } from "lucide-react";
+import { signInWithCredentials } from "@/lib/credentials-sign-in";
+
+async function fetchSessionRole(): Promise<string | undefined> {
+  const r = await fetch(`${window.location.origin}/api/auth/session`, {
+    credentials: "same-origin",
+    cache: "no-store",
+  });
+  if (!r.ok) return undefined;
+  const data = (await r.json()) as { user?: { role?: string } };
+  return data?.user?.role;
+}
+
+async function fetchSessionRoleWithRetry(maxAttempts = 10, delayMs = 250): Promise<string | undefined> {
+  for (let i = 0; i < maxAttempts; i++) {
+    const role = await fetchSessionRole();
+    if (role) return role;
+    await new Promise((r) => setTimeout(r, delayMs));
+  }
+  return undefined;
+}
 
 export function LoginForm() {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const callbackUrl = searchParams.get("callbackUrl") ?? "/";
   const notice = searchParams.get("notice");
@@ -28,27 +46,32 @@ export function LoginForm() {
         console.info("[iqm-login] submit", { identifier, hasPassword: password.length > 0 });
       }
       const res = await Promise.race([
-        signIn("credentials", { identifier, password, redirect: false }),
+        signInWithCredentials(identifier, password),
         new Promise<null>((_, reject) =>
           setTimeout(() => reject(new Error("TIMEOUT")), signInTimeoutMs),
         ),
       ]);
       if (process.env.NEXT_PUBLIC_AUTH_DEBUG === "1") {
-        console.info("[iqm-login] signIn result", { ok: res?.ok, error: res?.error, status: res?.status, url: res?.url });
+        console.info("[iqm-login] signIn result", res);
       }
       if (res == null || !res.ok) {
+        const reason = res && !res.ok ? res.reason : "";
+        const credMsg =
+          reason === "CredentialsSignin" || reason.includes("AccessDenied") || reason.includes("callback");
         setError(
-          res?.error
-            ? "Email/ism-familiya yoki parol noto‘g‘ri. Email tasdiqlangan va akkaunt faolligini tekshiring."
-            : "Kirish javobi kutilmadi. Internet yoki serverni tekshirib, qayta urinib ko‘ring.",
+          res == null
+            ? "Kirish javobi kutilmadi. Internet yoki serverni tekshirib, qayta urinib ko‘ring."
+            : credMsg || reason.startsWith("http_") || reason === "not_json_429"
+              ? "Email/ism-familiya yoki parol noto‘g‘ri. Email tasdiqlangan va akkaunt faolligini tekshiring."
+              : "Kirishda muammo yuz berdi. Sahifani yangilab qayta urinib ko‘ring.",
         );
         return;
       }
-      const session = await getSession();
+      /** Set-Cookie → keyingi `fetch` ba’zan bir necha ms kechikadi (serverless). */
+      const role = await fetchSessionRoleWithRetry();
       if (process.env.NEXT_PUBLIC_AUTH_DEBUG === "1") {
-        console.info("[iqm-login] session role", session?.user?.role);
+        console.info("[iqm-login] session role", role);
       }
-      const role = session?.user?.role;
       const dest =
         role === "SUPER_ADMIN"
           ? "/super-admin"
@@ -59,8 +82,11 @@ export function LoginForm() {
               : role === "STUDENT"
                 ? "/oquvchi"
                 : callbackUrl;
-      router.push(dest);
-      router.refresh();
+      try {
+        window.location.assign(new URL(dest, window.location.origin).href);
+      } catch {
+        window.location.assign(`${window.location.origin}/`);
+      }
     } catch (err) {
       const msg = err instanceof Error && err.message === "TIMEOUT" ? "So‘rov juda uzoq davom etdi. Qayta urinib ko‘ring." : "Kirishda xatolik yuz berdi. Sahifani yangilab qayta urinib ko‘ring.";
       setError(msg);

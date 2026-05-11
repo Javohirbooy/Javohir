@@ -1,5 +1,12 @@
 import { ContactForm } from "@/components/site/contact-form";
 import { BRAND } from "@/lib/brand";
+import { getServerLocale } from "@/lib/i18n/resolve-locale";
+import { metadataFromSeoKey } from "@/lib/seo/public-page-metadata";
+
+export async function generateMetadata() {
+  const locale = await getServerLocale();
+  return metadataFromSeoKey(locale, "aloqa");
+}
 
 export default function ContactPage() {
   return (

@@ -1,6 +1,6 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { sessionHasPermission } from "@/lib/permissions";
@@ -9,6 +9,7 @@ import { teacherCanComposeTest } from "@/lib/teacher-scope";
 import { writeAuditLog } from "@/lib/audit";
 import type { ActionResult } from "@/lib/action-result";
 import { errResult, okResult } from "@/lib/action-result";
+import { PUBLIC_TESTS_DATA_TAG } from "@/lib/tests/public-test-queries";
 
 export type TeacherQuestionInput = {
   text: string;
@@ -194,6 +195,7 @@ export async function createTest(input: CreateTeacherTestInput) {
   revalidatePath("/oqituvchi");
   revalidatePath("/admin/testlar");
   revalidatePath("/admin");
+  revalidateTag(PUBLIC_TESTS_DATA_TAG, "max");
 
   return okResult({ testId: test.id }, "OK");
 }
@@ -324,6 +326,7 @@ export async function updateTeacherTest(
   revalidatePath("/admin/testlar");
   revalidatePath(`/admin/testlar/${testId}/tahrirlash`);
   revalidatePath(`/testlar/${testId}`);
+  revalidateTag(PUBLIC_TESTS_DATA_TAG, "max");
 
   return okResult(undefined, "OK");
 }
@@ -347,6 +350,7 @@ export async function deleteTest(formData: FormData): Promise<void> {
   revalidatePath("/admin/testlar");
   revalidatePath("/oqituvchi/testlar");
   revalidatePath("/testlar");
+  revalidateTag(PUBLIC_TESTS_DATA_TAG, "max");
 }
 
 export async function publishTestDraft(formData: FormData): Promise<void> {
@@ -370,4 +374,7 @@ export async function publishTestDraft(formData: FormData): Promise<void> {
   });
   revalidatePath("/admin/testlar");
   revalidatePath("/oqituvchi/testlar");
+  revalidatePath("/testlar");
+  revalidatePath(`/testlar/${id}`);
+  revalidateTag(PUBLIC_TESTS_DATA_TAG, "max");
 }

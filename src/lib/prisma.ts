@@ -1,10 +1,12 @@
 import { PrismaClient } from "@prisma/client";
+import { getTunedDatabaseUrl } from "@/lib/prisma-database-url";
 
 /**
  * Namespaced singleton — avoids `globalThis.prisma` collisions with other libs/tutorials
  * and ensures dev HMR does not accidentally reuse a foreign Prisma instance.
  *
  * Neon: `DATABASE_URL` pooled (`pgbouncer=true`), `DIRECT_URL` — migrate/db push.
+ * Build vaqti: `getTunedDatabaseUrl` pool parametrlarini yumshoq qiladi (SSG parallel).
  * If queries fail with “Unknown argument …”, run `npx prisma generate` va dev serverni qayta ishga tushiring.
  */
 const globalForPrisma = globalThis as typeof globalThis & {
@@ -19,12 +21,18 @@ function createClient(): PrismaClient {
   if (!process.env.DIRECT_URL) {
     process.env.DIRECT_URL = process.env.DATABASE_URL;
   }
+
+  const tunedUrl = getTunedDatabaseUrl(process.env.DATABASE_URL) ?? process.env.DATABASE_URL;
+
   return new PrismaClient({
+    datasources: {
+      db: { url: tunedUrl },
+    },
     log: process.env.NODE_ENV === "development" ? ["error", "warn"] : ["error"],
   });
 }
 
-/** Barcha muhitlarda bitta instansiya — Neon pooled ulanishlarni ortiqcha ochishni kamaytiradi. */
+/** Barcha Node server kontekstlarida bitta instansiya (har bir worker jarayoni o‘z nusxasi). */
 export const prisma =
   globalForPrisma.__IQ_MONITORING_PRISMA__ ??
   (globalForPrisma.__IQ_MONITORING_PRISMA__ = createClient());

@@ -2,6 +2,13 @@ import Link from "next/link";
 import { Suspense } from "react";
 import { LoginForm } from "@/components/auth/login-form";
 import { BRAND } from "@/lib/brand";
+import { getServerLocale } from "@/lib/i18n/resolve-locale";
+import { metadataFromSeoKey } from "@/lib/seo/public-page-metadata";
+
+export async function generateMetadata() {
+  const locale = await getServerLocale();
+  return metadataFromSeoKey(locale, "kirish");
+}
 
 export default function LoginPage() {
   return (

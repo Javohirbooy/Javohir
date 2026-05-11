@@ -1,26 +1,14 @@
 import * as Sentry from "@sentry/nextjs";
+import { getSharedSentryInitOptions } from "@/lib/sentry/init-core";
 
-const dsn = process.env.NEXT_PUBLIC_SENTRY_DSN;
+const isProd = process.env.NODE_ENV === "production";
 
 Sentry.init({
-  dsn: dsn || undefined,
-  enabled: Boolean(dsn),
-  environment: process.env.SENTRY_ENVIRONMENT ?? process.env.NODE_ENV,
-  tracesSampleRate: process.env.NODE_ENV === "production" ? 0.1 : 1,
-  debug: false,
-  sendDefaultPii: false,
-  beforeSend(event) {
-    if (event.request?.headers) {
-      const h = { ...event.request.headers };
-      delete h["Cookie"];
-      delete h["Authorization"];
-      event.request.headers = h;
-    }
-    if (event.request?.cookies) {
-      delete event.request.cookies;
-    }
-    return event;
-  },
+  ...getSharedSentryInitOptions("browser"),
+  debug: process.env.SENTRY_DEBUG === "1",
+  tracePropagationTargets: isProd
+    ? ["localhost", /^https:\/\/.+\.vercel\.app$/]
+    : ["localhost", /^http:\/\/127\.0\.0\.1(:\d+)?$/, /^http:\/\/localhost(:\d+)?$/],
 });
 
 export const onRouterTransitionStart = Sentry.captureRouterTransitionStart;

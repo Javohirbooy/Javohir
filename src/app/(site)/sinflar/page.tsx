@@ -1,8 +1,15 @@
 import { prisma } from "@/lib/prisma";
 import { GradeCard } from "@/components/classes/grade-card";
 import { SectionTitle } from "@/components/ui/section-title";
+import { getServerLocale } from "@/lib/i18n/resolve-locale";
+import { metadataFromSeoKey } from "@/lib/seo/public-page-metadata";
 
 type Props = { searchParams: Promise<{ q?: string }> };
+
+export async function generateMetadata() {
+  const locale = await getServerLocale();
+  return metadataFromSeoKey(locale, "sinflar");
+}
 
 export default async function ClassesPage({ searchParams }: Props) {
   const sp = await searchParams;

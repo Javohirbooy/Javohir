@@ -25,8 +25,13 @@ export const authConfig = {
         token.locale = (user as { locale?: string }).locale;
         token.mustChangePassword = (user as { mustChangePassword?: boolean }).mustChangePassword;
         token.studentNumber = (user as { studentNumber?: number | null }).studentNumber ?? undefined;
-        token.permissionKeys =
-          (user as { permissionKeys?: string[] }).permissionKeys ?? staticPermissionKeysForRole(String(user.role));
+        {
+          const incoming = (user as { permissionKeys?: string[] }).permissionKeys;
+          token.permissionKeys =
+            Array.isArray(incoming) && incoming.length > 0
+              ? incoming
+              : staticPermissionKeysForRole(String(user.role));
+        }
       }
       if (trigger === "update" && token.role) {
         token.permissionKeys = staticPermissionKeysForRole(token.role as string);

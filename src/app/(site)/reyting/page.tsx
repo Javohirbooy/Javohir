@@ -1,15 +1,48 @@
+import { unstable_cache } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { SectionTitle } from "@/components/ui/section-title";
 import { Card } from "@/components/ui/card";
 import { ProgressBar } from "@/components/ui/progress-bar";
+import { getServerLocale } from "@/lib/i18n/resolve-locale";
+import { metadataFromSeoKey } from "@/lib/seo/public-page-metadata";
 import { Trophy } from "lucide-react";
 
+export async function generateMetadata() {
+  const locale = await getServerLocale();
+  return metadataFromSeoKey(locale, "reyting");
+}
+
+/** Bosh sahifa bilan bir xil ISR — kesh `unstable_cache` bilan build va runtime da yumshoqroq. */
+export const revalidate = 60;
+
+const getCachedLeaderboard = unstable_cache(
+  async () =>
+    prisma.testResult.findMany({
+      orderBy: { score: "desc" },
+      take: 15,
+      select: {
+        id: true,
+        score: true,
+        user: { select: { name: true, avatarEmoji: true } },
+        test: {
+          select: {
+            title: true,
+            subject: {
+              select: {
+                title: true,
+                grade: { select: { number: true } },
+              },
+            },
+          },
+        },
+      },
+    }),
+  ["public-site-leaderboard-top-15"],
+  { revalidate: 60 },
+);
+
 export default async function LeaderboardPage() {
-  const rows = await prisma.testResult.findMany({
-    orderBy: { score: "desc" },
-    take: 15,
-    include: { user: true, test: { include: { subject: { include: { grade: true } } } } },
-  });
+  const rows = await getCachedLeaderboard();
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-16 sm:px-6 lg:py-20">

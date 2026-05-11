@@ -181,6 +181,8 @@ export function PremiumNavbar({ user, locale }: { user: UserLite; locale: AppLoc
             }}
             className="group inline-flex h-11 min-h-[44px] w-11 min-w-[44px] items-center justify-center rounded-xl border border-emerald-200 bg-white px-0 text-xs text-slate-700 backdrop-blur-xl dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200 sm:h-11 sm:min-h-0 sm:w-[8.5rem] sm:min-w-[8.5rem] sm:justify-between sm:px-3 sm:text-sm"
             aria-label={L.localeLabel}
+            aria-expanded={localeOpen}
+            aria-haspopup="menu"
           >
             <span className="hidden items-center gap-2 sm:inline-flex">
               <Icon3DGlyph icon={Globe} size="md" className="text-emerald-600" />
@@ -228,6 +230,8 @@ export function PremiumNavbar({ user, locale }: { user: UserLite; locale: AppLoc
                     setSectionsOpen(false);
                   }}
                   className="group inline-flex h-11 max-w-[15rem] items-center gap-2 rounded-xl border border-emerald-200 bg-white px-3 text-left backdrop-blur-xl dark:border-slate-600 dark:bg-slate-800"
+                  aria-expanded={userMenuOpen}
+                  aria-haspopup="menu"
                 >
                   <Icon3DGlyph icon={UserCircle2} size="md" className="shrink-0 text-emerald-600" />
                   <span className="min-w-0">

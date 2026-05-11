@@ -1,7 +1,7 @@
 "use server";
 
 import { randomBytes } from "crypto";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { cookies } from "next/headers";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
@@ -11,6 +11,7 @@ import { buildOptionPermutation, buildQuestionShuffle } from "@/lib/exam-shuffle
 import { writeAuditLog } from "@/lib/audit";
 import { getServerLocale } from "@/lib/i18n/resolve-locale";
 import { formatTestMetaLine } from "@/lib/i18n/t";
+import { PUBLIC_TESTS_DATA_TAG } from "@/lib/tests/public-test-queries";
 
 const FINISHED_STATUSES = [
   "SUBMITTED",
@@ -68,7 +69,30 @@ async function resumeAttempt(attemptId: string, userId: string): Promise<BeginAt
   const locale = await getServerLocale();
   const attempt = await prisma.testAttempt.findFirst({
     where: { id: attemptId, userId, status: "IN_PROGRESS" },
-    include: { test: { include: { subject: { include: { grade: true } }, questions: { orderBy: { order: "asc" } } } } },
+    select: {
+      id: true,
+      sessionToken: true,
+      startedAt: true,
+      questionOrderJson: true,
+      optionPermutationsJson: true,
+      test: {
+        select: {
+          title: true,
+          difficulty: true,
+          durationMinutes: true,
+          endsAt: true,
+          shuffleQuestions: true,
+          shuffleOptions: true,
+          protectedExamMode: true,
+          tabSwitchPolicy: true,
+          subject: { select: { title: true, grade: { select: { number: true } } } },
+          questions: {
+            orderBy: { order: "asc" },
+            select: { id: true, text: true, optionsJson: true, order: true },
+          },
+        },
+      },
+    },
   });
   if (!attempt?.test) return { ok: false, error: "Sessiya topilmadi." };
   if (!attempt.sessionToken) return { ok: false, error: "Sessiya yaroqsiz." };
@@ -116,7 +140,27 @@ export async function beginTestAttempt(testId: string): Promise<BeginAttemptResu
 
   const test = await prisma.test.findUnique({
     where: { id: testId },
-    include: { subject: { include: { grade: true } }, questions: { orderBy: { order: "asc" } } },
+    select: {
+      id: true,
+      title: true,
+      difficulty: true,
+      durationMinutes: true,
+      maxAttempts: true,
+      isActive: true,
+      isDraft: true,
+      status: true,
+      startsAt: true,
+      endsAt: true,
+      shuffleQuestions: true,
+      shuffleOptions: true,
+      protectedExamMode: true,
+      tabSwitchPolicy: true,
+      subject: { select: { gradeId: true, title: true, grade: { select: { number: true } } } },
+      questions: {
+        orderBy: { order: "asc" },
+        select: { id: true, text: true, optionsJson: true, order: true },
+      },
+    },
   });
   if (!test?.questions.length) return { ok: false, error: "Test topilmadi." };
 
@@ -262,7 +306,31 @@ export async function submitExamAttempt(
   const jar = await cookies();
   const attempt = await prisma.testAttempt.findFirst({
     where: { id: attemptId, userId: session.user.id },
-    include: { test: { include: { subject: true, questions: { orderBy: { order: "asc" } } } } },
+    select: {
+      id: true,
+      userId: true,
+      testId: true,
+      status: true,
+      sessionToken: true,
+      startedAt: true,
+      questionOrderJson: true,
+      optionPermutationsJson: true,
+      test: {
+        select: {
+          id: true,
+          isDraft: true,
+          isActive: true,
+          status: true,
+          durationMinutes: true,
+          endsAt: true,
+          subject: { select: { gradeId: true } },
+          questions: {
+            orderBy: { order: "asc" },
+            select: { id: true, text: true, optionsJson: true, correctIndex: true, points: true },
+          },
+        },
+      },
+    },
   });
   if (!attempt?.test) return { ok: false, error: "Sessiya topilmadi." };
   if (attempt.sessionToken !== sessionToken) return { ok: false, error: "Sessiya yaroqsiz." };
@@ -357,6 +425,7 @@ export async function submitExamAttempt(
   revalidatePath("/oquvchi");
   revalidatePath("/testlar");
   revalidatePath("/reyting");
+  revalidateTag(PUBLIC_TESTS_DATA_TAG, "max");
 
   return {
     ok: true,
@@ -381,7 +450,20 @@ export async function logExamViolation(
 
   const attempt = await prisma.testAttempt.findFirst({
     where: { id: attemptId, userId: session.user.id },
-    include: { test: true },
+    select: {
+      id: true,
+      status: true,
+      sessionToken: true,
+      questionOrderJson: true,
+      testId: true,
+      test: {
+        select: {
+          id: true,
+          protectedExamMode: true,
+          tabSwitchPolicy: true,
+        },
+      },
+    },
   });
   if (!attempt || attempt.sessionToken !== sessionToken || attempt.status !== "IN_PROGRESS") {
     return { ok: false, error: "Sessiya yaroqsiz." };

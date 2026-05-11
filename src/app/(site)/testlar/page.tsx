@@ -1,5 +1,4 @@
 import { auth } from "@/auth";
-import { prisma } from "@/lib/prisma";
 import { SectionTitle } from "@/components/ui/section-title";
 import { Card } from "@/components/ui/card";
 import { TestFilterBar } from "@/components/tests/test-filter-bar";
@@ -7,9 +6,19 @@ import { TestCard, type TestCardModel } from "@/components/ui/test-card";
 import { DIFFICULTIES, type Difficulty } from "@/lib/difficulty";
 import { getServerLocale } from "@/lib/i18n/resolve-locale";
 import { t } from "@/lib/i18n/t";
+import { metadataFromSeoKey } from "@/lib/seo/public-page-metadata";
 import Link from "next/link";
+import { fetchCachedTestsIndex } from "@/lib/tests/public-test-queries";
 
 type Props = { searchParams: Promise<{ q?: string; subject?: string; grade?: string; difficulty?: string }> };
+
+export async function generateMetadata() {
+  const locale = await getServerLocale();
+  return metadataFromSeoKey(locale, "testlar");
+}
+
+/** Ro‘yxat `unstable_cache` ichida — tez-tez qidiruvda DB bosimi kamayadi. */
+export const revalidate = 60;
 
 export default async function TestsIndexPage({ searchParams }: Props) {
   const locale = await getServerLocale();
@@ -24,35 +33,23 @@ export default async function TestsIndexPage({ searchParams }: Props) {
   const difficulty =
     diffRaw && (DIFFICULTIES as readonly string[]).includes(diffRaw) ? (diffRaw as Difficulty) : undefined;
 
-  const tests = await prisma.test.findMany({
-    where: {
-      ...(session?.user?.role === "TEACHER" && session.user.id ? { authorUserId: session.user.id } : {}),
-      ...(query
-        ? {
-            OR: [{ title: { contains: query, mode: "insensitive" } }, { description: { contains: query, mode: "insensitive" } }],
-          }
-        : {}),
-      subject: {
-        ...(subjectTitle ? { title: subjectTitle } : {}),
-        ...(gradeNum != null ? { grade: { number: gradeNum } } : {}),
-      },
-      ...(difficulty ? { difficulty } : {}),
-    },
-    take: 48,
-    orderBy: [{ subject: { grade: { number: "asc" } } }, { title: "asc" }],
-    include: {
-      subject: { include: { grade: true } },
-      _count: { select: { questions: true } },
-    },
+  const teacherId = session?.user?.role === "TEACHER" && session.user.id ? session.user.id : null;
+
+  const tests = await fetchCachedTestsIndex({
+    teacherId,
+    query,
+    subjectTitle,
+    gradeNum,
+    difficulty,
   });
 
-  const cards: TestCardModel[] = tests.map((t) => ({
-    id: t.id,
-    title: t.title,
-    difficulty: t.difficulty,
-    questionCount: t._count.questions,
-    gradeNumber: t.subject.grade.number,
-    subjectTitle: t.subject.title,
+  const cards: TestCardModel[] = tests.map((row) => ({
+    id: row.id,
+    title: row.title,
+    difficulty: row.difficulty,
+    questionCount: row._count.questions,
+    gradeNumber: row.subject.grade.number,
+    subjectTitle: row.subject.title,
   }));
   const clearQParams = new URLSearchParams({
     ...(subjectTitle ? { subject: subjectTitle } : {}),
@@ -109,8 +106,8 @@ export default async function TestsIndexPage({ searchParams }: Props) {
         </Card>
       ) : (
         <div className="mt-10 grid gap-5 md:grid-cols-2">
-          {cards.map((t) => (
-            <TestCard key={t.id} test={t} />
+          {cards.map((row) => (
+            <TestCard key={row.id} test={row} />
           ))}
         </div>
       )}

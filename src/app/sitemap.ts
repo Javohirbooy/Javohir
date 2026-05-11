@@ -14,6 +14,7 @@ const publicRoutes = [
   "/register",
   "/forgot-password",
   "/aloqa",
+  "/premium",
 ] as const;
 
 export default function sitemap(): MetadataRoute.Sitemap {

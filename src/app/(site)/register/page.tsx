@@ -2,6 +2,19 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { RegisterForm } from "@/components/auth/register-form";
 import { BRAND } from "@/lib/brand";
+import { getServerLocale } from "@/lib/i18n/resolve-locale";
+import { metadataFromSeoKey } from "@/lib/seo/public-page-metadata";
+
+export async function generateMetadata() {
+  const locale = await getServerLocale();
+  if (process.env.NEXT_PUBLIC_ENABLE_REGISTRATION === "0") {
+    return metadataFromSeoKey(locale, "registerDisabled", {
+      robots: { index: false, follow: true },
+      titleMode: "template",
+    });
+  }
+  return metadataFromSeoKey(locale, "register");
+}
 
 export default function RegisterPage() {
   if (process.env.NEXT_PUBLIC_ENABLE_REGISTRATION === "0") {

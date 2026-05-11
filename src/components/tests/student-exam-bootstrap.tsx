@@ -1,9 +1,18 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { useEffect, useState } from "react";
 import { beginTestAttempt, type BeginAttemptResult } from "@/app/actions/exam-session";
 import { useT } from "@/components/providers/locale-provider";
-import { TestRunner } from "@/components/tests/test-runner";
+
+const TestRunner = dynamic(() => import("./test-runner").then((m) => m.TestRunner), {
+  ssr: true,
+  loading: () => (
+    <div className="rounded-3xl border border-white/15 bg-white/5 px-6 py-10 text-center text-sm text-white/60 backdrop-blur-xl">
+      …
+    </div>
+  ),
+});
 
 /**
  * Starts a server-tracked exam attempt (shuffle, timer, violations) then mounts the runner.

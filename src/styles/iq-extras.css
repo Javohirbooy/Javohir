@@ -80,6 +80,14 @@
   will-change: background-position;
 }
 
+@media (prefers-reduced-motion: reduce) {
+  .iq-ambient-orb,
+  .iq-ambient-sheen {
+    animation: none !important;
+    will-change: auto;
+  }
+}
+
 @keyframes iq-fade-slide-in {
   from {
     opacity: 0;

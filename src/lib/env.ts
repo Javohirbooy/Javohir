@@ -1,43 +1,64 @@
-import { z } from "zod";
 import { isUpstashConfigured } from "@/lib/upstash-redis";
+import {
+  allowInsecureSiteUrl,
+  isHttpsUrl,
+  parsePublicEnv,
+  parseServerSecrets,
+} from "@/lib/env-schema";
 
-const publicEnvSchema = z.object({
-  NEXT_PUBLIC_SITE_URL: z.string().url().optional(),
-});
+export { allowInsecureSiteUrl, parsePublicEnv, parseServerSecrets } from "@/lib/env-schema";
 
-const serverEnvSchema = z.object({
-  AUTH_SECRET: z.string().min(16).optional(),
-  DATABASE_URL: z.string().min(1).optional(),
-  RESEND_API_KEY: z.string().min(1).optional(),
-  RESEND_FROM: z.string().min(1).optional(),
-  SENTRY_DSN: z.string().url().optional(),
-  NEXT_PUBLIC_SENTRY_DSN: z.string().url().optional(),
-  UPSTASH_REDIS_REST_URL: z.string().url().optional(),
-  UPSTASH_REDIS_REST_TOKEN: z.string().min(1).optional(),
-});
-
-export function getSiteUrl() {
-  const parsed = publicEnvSchema.safeParse(process.env);
-  const raw = parsed.success ? parsed.data.NEXT_PUBLIC_SITE_URL : undefined;
-  return raw ?? "http://localhost:3000";
+/**
+ * Canonical / email / OG uchun asosiysi `NEXT_PUBLIC_SITE_URL`.
+ * Vercelda odatda `VERCEL_URL` (https) — `NEXT_PUBLIC_SITE_URL` bo‘lmasa shu ishlatiladi.
+ */
+export function getSiteUrl(): string {
+  const parsed = parsePublicEnv();
+  const explicit = parsed.ok ? parsed.data.NEXT_PUBLIC_SITE_URL : undefined;
+  if (explicit) return explicit;
+  const vercel = process.env.VERCEL_URL?.trim();
+  if (vercel) {
+    const withProto = vercel.startsWith("http") ? vercel : `https://${vercel}`;
+    try {
+      return new URL(withProto).origin;
+    } catch {
+      /* ignore */
+    }
+  }
+  return "http://localhost:3000";
 }
 
-export function validateServerEnv() {
-  const parsed = serverEnvSchema.safeParse(process.env);
-  if (!parsed.success) {
-    return {
-      ok: false as const,
-      errors: parsed.error.flatten().fieldErrors,
+export type ValidateServerEnvResult =
+  | { ok: true }
+  | {
+      ok: false;
+      errors: {
+        public?: Record<string, string[] | undefined>;
+        server?: Record<string, string[] | undefined>;
+      };
     };
+
+/** Startup / testlar uchun server env shaklini tekshirish (xatolarni konsolga chiqarmaydi). */
+export function validateServerEnv(): ValidateServerEnvResult {
+  const pub = parsePublicEnv();
+  const sec = parseServerSecrets();
+  if (!pub.ok) {
+    return { ok: false, errors: { public: pub.errors.flatten().fieldErrors } };
   }
-  return { ok: true as const };
+  if (!sec.ok) {
+    return { ok: false, errors: { server: sec.errors.flatten().fieldErrors } };
+  }
+  return { ok: true };
 }
 
 /**
- * Ishga tushishda chaqiriladi (`instrumentation.ts`). Productionda majburiy o‘zgaruvchilarni tekshiradi.
+ * `instrumentation.ts` (Node production) da chaqiriladi.
+ * CI / GitHub Actions: `ALLOW_INSECURE_SITE_URL=1` yoki `GITHUB_ACTIONS=true` — http localhost ruxsat.
  */
 export function assertProductionConfig() {
   if (process.env.NODE_ENV !== "production") return;
+
+  const relaxed = allowInsecureSiteUrl();
 
   if (!process.env.DATABASE_URL?.trim()) {
     throw new Error("[env] Production: DATABASE_URL majburiy.");
@@ -48,14 +69,48 @@ export function assertProductionConfig() {
     throw new Error("[env] Production: AUTH_SECRET kamida 32 belgi bo‘lishi kerak.");
   }
 
-  const site = process.env.NEXT_PUBLIC_SITE_URL;
-  if (!site || !/^https:\/\//i.test(site)) {
-    console.warn("[env] Production: NEXT_PUBLIC_SITE_URL HTTPS URL bo‘lishi tavsiya etiladi (email havolalari uchun).");
+  const site = process.env.NEXT_PUBLIC_SITE_URL?.trim();
+  const hasVercelUrl = Boolean(process.env.VERCEL_URL?.trim());
+  if (!site && !hasVercelUrl && !relaxed) {
+    throw new Error(
+      "[env] Production: NEXT_PUBLIC_SITE_URL yoki Vercel VERCEL_URL kerak (metadataBase, email, OG).",
+    );
+  }
+  if (!site && !hasVercelUrl && relaxed) {
+    console.warn("[env] Production: NEXT_PUBLIC_SITE_URL yo‘q — metadata/email havolalari localhost ga tushishi mumkin.");
+  }
+  if (site && !isHttpsUrl(site)) {
+    if (!relaxed) {
+      throw new Error(
+        "[env] Production: NEXT_PUBLIC_SITE_URL faqat https:// bo‘lishi kerak. Istisno: ALLOW_INSECURE_SITE_URL=1 yoki CI.",
+      );
+    }
+    console.warn("[env] Production: NEXT_PUBLIC_SITE_URL HTTPS emas — faqat dev/CI rejimi uchun.");
+  }
+
+  const authBase = process.env.AUTH_URL?.trim() || process.env.NEXTAUTH_URL?.trim();
+  if (authBase && !isHttpsUrl(authBase) && !relaxed) {
+    throw new Error(
+      "[env] Production: AUTH_URL yoki NEXTAUTH_URL https:// bo‘lishi kerak (session cookie xavfsizligi).",
+    );
   }
 
   if (process.env.VERCEL && !isUpstashConfigured()) {
     console.warn(
       "[env] Vercel: bir nechta funksiya instansiyasi uchun UPSTASH_REDIS_REST_URL + UPSTASH_REDIS_REST_TOKEN tavsiya etiladi (rate limit / lockout).",
     );
+  }
+
+  const pub = parsePublicEnv();
+  const sec = parseServerSecrets();
+  if (!pub.ok) {
+    const fe = pub.errors.flatten().fieldErrors;
+    console.error("[env] Production: NEXT_PUBLIC_* sxema xatosi", fe);
+    throw new Error("[env] Production: NEXT_PUBLIC_* muhit o‘zgaruvchilari sxemaga mos emas.");
+  }
+  if (!sec.ok) {
+    const fe = sec.errors.flatten().fieldErrors;
+    console.error("[env] Production: server env sxema xatosi", fe);
+    throw new Error("[env] Production: server-only muhit o‘zgaruvchilari sxemaga mos emas.");
   }
 }

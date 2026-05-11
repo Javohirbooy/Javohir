@@ -196,6 +196,20 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         }
         await clearLoginAttempts(fp);
         logSecurityEvent("auth.success", { role: String(user.role) });
+        /** Audit shu yerda: `authorize` dagi `user` — haqiqiy Prisma qatori; `events.signIn` dagi `user` ba’zan id/email bilan mos kelmaydi. */
+        try {
+          await writeAuditLog({
+            actorUserId: user.id,
+            action: "auth.sign_in",
+            entityType: "User",
+            entityId: user.id,
+            metadata: { provider: "credentials" },
+          });
+        } catch (e) {
+          logStructured("warn", "audit.sign_in_write_failed", {
+            message: e instanceof Error ? e.message : String(e),
+          });
+        }
         const role = user.role as AppRole;
         const permissionKeys = await resolvePermissionKeysForRole(user.role);
         return {
@@ -237,19 +251,6 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         }
       }
       return token;
-    },
-  },
-  events: {
-    async signIn({ user }) {
-      const id = user?.id;
-      if (!id) return;
-      await writeAuditLog({
-        actorUserId: id,
-        action: "auth.sign_in",
-        entityType: "User",
-        entityId: id,
-        metadata: { provider: "credentials" },
-      });
     },
   },
 });
