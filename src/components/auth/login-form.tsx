@@ -22,35 +22,51 @@ export function LoginForm() {
     e.preventDefault();
     setError(null);
     setLoading(true);
-    if (process.env.NEXT_PUBLIC_AUTH_DEBUG === "1") {
-      console.info("[iqm-login] submit", { identifier, hasPassword: password.length > 0 });
+    const signInTimeoutMs = 45_000;
+    try {
+      if (process.env.NEXT_PUBLIC_AUTH_DEBUG === "1") {
+        console.info("[iqm-login] submit", { identifier, hasPassword: password.length > 0 });
+      }
+      const res = await Promise.race([
+        signIn("credentials", { identifier, password, redirect: false }),
+        new Promise<null>((_, reject) =>
+          setTimeout(() => reject(new Error("TIMEOUT")), signInTimeoutMs),
+        ),
+      ]);
+      if (process.env.NEXT_PUBLIC_AUTH_DEBUG === "1") {
+        console.info("[iqm-login] signIn result", { ok: res?.ok, error: res?.error, status: res?.status, url: res?.url });
+      }
+      if (res == null || !res.ok) {
+        setError(
+          res?.error
+            ? "Email/ism-familiya yoki parol noto‘g‘ri. Email tasdiqlangan va akkaunt faolligini tekshiring."
+            : "Kirish javobi kutilmadi. Internet yoki serverni tekshirib, qayta urinib ko‘ring.",
+        );
+        return;
+      }
+      const session = await getSession();
+      if (process.env.NEXT_PUBLIC_AUTH_DEBUG === "1") {
+        console.info("[iqm-login] session role", session?.user?.role);
+      }
+      const role = session?.user?.role;
+      const dest =
+        role === "SUPER_ADMIN"
+          ? "/super-admin"
+          : role === "ADMIN"
+            ? "/admin"
+            : role === "TEACHER"
+              ? "/oqituvchi"
+              : role === "STUDENT"
+                ? "/oquvchi"
+                : callbackUrl;
+      router.push(dest);
+      router.refresh();
+    } catch (err) {
+      const msg = err instanceof Error && err.message === "TIMEOUT" ? "So‘rov juda uzoq davom etdi. Qayta urinib ko‘ring." : "Kirishda xatolik yuz berdi. Sahifani yangilab qayta urinib ko‘ring.";
+      setError(msg);
+    } finally {
+      setLoading(false);
     }
-    const res = await signIn("credentials", { identifier, password, redirect: false });
-    if (process.env.NEXT_PUBLIC_AUTH_DEBUG === "1") {
-      console.info("[iqm-login] signIn result", { ok: res?.ok, error: res?.error, status: res?.status, url: res?.url });
-    }
-    setLoading(false);
-    if (res?.error) {
-      setError("Email/ism-familiya yoki parol noto‘g‘ri.");
-      return;
-    }
-    const session = await getSession();
-    if (process.env.NEXT_PUBLIC_AUTH_DEBUG === "1") {
-      console.info("[iqm-login] session role", session?.user?.role);
-    }
-    const role = session?.user?.role;
-    const dest =
-      role === "SUPER_ADMIN"
-        ? "/super-admin"
-        : role === "ADMIN"
-          ? "/admin"
-          : role === "TEACHER"
-            ? "/oqituvchi"
-            : role === "STUDENT"
-              ? "/oquvchi"
-              : callbackUrl;
-    router.push(dest);
-    router.refresh();
   }
 
   return (

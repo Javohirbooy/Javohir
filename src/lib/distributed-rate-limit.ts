@@ -114,26 +114,23 @@ export async function takeRateLimitSlot(
       });
       logSecurityEvent("redis_down", { namespace, requestId: options?.requestId });
       console.error("[rate-limit] Upstash error", e);
+      // Davom etamiz: `requireDistributed` bo‘lsa ham login butunlay bloklanmasin — xotira limiter.
     }
-  }
-
-  if (options?.requireDistributed) {
-    logStructured("warn", "rate_limit.redis_unavailable", {
-      namespace,
-      requestId: options.requestId,
-    });
-    logSecurityEvent("redis_down", { namespace, requestId: options.requestId });
-    return {
-      ok: false,
-      retryAfterMs: 2000,
-      remaining: 0,
-      backend: "redis_unavailable",
-    };
   }
 
   const mem = checkRateLimit(compositeKey, limit, windowMs);
   if (!rl) {
-    logStructured("warn", "rate_limit.memory_fallback", {
+    // Auth/middleware `requireDistributed` + Redis yo‘q: kutiladigan rejim; har so‘rovda warn spam qilmaymiz.
+    if (!options?.requireDistributed) {
+      logStructured("warn", "rate_limit.memory_fallback", {
+        namespace,
+        requestId: options?.requestId,
+      });
+      logSecurityEvent("rate_limit_fallback", { namespace, requestId: options?.requestId });
+    }
+  } else if (options?.requireDistributed) {
+    // Redis klient bor edi, lekin limit() dan tashqariga chiqildi (xato) — xotiraga tushdik.
+    logStructured("warn", "rate_limit.distributed_memory_fallback", {
       namespace,
       requestId: options?.requestId,
     });
