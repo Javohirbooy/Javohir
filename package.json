@@ -25,7 +25,9 @@
     "test:e2e": "playwright test",
     "test:e2e:stress": "playwright test -c playwright.stress.config.ts",
     "redis:ping": "tsx scripts/check-redis.ts",
-    "stress:auth-post": "tsx scripts/stress-auth-post.ts"
+    "stress:auth-post": "tsx scripts/stress-auth-post.ts",
+    "load:test:exam": "node scripts/load-test-exam-full.mjs",
+    "load:test:testlar": "node scripts/load-test-testlar.mjs"
   },
   "prisma": {
     "seed": "npx tsx prisma/seed.ts"

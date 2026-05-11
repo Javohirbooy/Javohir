@@ -17,8 +17,8 @@ export async function generateMetadata() {
   return metadataFromSeoKey(locale, "testlar");
 }
 
-/** Ro‘yxat `unstable_cache` ichida — tez-tez qidiruvda DB bosimi kamayadi. */
-export const revalidate = 60;
+/** Ro‘yxat `unstable_cache` bilan mos — takroriy so‘rovlarda tezroq. */
+export const revalidate = 120;
 
 export default async function TestsIndexPage({ searchParams }: Props) {
   const locale = await getServerLocale();

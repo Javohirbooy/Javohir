@@ -16,7 +16,7 @@ const getCachedCounts = unstable_cache(
     return { studentCount, testCount, avgRow };
   },
   ["landing-stats-counts"],
-  { revalidate: 60 },
+  { revalidate: 120 },
 );
 
 function fallbackItems(locale: AppLocale): LandingStatItemDTO[] {

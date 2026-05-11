@@ -15,8 +15,8 @@ export async function generateMetadata() {
   return metadataFromSeoKey(locale, "home");
 }
 
-/** Bosh sahifa statistikasi `unstable_cache` bilan 60s; qolgan segmentlar ham tez-yangilanadi */
-export const revalidate = 60;
+/** Bosh sahifa statistikasi `unstable_cache` bilan ~120s; DB yuki kamroq */
+export const revalidate = 120;
 
 export default async function HomePage() {
   const locale = await getServerLocale();

@@ -12,8 +12,8 @@ export async function generateMetadata() {
   return metadataFromSeoKey(locale, "reyting");
 }
 
-/** Bosh sahifa bilan bir xil ISR — kesh `unstable_cache` bilan build va runtime da yumshoqroq. */
-export const revalidate = 60;
+/** ISR — kesh `unstable_cache` bilan mos. */
+export const revalidate = 120;
 
 const getCachedLeaderboard = unstable_cache(
   async () =>
@@ -38,7 +38,7 @@ const getCachedLeaderboard = unstable_cache(
       },
     }),
   ["public-site-leaderboard-top-15"],
-  { revalidate: 60 },
+  { revalidate: 120 },
 );
 
 export default async function LeaderboardPage() {

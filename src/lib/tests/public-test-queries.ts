@@ -54,7 +54,7 @@ export function fetchCachedTestsIndex(params: TestsIndexCacheParams) {
       String(gradeNum ?? ""),
       difficulty ?? "",
     ],
-    { revalidate: 60, tags: [PUBLIC_TESTS_DATA_TAG] },
+    { revalidate: 120, tags: [PUBLIC_TESTS_DATA_TAG] },
   )();
 }
 
@@ -71,7 +71,8 @@ export function fetchCachedTestSeo(testId: string) {
         },
       }),
     ["test-seo-v1", testId],
-    { revalidate: 60, tags: [PUBLIC_TESTS_DATA_TAG] },
+    /** Ko‘p qayta ochishda DB yuki kamroq (tezroq javob). */
+    { revalidate: 120, tags: [PUBLIC_TESTS_DATA_TAG] },
   )();
 }
 
@@ -93,6 +94,6 @@ export function fetchCachedTestPreviewPack(testId: string) {
         },
       }),
     ["test-preview-v1", testId],
-    { revalidate: 60, tags: [PUBLIC_TESTS_DATA_TAG] },
+    { revalidate: 120, tags: [PUBLIC_TESTS_DATA_TAG] },
   )();
 }
