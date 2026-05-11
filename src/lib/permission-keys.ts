@@ -30,6 +30,10 @@ export const PERMISSION_KEYS = [
   "SITE_SETTINGS_MANAGE",
   "SITE_SETTINGS_SUPER",
   "ANNOUNCEMENTS_MANAGE",
+  /** Olimpiada yaratish, kodlar, jadval, pause/end. */
+  "OLYMPIAD_MANAGE",
+  /** Jonli monitoring dashboard (qatnashchilar, shubhali harakatlar). */
+  "OLYMPIAD_MONITOR",
   /** Role ↔ permission matrix in admin UI; super-admin lockout protection applies. */
   "PERMISSIONS_MANAGE",
 ] as const;

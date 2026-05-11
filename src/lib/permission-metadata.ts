@@ -29,6 +29,8 @@ export const PERMISSION_DESCRIPTIONS_UZ: Record<PermissionKey, string> = {
   SITE_SETTINGS_MANAGE: "Sayt sozlamalari (admin)",
   SITE_SETTINGS_SUPER: "Super-only sozlamalar",
   ANNOUNCEMENTS_MANAGE: "E’lonlarni boshqarish",
+  OLYMPIAD_MANAGE: "Olimpiadalarni boshqarish (kodlar, jadval)",
+  OLYMPIAD_MONITOR: "Olimpiada jonli monitoring",
   PERMISSIONS_MANAGE: "Rol ruxsatlarini boshqarish",
 };
 
@@ -70,7 +72,7 @@ const CATEGORY_LABELS_UZ: Record<PermissionCategoryId, string> = {
 export function permissionCategoryOf(key: PermissionKey): PermissionCategoryId {
   if (key === "PERMISSIONS_MANAGE") return "system";
   if (key.startsWith("USERS_") || key.startsWith("PASSWORD_")) return "users";
-  if (key.startsWith("TESTS_") || key.startsWith("TEST_CODES")) return "tests";
+  if (key.startsWith("TESTS_") || key.startsWith("TEST_CODES") || key.startsWith("OLYMPIAD_")) return "tests";
   if (key.startsWith("RESULTS_")) return "results";
   if (key.startsWith("SUBJECTS_") || key.startsWith("QUESTION_")) return "curriculum";
   if (key.startsWith("ANALYTICS_")) return "analytics";

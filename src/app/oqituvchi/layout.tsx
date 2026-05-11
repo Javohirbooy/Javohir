@@ -13,6 +13,7 @@ const items = [
   { href: "/oqituvchi/testlar/import", label: "Test import", icon: "scroll" as const },
   { href: "/oqituvchi/oquvchilar", label: "O‘quvchilar", icon: "user" as const },
   { href: "/oqituvchi/reyting", label: "Reyting", icon: "trophy" as const },
+  { href: "/oqituvchi/oimpiadalar", label: "Olimpiadalar", icon: "layers" as const },
 ];
 
 export default function TeacherLayout({ children }: { children: React.ReactNode }) {

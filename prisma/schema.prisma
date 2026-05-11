@@ -15,11 +15,11 @@ datasource db {
 
 /// Granular capability (e.g. USERS_CREATE). Assigned to roles via RolePermission.
 model Permission {
-  id               String           @id @default(cuid())
-  key              String           @unique
-  description      String?
-  createdAt        DateTime         @default(now())
-  rolePermissions  RolePermission[]
+  id              String           @id @default(cuid())
+  key             String           @unique
+  description     String?
+  createdAt       DateTime         @default(now())
+  rolePermissions RolePermission[]
 }
 
 /// Maps platform role string (User.role) to Permission rows.
@@ -35,29 +35,29 @@ model RolePermission {
 }
 
 model User {
-  id                   String           @id @default(cuid())
-  email                String           @unique
+  id                   String                     @id @default(cuid())
+  email                String                     @unique
   passwordHash         String
   name                 String
   /// SUPER_ADMIN | ADMIN | TEACHER | STUDENT
   role                 String
   /// ACTIVE | INACTIVE | BLOCKED | PENDING_VERIFICATION
-  status               String           @default("ACTIVE")
+  status               String                     @default("ACTIVE")
   /// Yangi ro‘yxatdan o‘tganlar email tasdiqlanguncha false bo‘lishi mumkin.
-  emailVerified        Boolean          @default(true)
-  mustChangePassword   Boolean          @default(false)
+  emailVerified        Boolean                    @default(true)
+  mustChangePassword   Boolean                    @default(false)
   /// uz | ru | en
-  locale               String           @default("uz")
+  locale               String                     @default("uz")
   gradeId              String?
-  avatarEmoji          String?          @default("🎓")
+  avatarEmoji          String?                    @default("🎓")
   avatarUrl            String?
   /// Last actor who issued/reset login credentials (admin or teacher).
   credentialIssuedById String?
   /// O‘quvchi uchun ko‘rsatiladigan doimiy raqamli ID (masalan 100001). Faqat STUDENT uchun.
-  studentNumber        Int?             @unique
-  createdAt            DateTime         @default(now())
-  updatedAt            DateTime         @updatedAt
-  grade                Grade?           @relation(fields: [gradeId], references: [id])
+  studentNumber        Int?                       @unique
+  createdAt            DateTime                   @default(now())
+  updatedAt            DateTime                   @updatedAt
+  grade                Grade?                     @relation(fields: [gradeId], references: [id])
   teacherClasses       TeacherOnClass[]
   teacherSubjects      TeacherSubjectAssignment[]
   /// Students this teacher may manage (credentials, etc.)
@@ -70,6 +70,8 @@ model User {
   testsAuthored        Test[]                     @relation("TestAuthor")
   testAttempts         TestAttempt[]
   authTokens           AuthToken[]
+  olympiadsCreated     Olympiad[]                 @relation("OlympiadCreatedBy")
+  olympiadsResponsible Olympiad[]                 @relation("OlympiadResponsible")
 }
 
 /// EMAIL_VERIFY | PASSWORD_RESET — token clientga yuboriladi, DBda faqat hash saqlanadi.
@@ -110,16 +112,16 @@ model Grade {
 }
 
 model Subject {
-  id          String                     @id @default(cuid())
-  gradeId     String
-  title       String
-  description String
-  imageEmoji  String                     @default("📘")
-  order       Int                        @default(0)
-  grade       Grade                      @relation(fields: [gradeId], references: [id], onDelete: Cascade)
-  tests       Test[]
-  materials   Material[]
-  topics      Topic[]
+  id              String                     @id @default(cuid())
+  gradeId         String
+  title           String
+  description     String
+  imageEmoji      String                     @default("📘")
+  order           Int                        @default(0)
+  grade           Grade                      @relation(fields: [gradeId], references: [id], onDelete: Cascade)
+  tests           Test[]
+  materials       Material[]
+  topics          Topic[]
   teacherSubjects TeacherSubjectAssignment[]
 }
 
@@ -135,52 +137,53 @@ model Topic {
 }
 
 model Test {
-  id               String    @id @default(cuid())
-  subjectId        String
-  title            String
-  description      String?
-  difficulty       String    @default("MEDIUM")
+  id                 String        @id @default(cuid())
+  subjectId          String
+  title              String
+  description        String?
+  difficulty         String        @default("MEDIUM")
   /// minutes — enforced in exam runner + server submit
-  durationMinutes  Int?
-  passScore        Float?
+  durationMinutes    Int?
+  passScore          Float?
   /// null = unlimited attempts (same concept as “attempt limit” in UI).
-  maxAttempts      Int?
-  isDraft          Boolean   @default(false)
-  isActive         Boolean   @default(true)
+  maxAttempts        Int?
+  isDraft            Boolean       @default(false)
+  isActive           Boolean       @default(true)
   /// DRAFT | PUBLISHED | ARCHIVED — canonical lifecycle; kept in sync with isDraft / isActive for legacy checks.
-  status           String    @default("DRAFT")
+  status             String        @default("DRAFT")
   /// Owning teacher user id when a TEACHER created the test; null = platform/admin catalogue test.
-  authorUserId     String?
+  authorUserId       String?
   /// Denormalized class/grade for filtering and teacher scope checks (must match subject.gradeId when set).
-  gradeId          String?
-  topicId          String?
+  gradeId            String?
+  topicId            String?
   /// Exam window (UTC). null = no lower/upper bound on that side.
-  startsAt         DateTime?
-  endsAt           DateTime?
+  startsAt           DateTime?
+  endsAt             DateTime?
   /// When true, runner applies stricter browser deterrence + tab policy.
-  protectedExamMode Boolean  @default(false)
+  protectedExamMode  Boolean       @default(false)
   /// OFF | STANDARD | STRICT — policy bundle on top of protectedExamMode (STRICT forces stronger defaults on save).
-  antiCheatMode     String    @default("STANDARD")
+  antiCheatMode      String        @default("STANDARD")
   /// WARNING | AUTO_FAIL | AUTO_SUBMIT (tab / visibility loss)
-  tabSwitchPolicy   String    @default("AUTO_SUBMIT")
-  shuffleQuestions  Boolean   @default(true)
-  shuffleOptions    Boolean   @default(true)
+  tabSwitchPolicy    String        @default("AUTO_SUBMIT")
+  shuffleQuestions   Boolean       @default(true)
+  shuffleOptions     Boolean       @default(true)
   /// MANUAL | IMPORT_TXT | IMPORT_DOCX
-  sourceType        String    @default("MANUAL")
+  sourceType         String        @default("MANUAL")
   /// Original import / parser context (JSON).
-  importMetadataJson String   @default("{}")
+  importMetadataJson String        @default("{}")
   /// Optional preserved source text for review (large TEXT).
-  importRawText     String?
-  createdAt         DateTime  @default(now())
-  updatedAt         DateTime  @default(now()) @updatedAt
-  subject           Subject   @relation(fields: [subjectId], references: [id], onDelete: Cascade)
-  grade             Grade?    @relation(fields: [gradeId], references: [id], onDelete: SetNull)
-  topic             Topic?    @relation(fields: [topicId], references: [id], onDelete: SetNull)
-  author            User?     @relation("TestAuthor", fields: [authorUserId], references: [id], onDelete: SetNull)
-  questions         Question[]
-  results           TestResult[]
-  testCodes         TestCode[]
-  attempts          TestAttempt[]
+  importRawText      String?
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @default(now()) @updatedAt
+  subject            Subject       @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  grade              Grade?        @relation(fields: [gradeId], references: [id], onDelete: SetNull)
+  topic              Topic?        @relation(fields: [topicId], references: [id], onDelete: SetNull)
+  author             User?         @relation("TestAuthor", fields: [authorUserId], references: [id], onDelete: SetNull)
+  questions          Question[]
+  results            TestResult[]
+  testCodes          TestCode[]
+  attempts           TestAttempt[]
+  olympiads          Olympiad[]
 
   @@index([difficulty])
   @@index([authorUserId])
@@ -191,52 +194,52 @@ model Test {
 
 /// Teacher-issued access codes (student must enter code to open test session).
 model TestCode {
-  id         String    @id @default(cuid())
-  testId     String
-  code       String    @unique
-  maxUses    Int?
-  expiresAt  DateTime?
-  isActive   Boolean   @default(true)
-  usesCount  Int       @default(0)
-  createdAt  DateTime  @default(now())
+  id                 String    @id @default(cuid())
+  testId             String
+  code               String    @unique
+  maxUses            Int?
+  expiresAt          DateTime?
+  isActive           Boolean   @default(true)
+  usesCount          Int       @default(0)
+  createdAt          DateTime  @default(now())
   /// ALL | GRADE | USERS — narrows who may redeem the code (server checks).
-  scopeType  String    @default("ALL")
-  scopeGradeId String?
+  scopeType          String    @default("ALL")
+  scopeGradeId       String?
   /// JSON string[] of user ids allowed when scopeType = USERS
-  scopeUserIdsJson String @default("[]")
+  scopeUserIdsJson   String    @default("[]")
   /// Shu kod bilan birga ochiladigan qo‘shimcha test id-lari (asosiy testId dan tashqari). Monitoring paketi.
-  grantedTestIdsJson String @default("[]")
-  test       Test      @relation(fields: [testId], references: [id], onDelete: Cascade)
+  grantedTestIdsJson String    @default("[]")
+  test               Test      @relation(fields: [testId], references: [id], onDelete: Cascade)
 
   @@index([testId])
   @@index([code])
 }
 
 model Question {
-  id           String @id @default(cuid())
+  id           String       @id @default(cuid())
   testId       String
   text         String
   optionsJson  String
   correctIndex Int
-  order        Int    @default(0)
+  order        Int          @default(0)
   /// Weight for scoring (default 1).
-  points       Float  @default(1)
-  test         Test   @relation(fields: [testId], references: [id], onDelete: Cascade)
+  points       Float        @default(1)
+  test         Test         @relation(fields: [testId], references: [id], onDelete: Cascade)
   testAnswers  TestAnswer[]
 
   @@index([testId, order])
 }
 
 model TestResult {
-  id          String   @id @default(cuid())
+  id          String       @id @default(cuid())
   userId      String
   testId      String
   score       Float
   answersJson String
-  createdAt   DateTime @default(now())
-  attemptId   String?  @unique
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  test        Test     @relation(fields: [testId], references: [id], onDelete: Cascade)
+  createdAt   DateTime     @default(now())
+  attemptId   String?      @unique
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  test        Test         @relation(fields: [testId], references: [id], onDelete: Cascade)
   attempt     TestAttempt? @relation(fields: [attemptId], references: [id], onDelete: SetNull)
 
   @@index([userId])
@@ -245,28 +248,28 @@ model TestResult {
 
 /// One in-progress or completed exam session (supports attempt limits + integrity logs).
 model TestAttempt {
-  id                       String          @id @default(cuid())
-  userId                   String
-  testId                   String
+  id                     String          @id @default(cuid())
+  userId                 String
+  testId                 String
   /// IN_PROGRESS | SUBMITTED | EXPIRED | TERMINATED_VIOLATION | AUTO_SUBMITTED_TIME | AUTO_SUBMITTED_TAB
-  status                   String          @default("IN_PROGRESS")
-  startedAt                DateTime        @default(now())
-  submittedAt              DateTime?
-  score                    Float?
+  status                 String          @default("IN_PROGRESS")
+  startedAt              DateTime        @default(now())
+  submittedAt            DateTime?
+  score                  Float?
   /// Answers in **canonical** question order, each value = selected **canonical** option index.
-  answersJson              String?
+  answersJson            String?
   /// Display order of question ids (JSON string[]).
-  questionOrderJson        String          @default("[]")
+  questionOrderJson      String          @default("[]")
   /// Per question id: JSON number[] permutation mapping displayed option index -> canonical index.
-  optionPermutationsJson   String          @default("{}")
+  optionPermutationsJson String          @default("{}")
   /// Opaque value issued at begin; must match on submit (not a secret from client guess — paired with session).
-  sessionToken             String?
-  violationCount           Int             @default(0)
-  test                     Test            @relation(fields: [testId], references: [id], onDelete: Cascade)
-  user                     User            @relation(fields: [userId], references: [id], onDelete: Cascade)
-  violations               TestViolation[]
-  testResult               TestResult?
-  testAnswers              TestAnswer[]
+  sessionToken           String?
+  violationCount         Int             @default(0)
+  test                   Test            @relation(fields: [testId], references: [id], onDelete: Cascade)
+  user                   User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  violations             TestViolation[]
+  testResult             TestResult?
+  testAnswers            TestAnswer[]
 
   @@index([userId, testId])
   @@index([testId, status])
@@ -275,13 +278,13 @@ model TestAttempt {
 
 /// Optional normalized per-question capture for reporting/analytics; live sessions still store JSON on TestAttempt.
 model TestAnswer {
-  id             String      @id @default(cuid())
-  attemptId      String
-  questionId     String
-  selectedIndex  Int
-  createdAt      DateTime    @default(now())
-  attempt        TestAttempt @relation(fields: [attemptId], references: [id], onDelete: Cascade)
-  question       Question    @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  id            String      @id @default(cuid())
+  attemptId     String
+  questionId    String
+  selectedIndex Int
+  createdAt     DateTime    @default(now())
+  attempt       TestAttempt @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+  question      Question    @relation(fields: [questionId], references: [id], onDelete: Cascade)
 
   @@unique([attemptId, questionId])
   @@index([attemptId])
@@ -379,4 +382,179 @@ model AuditLog {
   @@index([actorUserId])
   @@index([action])
   @@index([createdAt])
+}
+
+// --- Olympiad / secure exam module ---
+
+model Olympiad {
+  id                  String                       @id @default(cuid())
+  title               String
+  slug                String                       @unique
+  description         String?
+  testId              String
+  responsibleUserId   String?
+  createdByUserId     String
+  startsAt            DateTime
+  endsAt              DateTime?
+  durationMinutes     Int
+  participantLimit    Int?
+  antiCheatStrictness String                       @default("STANDARD")
+  resultVisibility    String                       @default("DELAYED")
+  resultsPublishedAt  DateTime?
+  status              String                       @default("DRAFT")
+  shuffleQuestions    Boolean                      @default(true)
+  shuffleOptions      Boolean                      @default(true)
+  createdAt           DateTime                     @default(now())
+  updatedAt           DateTime                     @updatedAt
+  test                Test                         @relation(fields: [testId], references: [id], onDelete: Restrict)
+  responsibleUser     User?                        @relation("OlympiadResponsible", fields: [responsibleUserId], references: [id], onDelete: SetNull)
+  createdBy           User                         @relation("OlympiadCreatedBy", fields: [createdByUserId], references: [id], onDelete: Restrict)
+  codes               OlympiadCode[]
+  participants        OlympiadParticipant[]
+  sessions            OlympiadSession[]
+  olympiadResults     OlympiadResult[]
+  invalidCodeAttempts OlympiadInvalidCodeAttempt[]
+
+  @@index([status, startsAt])
+  @@index([testId])
+  @@index([createdByUserId])
+}
+
+model OlympiadCode {
+  id                    String                @id @default(cuid())
+  olympiadId            String
+  codeHash              String
+  codeHint              String?
+  maxUses               Int?
+  usesCount             Int                   @default(0)
+  expiresAt             DateTime?
+  oneTimePerParticipant Boolean               @default(false)
+  isActive              Boolean               @default(true)
+  createdAt             DateTime              @default(now())
+  olympiad              Olympiad              @relation(fields: [olympiadId], references: [id], onDelete: Cascade)
+  participants          OlympiadParticipant[]
+
+  @@unique([olympiadId, codeHash])
+  @@index([olympiadId])
+}
+
+model OlympiadParticipant {
+  id           String            @id @default(cuid())
+  olympiadId   String
+  codeId       String?
+  firstName    String
+  lastName     String
+  gradeLabel   String
+  age          Int
+  schoolName   String
+  region       String
+  phone        String?
+  deviceFpHash String?
+  createdAt    DateTime          @default(now())
+  olympiad     Olympiad          @relation(fields: [olympiadId], references: [id], onDelete: Cascade)
+  code         OlympiadCode?     @relation(fields: [codeId], references: [id], onDelete: SetNull)
+  sessions     OlympiadSession[]
+  results      OlympiadResult[]
+
+  @@index([olympiadId])
+}
+
+model OlympiadSession {
+  id                  String              @id @default(cuid())
+  olympiadId          String
+  participantId       String
+  sessionTokenHash    String              @unique
+  status              String              @default("RULES_PENDING")
+  rulesAcceptedAt     DateTime?
+  startedAt           DateTime?
+  serverEndsAt        DateTime?
+  submittedAt         DateTime?
+  finalizedAt         DateTime?
+  finalizationReason  String?
+  autoFinalized       Boolean             @default(false)
+  processingLock      String?
+  processingStartedAt DateTime?
+  lastIpHash          String?
+  userAgentHash       String?
+  warningCount        Int                 @default(0)
+  suspiciousScore     Int                 @default(0)
+  lastSeenAt          DateTime            @default(now())
+  olympiad            Olympiad            @relation(fields: [olympiadId], references: [id], onDelete: Cascade)
+  participant         OlympiadParticipant @relation(fields: [participantId], references: [id], onDelete: Cascade)
+  attempt             OlympiadAttempt?
+  violations          OlympiadViolation[]
+  result              OlympiadResult?
+
+  @@index([olympiadId, status])
+  @@index([olympiadId, lastSeenAt])
+  @@index([status, serverEndsAt])
+  @@index([olympiadId, autoFinalized])
+  @@index([olympiadId, finalizationReason])
+}
+
+model OlympiadAttempt {
+  id                     String          @id @default(cuid())
+  sessionId              String          @unique
+  questionOrderJson      String
+  optionPermutationsJson String          @default("{}")
+  answersJson            String?
+  lastAutoSavedAt        DateTime?
+  session                OlympiadSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+}
+
+model OlympiadViolation {
+  id         String          @id @default(cuid())
+  sessionId  String
+  type       String
+  detailJson String          @default("{}")
+  createdAt  DateTime        @default(now())
+  session    OlympiadSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@index([sessionId])
+  @@index([sessionId, createdAt])
+}
+
+model OlympiadResult {
+  id                 String               @id @default(cuid())
+  sessionId          String               @unique
+  participantId      String
+  olympiadId         String
+  score              Float?
+  maxScore           Float?
+  rank               Int?
+  published          Boolean              @default(false)
+  approvedAt         DateTime?
+  answersJson        String?
+  createdAt          DateTime             @default(now())
+  finalizedAt        DateTime?
+  finalizationReason String?
+  autoFinalized      Boolean              @default(false)
+  session            OlympiadSession      @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  participant        OlympiadParticipant  @relation(fields: [participantId], references: [id], onDelete: Cascade)
+  olympiad           Olympiad             @relation(fields: [olympiadId], references: [id], onDelete: Cascade)
+  certificate        OlympiadCertificate?
+
+  @@index([olympiadId, published])
+  @@index([participantId])
+  @@index([olympiadId, autoFinalized])
+}
+
+model OlympiadCertificate {
+  id          String         @id @default(cuid())
+  resultId    String         @unique
+  templateKey String?
+  issuedAt    DateTime?
+  metaJson    String         @default("{}")
+  result      OlympiadResult @relation(fields: [resultId], references: [id], onDelete: Cascade)
+}
+
+model OlympiadInvalidCodeAttempt {
+  id         String    @id @default(cuid())
+  olympiadId String?
+  codeHash   String?
+  ipHash     String
+  createdAt  DateTime  @default(now())
+  olympiad   Olympiad? @relation(fields: [olympiadId], references: [id], onDelete: SetNull)
+
+  @@index([ipHash, createdAt])
 }

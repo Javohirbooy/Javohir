@@ -22,6 +22,7 @@
     "seed:demo": "tsx prisma/seed-demo.ts",
     "db:backfill-student-numbers": "tsx scripts/backfill-student-numbers.ts",
     "typecheck": "tsc --noEmit",
+    "test:unit": "vitest run",
     "test:e2e": "playwright test",
     "test:e2e:stress": "playwright test -c playwright.stress.config.ts",
     "redis:ping": "tsx scripts/check-redis.ts",
@@ -75,6 +76,7 @@
     "eslint-config-next": "16.2.3",
     "tailwindcss": "^4",
     "tsx": "^4.21.0",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "^3.2.4"
   }
 }

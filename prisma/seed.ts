@@ -42,6 +42,8 @@ async function seedPermissionsAndRoleGrants() {
     "PASSWORD_RESET_ASSIGNED_STUDENTS",
     "USERS_CREATE",
     "USERS_UPDATE",
+    "OLYMPIAD_MANAGE",
+    "OLYMPIAD_MONITOR",
   ];
   const studentKeys: PermissionKey[] = ["TESTS_ATTEMPT", "RESULTS_VIEW_OWN", "SUBJECTS_VIEW", "ANALYTICS_OWN"];
 
