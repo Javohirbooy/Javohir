@@ -4,18 +4,20 @@ import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/authz";
 import { DashboardCard } from "@/components/dashboard/dashboard-card";
 import { SuperAdminCredentialsForm } from "@/components/super-admin/super-admin-credentials-form";
+import { getSuperAdminOlympiadSystemSnapshot } from "@/lib/olympiad/dashboard-stats";
 import { Shield } from "lucide-react";
 
 export default async function SuperAdminDashboardPage() {
   const session = await auth();
   requirePermission(session, "SITE_SETTINGS_SUPER", { redirectTo: "/" });
 
-  const [userCounts, tests, audit24h] = await Promise.all([
+  const [userCounts, tests, audit24h, olympiad] = await Promise.all([
     prisma.user.groupBy({ by: ["role"], _count: { _all: true } }),
     prisma.test.count(),
     prisma.auditLog.count({
       where: { createdAt: { gte: new Date(Date.now() - 24 * 60 * 60 * 1000) } },
     }),
+    getSuperAdminOlympiadSystemSnapshot(),
   ]);
 
   const byRole = Object.fromEntries(userCounts.map((u) => [u.role, u._count._all])) as Record<string, number>;
@@ -49,6 +51,24 @@ export default async function SuperAdminDashboardPage() {
           </DashboardCard>
         ))}
       </div>
+
+      <DashboardCard>
+        <p className="text-xs uppercase tracking-widest text-white/50">Olimpiada (global)</p>
+        <p className="mt-2 text-sm text-white/60">
+          Olimpiadalar: <span className="font-black text-white">{olympiad.olympiads}</span> · ishtirokchilar:{" "}
+          <span className="font-black text-cyan-200">{olympiad.participants}</span> · noto‘g‘ri kod (7 kun):{" "}
+          <span className="font-black text-amber-200">{olympiad.invalidAttempts7d}</span>
+        </p>
+        <p className="mt-3 text-xs text-white/45">
+          Worker:{" "}
+          {olympiad.heartbeat
+            ? `${olympiad.heartbeat.at} — ${olympiad.heartbeat.ok ? "OK" : "xato"}`
+            : "Redis / cron ma’lumoti yo‘q"}
+          <br />
+          Redis: {olympiad.redisConfigured ? "mavjud" : "yo‘q"} · RL:{" "}
+          {olympiad.rateLimitStrict ? "qattiq" : "best-effort"}
+        </p>
+      </DashboardCard>
 
       <DashboardCard>
         <p className="text-xs uppercase tracking-widest text-white/50">So‘nggi 24 soat</p>

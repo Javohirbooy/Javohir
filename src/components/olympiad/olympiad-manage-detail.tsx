@@ -1,18 +1,40 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getOlympiadAdminDetail } from "@/app/actions/olympiad-admin";
-import { olympiadControlFormAction, publishOlympiadResultsFormAction, addOlympiadCodeFormAction } from "@/app/actions/olympiad-admin";
+import {
+  olympiadControlFormAction,
+  publishOlympiadResultsFormAction,
+  addOlympiadCodeFormAction,
+  issueOlympiadCertificatesFormAction,
+  revokeOlympiadCertificateFormAction,
+} from "@/app/actions/olympiad-admin";
 import { prisma } from "@/lib/prisma";
 import { DashboardCard } from "@/components/dashboard/dashboard-card";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { OlympiadLiveMonitor } from "@/components/olympiad/olympiad-live-monitor";
+import { isOlympiadMonitorSseEnabled } from "@/lib/olympiad/feature-flags";
 import { OlympiadExportButton } from "@/components/olympiad/olympiad-export-button";
 import { OlympiadFinalizationSection } from "@/components/olympiad/olympiad-finalization-section";
 
 export async function OlympiadManageDetail({ id, basePath }: { id: string; basePath: string }) {
   const olymp = await getOlympiadAdminDetail(id);
   if (!olymp) notFound();
+
+  const certificates = await prisma.olympiadCertificate.findMany({
+    where: { result: { olympiadId: id } },
+    orderBy: { issuedAt: "desc" },
+    take: 80,
+    include: {
+      result: {
+        select: {
+          score: true,
+          rank: true,
+          participant: { select: { firstName: true, lastName: true } },
+        },
+      },
+    },
+  });
 
   const violations = await prisma.olympiadViolation.findMany({
     where: { session: { olympiadId: id } },
@@ -72,6 +94,50 @@ export async function OlympiadManageDetail({ id, basePath }: { id: string; baseP
         </p>
       </DashboardCard>
 
+      <DashboardCard title="Sertifikatlar (PDF + QR tekshiruv)">
+        <p className="text-sm text-slate-600">
+          Natijalar e&apos;lon qilingach, PDF va jamoat tekshiruv havolasi yaratiladi. Talab:{" "}
+          <code className="rounded bg-slate-100 px-1 text-xs">BLOB_READ_WRITE_TOKEN</code>.
+        </p>
+        <form action={issueOlympiadCertificatesFormAction} className="mt-4">
+          <input type="hidden" name="olympiadId" value={id} />
+          <input type="hidden" name="revalidatePrefix" value={basePath} />
+          <Button type="submit" variant="secondary">
+            PDF sertifikatlarni chiqarish / yangilash
+          </Button>
+        </form>
+        <div className="mt-6 max-h-[280px] space-y-2 overflow-y-auto text-sm">
+          {certificates.length === 0 ? <p className="text-slate-600">Hozircha sertifikat yo‘q.</p> : null}
+          {certificates.map((c) => (
+            <div key={c.id} className="flex flex-col gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <p className="font-medium text-slate-900">
+                  {c.result.participant.firstName} {c.result.participant.lastName}
+                </p>
+                <p className="text-xs text-slate-600">
+                  rank {c.result.rank ?? "—"} · ball {c.result.score ?? "—"} ·{" "}
+                  {c.revokedAt ? <span className="text-rose-700">bekor qilingan</span> : "faol"}
+                </p>
+                {c.verifyPublicId ? (
+                  <p className="mt-1 break-all font-mono text-[11px] text-slate-500">{c.verifyPublicId}</p>
+                ) : null}
+              </div>
+              {!c.revokedAt && c.verifyPublicId ? (
+                <form action={revokeOlympiadCertificateFormAction} className="flex flex-wrap items-end gap-2">
+                  <input type="hidden" name="olympiadId" value={id} />
+                  <input type="hidden" name="revalidatePrefix" value={basePath} />
+                  <input type="hidden" name="verifyPublicId" value={c.verifyPublicId} />
+                  <input name="reason" placeholder="Sabab" className="min-w-[8rem] rounded border border-slate-200 px-2 py-1 text-xs" />
+                  <Button type="submit" variant="danger" className="px-2 py-1 text-xs">
+                    Bekor qilish
+                  </Button>
+                </form>
+              ) : null}
+            </div>
+          ))}
+        </div>
+      </DashboardCard>
+
       <DashboardCard title="Kirish kodlari (faqat oxirgi 4 belgi ko‘rsatiladi)">
         <ul className="space-y-1 text-sm text-slate-700">
           {olymp.codes.length === 0 ? <li>Hozircha kod yo‘q.</li> : null}
@@ -101,7 +167,7 @@ export async function OlympiadManageDetail({ id, basePath }: { id: string; baseP
       <OlympiadFinalizationSection olympiadId={id} basePath={basePath} />
 
       <DashboardCard title="Jonli monitoring">
-        <OlympiadLiveMonitor olympiadId={id} />
+        <OlympiadLiveMonitor olympiadId={id} monitorSseEnabled={isOlympiadMonitorSseEnabled()} />
       </DashboardCard>
 
       <DashboardCard title="So‘nggi qoidabuzarliklar / signal">

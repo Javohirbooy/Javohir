@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useActionState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { joinOlympiad } from "@/app/actions/olympiad-participant";
+import { joinOlympiadFormAction, type JoinOlympiadResult } from "@/app/actions/olympiad-participant";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
@@ -25,23 +25,24 @@ function buildDeviceFingerprint() {
 
 export function OlympiadJoinForm() {
   const router = useRouter();
-  const [err, setErr] = useState<string | null>(null);
-  const [pending, start] = useTransition();
+  const fpRef = useRef<HTMLInputElement>(null);
+  const [state, formAction, pending] = useActionState(joinOlympiadFormAction, null as JoinOlympiadResult | null);
+
+  useEffect(() => {
+    if (fpRef.current) fpRef.current.value = buildDeviceFingerprint();
+  }, []);
+
+  useEffect(() => {
+    if (state?.ok) router.push("/olympiada/rules");
+  }, [state, router]);
 
   return (
     <Card className="border-white/20 bg-white/95 p-5 shadow-2xl sm:p-8">
       <form
+        action={formAction}
         className="space-y-4"
-        action={(fd) => {
-          setErr(null);
-          fd.set("deviceFp", buildDeviceFingerprint());
-          start(async () => {
-            const r = await joinOlympiad(fd);
-            if (r.ok) router.push("/olympiada/rules");
-            else setErr(r.error);
-          });
-        }}
       >
+        <input ref={fpRef} type="hidden" name="deviceFp" defaultValue="" />
         <input type="text" name="website" tabIndex={-1} autoComplete="off" className="sr-only" aria-hidden />
 
         <div className="grid gap-4 sm:grid-cols-2">
@@ -68,7 +69,9 @@ export function OlympiadJoinForm() {
               name="lastName"
               required
               autoComplete="family-name"
-              className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-slate-900 outline-none ring-sky-500/30 focus:ring-2"
+              className={cn(
+                "mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-slate-900 outline-none ring-sky-500/30 focus:ring-2",
+              )}
             />
           </div>
         </div>
@@ -83,7 +86,9 @@ export function OlympiadJoinForm() {
               name="gradeLabel"
               required
               placeholder="Masalan: 8-A"
-              className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-slate-900 outline-none ring-sky-500/30 focus:ring-2"
+              className={cn(
+                "mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-slate-900 outline-none ring-sky-500/30 focus:ring-2",
+              )}
             />
           </div>
           <div>
@@ -98,7 +103,9 @@ export function OlympiadJoinForm() {
               min={6}
               max={99}
               required
-              className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-slate-900 outline-none ring-sky-500/30 focus:ring-2"
+              className={cn(
+                "mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-slate-900 outline-none ring-sky-500/30 focus:ring-2",
+              )}
             />
           </div>
         </div>
@@ -112,7 +119,9 @@ export function OlympiadJoinForm() {
             name="schoolName"
             required
             autoComplete="organization"
-            className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-slate-900 outline-none ring-sky-500/30 focus:ring-2"
+            className={cn(
+              "mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-slate-900 outline-none ring-sky-500/30 focus:ring-2",
+            )}
           />
         </div>
 
@@ -124,7 +133,9 @@ export function OlympiadJoinForm() {
             id="ol-region"
             name="region"
             required
-            className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-slate-900 outline-none ring-sky-500/30 focus:ring-2"
+            className={cn(
+              "mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-slate-900 outline-none ring-sky-500/30 focus:ring-2",
+            )}
           />
         </div>
 
@@ -137,7 +148,9 @@ export function OlympiadJoinForm() {
             name="phone"
             type="tel"
             autoComplete="tel"
-            className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-slate-900 outline-none ring-sky-500/30 focus:ring-2"
+            className={cn(
+              "mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-slate-900 outline-none ring-sky-500/30 focus:ring-2",
+            )}
           />
         </div>
 
@@ -150,14 +163,16 @@ export function OlympiadJoinForm() {
             name="accessCode"
             required
             autoComplete="one-time-code"
-            className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 font-mono text-slate-900 outline-none ring-sky-500/30 focus:ring-2"
+            className={cn(
+              "mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 font-mono text-slate-900 outline-none ring-sky-500/30 focus:ring-2",
+            )}
             placeholder="OLYMPIADA-8A-2026"
           />
         </div>
 
-        {err ? (
+        {state && !state.ok ? (
           <p className="text-sm font-medium text-rose-600" role="alert">
-            {err}
+            {state.error}
           </p>
         ) : null}
 

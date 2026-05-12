@@ -1,4 +1,5 @@
 import { isUpstashConfigured } from "@/lib/upstash-redis";
+import { mustEnforceDistributedRedisAtStartup } from "@/lib/redis-strict-policy";
 import {
   allowInsecureSiteUrl,
   isHttpsUrl,
@@ -95,7 +96,13 @@ export function assertProductionConfig() {
     );
   }
 
-  if (process.env.VERCEL && !isUpstashConfigured()) {
+  if (mustEnforceDistributedRedisAtStartup() && !isUpstashConfigured()) {
+    throw new Error(
+      "[env] Production: UPSTASH_REDIS_REST_URL va UPSTASH_REDIS_REST_TOKEN majburiy (tarqalgan rate limit / lockout). ALLOW_MEMORY_RATE_LIMIT=1 faqat maxsus dev/test.",
+    );
+  }
+
+  if (process.env.VERCEL === "1" && !isUpstashConfigured() && !mustEnforceDistributedRedisAtStartup()) {
     console.warn(
       "[env] Vercel: bir nechta funksiya instansiyasi uchun UPSTASH_REDIS_REST_URL + UPSTASH_REDIS_REST_TOKEN tavsiya etiladi (rate limit / lockout).",
     );

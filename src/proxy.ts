@@ -11,6 +11,32 @@ const { auth } = NextAuth(authConfig);
 
 export default auth(async (req) => {
   const ctx = createEdgeContext(req);
+  const pathnameEarly = req.nextUrl.pathname;
+
+  if (process.env.MAINTENANCE_MODE === "1") {
+    const allowed =
+      pathnameEarly.startsWith("/api/health") ||
+      pathnameEarly.startsWith("/certificate/verify") ||
+      pathnameEarly.startsWith("/sertifikatni-tekshirish") ||
+      pathnameEarly.startsWith("/olympiada") ||
+      pathnameEarly.startsWith("/api/olympiad/monitor") ||
+      pathnameEarly.startsWith("/api/certificate/verify") ||
+      pathnameEarly.startsWith("/api/certificate/pdf") ||
+      pathnameEarly === "/maintenance";
+    if (!allowed) {
+      if (pathnameEarly.startsWith("/api/")) {
+        return withCsp(
+          NextResponse.json(
+            { error: "maintenance", message: "Texnik xizmat. Iltimos, keyinroq urinib ko‘ring." },
+            { status: 503 },
+          ),
+          ctx,
+        );
+      }
+      return withCsp(NextResponse.redirect(new URL("/maintenance", req.url)), ctx);
+    }
+  }
+
   const authPath = req.nextUrl.pathname;
   const isSensitiveAuthPost =
     req.method === "POST" &&

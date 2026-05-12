@@ -211,3 +211,22 @@
   transform: translateZ(18px);
   box-shadow: 0 10px 22px -14px rgba(16, 185, 129, 0.45);
 }
+
+@keyframes olympiad-shake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  20%,
+  60% {
+    transform: translateX(-6px);
+  }
+  40%,
+  80% {
+    transform: translateX(6px);
+  }
+}
+
+.olympiad-shake {
+  animation: olympiad-shake 0.45s ease-in-out;
+}

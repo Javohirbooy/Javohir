@@ -9,6 +9,7 @@ import { getSiteUrl } from "@/lib/env";
 import { sendTransactionalEmail } from "@/lib/mail";
 import { logStructured, logStructuredFromRequest } from "@/lib/logger";
 import { throttleServerAction } from "@/lib/action-rate-limit";
+import { isStrictDistributedRateLimitPolicy } from "@/lib/redis-strict-policy";
 import { errResult, okResult } from "@/lib/action-result";
 import {
   contactSchema,
@@ -209,7 +210,9 @@ export async function resetPasswordWithToken(input: unknown) {
 }
 
 export async function submitContactMessage(input: unknown) {
-  const t = await throttleServerAction("contact", 10, 60 * 60 * 1000);
+  const t = await throttleServerAction("contact", 10, 60 * 60 * 1000, {
+    requireDistributed: isStrictDistributedRateLimitPolicy(),
+  });
   if (!t.ok) return errResult(t.message, "RATE_LIMITED");
 
   const parsed = contactSchema.safeParse(input);

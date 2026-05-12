@@ -1,11 +1,9 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
-import { prisma } from "@/lib/prisma";
 import { assertOlympiadMonitorAccess } from "@/lib/olympiad/authz";
+import { getOlympiadMonitorSnapshot } from "@/lib/olympiad/monitor-snapshot";
 
-const DISCONNECT_MS = 45_000;
-
-export async function GET(_req: Request, ctx: { params: Promise<{ olympiadId: string }> }) {
+export async function GET(req: Request, ctx: { params: Promise<{ olympiadId: string }> }) {
   const session = await auth();
   const { olympiadId } = await ctx.params;
   try {
@@ -14,59 +12,25 @@ export async function GET(_req: Request, ctx: { params: Promise<{ olympiadId: st
     return NextResponse.json({ error: "forbidden" }, { status: 403 });
   }
 
-  const now = Date.now();
-  const rows = await prisma.olympiadSession.findMany({
-    where: { olympiadId },
-    include: {
-      participant: { select: { firstName: true, lastName: true, gradeLabel: true } },
-      violations: { orderBy: { createdAt: "desc" }, take: 8 },
-    },
-    orderBy: { lastSeenAt: "desc" },
-    take: 500,
-  });
+  const url = new URL(req.url);
+  const limRaw = Number(url.searchParams.get("limit") ?? "120");
+  const takeSessions = Number.isFinite(limRaw) ? Math.min(200, Math.max(20, Math.floor(limRaw))) : 120;
+  const violRaw = Number(url.searchParams.get("violationLimit") ?? "6");
+  const takeViolations = Number.isFinite(violRaw) ? Math.min(20, Math.max(0, Math.floor(violRaw))) : 6;
+  const cursor = url.searchParams.get("cursor")?.trim() || null;
 
-  const participants = rows.map((r) => {
-    const disconnected = now - r.lastSeenAt.getTime() > DISCONNECT_MS;
-    let status: "active" | "disconnected" | "suspicious" = "active";
-    if (disconnected && (r.status === "ACTIVE" || r.status === "WAITING")) {
-      status = "disconnected";
-    }
-    if (r.suspiciousScore >= 8 || r.warningCount >= 8) {
-      status = "suspicious";
-    }
-    return {
-      sessionId: r.id,
-      status,
-      participant: r.participant,
-      sessionStatus: r.status,
-      warningCount: r.warningCount,
-      suspiciousScore: r.suspiciousScore,
-      lastSeenAt: r.lastSeenAt.toISOString(),
-      serverEndsAt: r.serverEndsAt?.toISOString() ?? null,
-      submittedAt: r.submittedAt?.toISOString() ?? null,
-      violations: r.violations.map((v) => ({
-        type: v.type,
-        at: v.createdAt.toISOString(),
-      })),
-    };
-  });
-
-  const olympiad = await prisma.olympiad.findUnique({
-    where: { id: olympiadId },
-    select: {
-      title: true,
-      startsAt: true,
-      endsAt: true,
-      status: true,
-      durationMinutes: true,
-      resultsPublishedAt: true,
-    },
+  const snap = await getOlympiadMonitorSnapshot({
+    olympiadId,
+    takeSessions,
+    takeViolations,
+    cursor,
   });
 
   return NextResponse.json({
     ok: true,
-    serverNow: new Date().toISOString(),
-    olympiad,
-    participants,
+    serverNow: snap.serverNow,
+    olympiad: snap.olympiad,
+    participants: snap.participants,
+    pagination: snap.pagination,
   });
 }

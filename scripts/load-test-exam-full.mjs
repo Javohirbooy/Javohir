@@ -13,7 +13,7 @@
  *   TEST_ID=cuid (ixtiyoriy; bo'lmasa ro'yxatdan olinadi)
  */
 const BASE = (process.env.BASE_URL || "https://edu-platform-blond-eight.vercel.app").replace(/\/$/, "");
-const USERS = Math.min(500, Math.max(1, Number(process.env.USERS || "100")));
+const USERS = Math.min(2000, Math.max(1, Number(process.env.USERS || "100")));
 const STUDENT_EMAIL = process.env.STUDENT_EMAIL?.trim();
 const STUDENT_PASSWORD = process.env.STUDENT_PASSWORD?.trim();
 const TEST_ID_ENV = process.env.TEST_ID?.trim();

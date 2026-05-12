@@ -11,6 +11,7 @@ export const messages: Record<
       subjects: string;
       grades: string;
       tests: string;
+      olympiad: string;
       ranking: string;
       about: string;
       login: string;
@@ -143,6 +144,7 @@ export const messages: Record<
       subjects: "Fanlar",
       grades: "Sinflar",
       tests: "Testlar",
+      olympiad: "Olimpiada",
       ranking: "Reyting",
       about: "Biz haqimizda",
       login: "Kirish",
@@ -288,6 +290,7 @@ export const messages: Record<
       subjects: "Предметы",
       grades: "Классы",
       tests: "Тесты",
+      olympiad: "Олимпиада",
       ranking: "Рейтинг",
       about: "О нас",
       login: "Вход",
@@ -435,6 +438,7 @@ export const messages: Record<
       subjects: "Subjects",
       grades: "Grades",
       tests: "Tests",
+      olympiad: "Olympiad",
       ranking: "Leaderboard",
       about: "About",
       login: "Sign in",

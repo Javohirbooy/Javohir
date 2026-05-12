@@ -6,6 +6,7 @@ export type RoleScopedNav = {
   subjects: string;
   grades: string;
   tests: string;
+  olympiad: string;
   ranking: string;
   about: string;
 };
@@ -17,6 +18,7 @@ export function getRoleScopedNav(role: AppRole | undefined | null): RoleScopedNa
       subjects: "/fanlar",
       grades: "/sinflar",
       tests: "/testlar",
+      olympiad: "/olympiada",
       ranking: "/reyting",
       about: "/biz-haqimizda",
     };
@@ -28,6 +30,7 @@ export function getRoleScopedNav(role: AppRole | undefined | null): RoleScopedNa
       subjects: "/admin/fanlar",
       grades: "/admin/sinflar",
       tests: "/admin/testlar",
+      olympiad: "/admin/oimpiadalar",
       ranking: "/admin/reyting",
       about: "/biz-haqimizda",
     };
@@ -39,6 +42,7 @@ export function getRoleScopedNav(role: AppRole | undefined | null): RoleScopedNa
       subjects: "/oqituvchi/fanlar",
       grades: "/oqituvchi/sinflar",
       tests: "/oqituvchi/testlar",
+      olympiad: "/oqituvchi/oimpiadalar",
       ranking: "/oqituvchi/reyting",
       about: "/biz-haqimizda",
     };
@@ -49,6 +53,7 @@ export function getRoleScopedNav(role: AppRole | undefined | null): RoleScopedNa
     subjects: "/oquvchi/fanlar",
     grades: "/oquvchi/sinflar",
     tests: "/testlar",
+    olympiad: "/olympiada",
     ranking: "/oquvchi/reyting",
     about: "/biz-haqimizda",
   };

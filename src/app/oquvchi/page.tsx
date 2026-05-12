@@ -6,6 +6,7 @@ import { DashboardCard } from "@/components/dashboard/dashboard-card";
 import { ProgressBar } from "@/components/ui/progress-bar";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
+import { StudentOlympiadTeaser } from "@/components/home/student-olympiad-teaser";
 import { BookOpen, FileQuestion } from "lucide-react";
 
 export default async function StudentDashboardPage() {
@@ -54,6 +55,9 @@ export default async function StudentDashboardPage() {
           <Button href="/testlar" variant="primary" className="px-5 py-2 text-sm">
             Testlar
           </Button>
+          <Button href="/olympiada/join" variant="glass" className="px-4 py-2 text-sm">
+            Olimpiada
+          </Button>
         </div>
       </div>
 
@@ -84,6 +88,8 @@ export default async function StudentDashboardPage() {
           <p className="mt-3 text-sm text-white/70">Har kuni qisqa test — barqaror natija. Davom eting!</p>
         </DashboardCard>
       </div>
+
+      <StudentOlympiadTeaser />
 
       <DashboardCard>
         <h2 className="font-display text-lg font-semibold tracking-tight">Test natijalari (yuqori ball bilan)</h2>

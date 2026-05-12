@@ -2,6 +2,7 @@ import { HeroSection } from "@/components/home/hero-section";
 import { LandingStatsSection } from "@/components/home/landing-stats-section";
 import { LandingSubjectsPreview } from "@/components/home/landing-subjects-preview";
 import { LandingTestPlatform } from "@/components/home/landing-test-platform";
+import { LandingOlympiadSection } from "@/components/home/landing-olympiad-section";
 import { LandingTrustStrip } from "@/components/home/landing-trust-strip";
 import { SectionTitle } from "@/components/ui/section-title";
 import { Card } from "@/components/ui/card";
@@ -36,6 +37,8 @@ export default async function HomePage() {
       <LandingTrustStrip />
       <LandingSubjectsPreview />
       <LandingTestPlatform />
+
+      <LandingOlympiadSection />
 
       <section className="mx-auto max-w-6xl px-4 py-20 sm:px-6">
         <SectionTitle

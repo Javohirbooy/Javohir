@@ -65,6 +65,19 @@ export async function OlympiadFinalizationSection({ olympiadId, basePath }: { ol
       </div>
 
       <div className="mt-8 border-t border-slate-200 pt-4">
+        <p className="text-sm font-semibold text-slate-800">Redis worker heartbeat (olympiad-finalize)</p>
+        {insights.workerHeartbeat ? (
+          <p className="mt-2 text-xs text-slate-600">
+            {insights.workerHeartbeat.ok ? "OK" : "Xato"} · {insights.workerHeartbeat.at} · finalized:{" "}
+            {String(insights.workerHeartbeat.finalized ?? "—")} · errors: {String(insights.workerHeartbeat.errors ?? "—")}{" "}
+            · runId: {String(insights.workerHeartbeat.runId ?? "—")}
+          </p>
+        ) : (
+          <p className="mt-2 text-xs text-slate-500">Redisda yozuv yo‘q (cron ishlamagan yoki Upstash yo‘q).</p>
+        )}
+      </div>
+
+      <div className="mt-8 border-t border-slate-200 pt-4">
         <p className="text-sm font-semibold text-slate-800">So‘nggi worker ishga tushirishlari (global)</p>
         <ul className="mt-2 space-y-1 text-xs text-slate-600">
           {insights.recentWorkerRuns.length === 0 ? <li>Hozircha yozuv yo‘q.</li> : null}

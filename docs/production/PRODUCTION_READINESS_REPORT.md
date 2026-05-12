@@ -30,7 +30,7 @@ The application is suitable for public deployment when:
 | **High** | Invalid env shapes silently passing | **Fixed** | Public + server Zod schemas; production startup **throws** on schema failure. |
 | **High** | Secrets in structured logs | **Mitigated** | `sanitizeLogFields()` masks sensitive keys in `logStructured`. |
 | **High** | Secrets in Sentry request URLs | **Mitigated** | `before-send` strips common query params (`password`, `token`, `code`, …). |
-| **Medium** | Multi-instance rate limits | **Residual** | Documented: without Upstash, limits are best-effort per instance. |
+| **Medium** | Multi-instance rate limits | **Mitigated** | Strict production mode: `takeRateLimitSlot` + auth middleware + server actions with `requireDistributed` **fail closed** when Upstash is unavailable; lockout reads fail closed on Redis errors. Escape hatch: `ALLOW_MEMORY_RATE_LIMIT=1` (dev/test only). |
 | **Medium** | Build-time / SSG DB pool pressure | **Residual** | Prisma pool timeouts can appear under parallel static generation; tune pool or reduce build-time DB work. |
 | **Medium** | HSTS preload | **Residual** | `ENABLE_HSTS=1` uses long `max-age` + `preload`; enable only when HTTPS is permanent. |
 | **Low** | No first-party middleware CSP | **Residual** | Security headers in `next.config.ts`; add stricter CSP when inline scripts/styles are fully audited. |

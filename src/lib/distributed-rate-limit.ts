@@ -1,9 +1,12 @@
 import { Ratelimit } from "@upstash/ratelimit";
 import type { Duration } from "@upstash/ratelimit";
+import * as Sentry from "@sentry/nextjs";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { logStructured } from "@/lib/logger";
 import { logSecurityEvent } from "@/lib/security-events";
 import { getUpstashRedis } from "@/lib/upstash-redis";
+import { isStrictDistributedRateLimitPolicy, isNextProductionBuildPhase } from "@/lib/redis-strict-policy";
+import { shipStructuredLog } from "@/lib/log-shipping";
 
 const ratelimitCache = new Map<string, Ratelimit>();
 const isBuildPhase = () => process.env.NEXT_PHASE === "phase-production-build";
@@ -38,7 +41,6 @@ function ratelimitKey(namespace: string, limit: number, windowMs: number) {
 }
 
 function getRatelimit(namespace: string, limit: number, windowMs: number): Ratelimit | null {
-  // Build/prerender bosqichida Upstash fetch ishlatmaymiz (DYNAMIC_SERVER_USAGE oldini oladi).
   if (isBuildPhase() || disableRedisTemporarily) return null;
   const redis = getUpstashRedis();
   if (!redis) return null;
@@ -65,9 +67,26 @@ export type RateLimitResult = {
   backend: "redis" | "memory" | "redis_unavailable";
 };
 
+function failClosedRedisUnavailable(namespace: string, requestId?: string): RateLimitResult {
+  logStructured("error", "rate_limit.fail_closed_redis_unavailable", { namespace, requestId });
+  logSecurityEvent("redis_down", { namespace, requestId, mode: "fail_closed" });
+  void shipStructuredLog("rate_limit.fail_closed", { namespace, requestId: requestId ?? "" });
+  Sentry.captureMessage("Distributed Redis required but unavailable (fail-closed rate limit)", {
+    level: "error",
+    tags: { component: "rate_limit", namespace },
+    extra: { requestId },
+  });
+  return {
+    ok: false,
+    retryAfterMs: 60_000,
+    remaining: 0,
+    backend: "redis_unavailable",
+  };
+}
+
 /**
- * Token bucket / sliding window (Upstash) yoki xotira fallback.
- * `identifier` — IP, user id yoki scope:ip qatori (qisqa tuting).
+ * Token bucket / sliding window (Upstash) yoki xotira fallback (faqat qat’iy siyosat yo‘qida).
+ * `requireDistributed: true` + production strict → Redis yo‘q yoki xato bo‘lsa **fail closed** (xotira emas).
  */
 export async function takeRateLimitSlot(
   namespace: string,
@@ -78,6 +97,12 @@ export async function takeRateLimitSlot(
 ): Promise<RateLimitResult> {
   const safeId = identifier.length > 200 ? identifier.slice(0, 200) : identifier;
   const compositeKey = `${namespace}:${safeId}`;
+  const strict = isStrictDistributedRateLimitPolicy();
+  const requireDist = Boolean(options?.requireDistributed);
+
+  if (requireDist && strict && !getUpstashRedis()) {
+    return failClosedRedisUnavailable(namespace, options?.requestId);
+  }
 
   const rl = getRatelimit(namespace, limit, windowMs);
   if (rl) {
@@ -92,13 +117,14 @@ export async function takeRateLimitSlot(
       };
     } catch (e) {
       if (isDynamicServerUsageError(e)) {
-        // Next.js static generation contextida Redis no-store fetch ruxsat etilmaydi.
-        // Shu process davomida Redis limiterni o‘chirib, memory fallback bilan davom etamiz.
         disableRedisTemporarily = true;
         logStructured("warn", "rate_limit.redis_disabled_dynamic_context", {
           namespace,
           requestId: options?.requestId,
         });
+        if (requireDist && strict && !isNextProductionBuildPhase()) {
+          return failClosedRedisUnavailable(namespace, options?.requestId);
+        }
         const mem = checkRateLimit(compositeKey, limit, windowMs);
         return {
           ok: mem.ok,
@@ -109,33 +135,45 @@ export async function takeRateLimitSlot(
       }
       logStructured("warn", "rate_limit.redis_error", {
         namespace,
-        requireDistributed: Boolean(options?.requireDistributed),
+        requireDistributed: requireDist,
         requestId: options?.requestId,
       });
       logSecurityEvent("redis_down", { namespace, requestId: options?.requestId });
       console.error("[rate-limit] Upstash error", e);
-      // Davom etamiz: `requireDistributed` bo‘lsa ham login butunlay bloklanmasin — xotira limiter.
+      if (requireDist && strict) {
+        Sentry.captureException(e, { tags: { component: "rate_limit", namespace } });
+        return failClosedRedisUnavailable(namespace, options?.requestId);
+      }
     }
+  }
+
+  if (requireDist && strict && !rl) {
+    return failClosedRedisUnavailable(namespace, options?.requestId);
   }
 
   const mem = checkRateLimit(compositeKey, limit, windowMs);
   if (!rl) {
-    // Auth/middleware `requireDistributed` + Redis yo‘q: kutiladigan rejim; har so‘rovda warn spam qilmaymiz.
     if (!options?.requireDistributed) {
       logStructured("warn", "rate_limit.memory_fallback", {
         namespace,
         requestId: options?.requestId,
       });
       logSecurityEvent("rate_limit_fallback", { namespace, requestId: options?.requestId });
+    } else if (!strict) {
+      logStructured("warn", "rate_limit.distributed_memory_fallback", {
+        namespace,
+        requestId: options?.requestId,
+      });
+      logSecurityEvent("rate_limit_fallback", { namespace, requestId: options?.requestId });
     }
-  } else if (options?.requireDistributed) {
-    // Redis klient bor edi, lekin limit() dan tashqariga chiqildi (xato) — xotiraga tushdik.
+  } else if (options?.requireDistributed && !strict) {
     logStructured("warn", "rate_limit.distributed_memory_fallback", {
       namespace,
       requestId: options?.requestId,
     });
     logSecurityEvent("rate_limit_fallback", { namespace, requestId: options?.requestId });
   }
+
   return {
     ok: mem.ok,
     retryAfterMs: mem.retryAfterMs,

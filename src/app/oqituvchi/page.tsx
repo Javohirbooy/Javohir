@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { DashboardCard } from "@/components/dashboard/dashboard-card";
 import { ClientMiniBar } from "@/components/charts/client-mini-bar";
 import { Badge } from "@/components/ui/badge";
+import { getTeacherOlympiadSummary } from "@/lib/olympiad/dashboard-stats";
 
 export default async function TeacherDashboardPage() {
   const session = await auth();
@@ -15,6 +16,8 @@ export default async function TeacherDashboardPage() {
     where: { userId: session.user.id },
     include: { grade: true },
   });
+
+  const olympiad = await getTeacherOlympiadSummary(session.user.id);
 
   const gradeIds = classes.map((c) => c.gradeId);
   const recent = await prisma.testResult.findMany({
@@ -57,7 +60,41 @@ export default async function TeacherDashboardPage() {
         >
           Yangi test
         </Link>
+        <Link
+          href="/oqituvchi/oimpiadalar"
+          className="rounded-2xl border border-amber-400/30 bg-amber-500/10 px-4 py-2.5 text-sm font-semibold text-amber-100 shadow-[0_0_20px_-8px_rgba(245,158,11,0.25)] backdrop-blur-sm transition-all duration-300 hover:scale-[1.03] hover:border-amber-300/40 hover:bg-amber-500/15 motion-reduce:hover:scale-100"
+        >
+          Olimpiadalar
+        </Link>
       </div>
+
+      <DashboardCard>
+        <h2 className="text-lg font-bold">Olimpiadalar (sizning)</h2>
+        <p className="mt-1 text-sm text-white/60">
+          Faol ishtirokchilar: <span className="font-bold text-amber-200">{olympiad.activeParticipants}</span> · chop etish
+          kutilmoqda: <span className="font-bold text-cyan-200">{olympiad.pendingPublish}</span> · sertifikatlar:{" "}
+          <span className="font-bold text-emerald-200">{olympiad.certs}</span>
+        </p>
+        <ul className="mt-4 space-y-2 text-sm">
+          {olympiad.rows.length === 0 ? (
+            <li className="text-white/55">Hozircha biriktirilgan olimpiada yo‘q.</li>
+          ) : (
+            olympiad.rows.map((o) => (
+              <li key={o.id} className="flex flex-wrap items-center justify-between gap-2 border-b border-white/10 pb-2">
+                <Link href={`/oqituvchi/oimpiadalar/${o.id}`} className="font-semibold text-white hover:text-cyan-200">
+                  {o.title}
+                </Link>
+                <span className="text-xs text-white/55">
+                  {o.status} · {o._count.participants} ro‘yxat · {o._count.sessions} sessiya
+                </span>
+              </li>
+            ))
+          )}
+        </ul>
+        <Link href="/oqituvchi/oimpiadalar" className="mt-4 inline-block text-sm font-semibold text-cyan-300 hover:underline">
+          Barchasi va monitoring →
+        </Link>
+      </DashboardCard>
 
       <DashboardCard>
         <h2 className="text-lg font-bold">Biriktirilgan sinflar</h2>

@@ -3,7 +3,7 @@
 import { Button } from "@/components/ui/button";
 import { useT } from "@/components/providers/locale-provider";
 import { BRAND } from "@/lib/brand";
-import { BarChart3, Brain, Sparkles, Zap } from "lucide-react";
+import { BarChart3, Brain, Medal, Sparkles, Zap } from "lucide-react";
 import type { CSSProperties } from "react";
 
 export function HeroSection() {
@@ -53,6 +53,10 @@ export function HeroSection() {
           </Button>
           <Button href="/testlar" variant="outline" className="min-h-12 w-full min-w-0 rounded-2xl text-sm sm:min-h-14 sm:min-w-[12rem] sm:text-base">
             {tf("nav.tests")}
+          </Button>
+          <Button href="/olympiada/join" variant="outline" className="min-h-12 w-full min-w-0 rounded-2xl text-sm sm:min-h-14 sm:min-w-[12rem] sm:text-base">
+            <Medal className="h-5 w-5 shrink-0" aria-hidden />
+            {tf("nav.olympiad")}
           </Button>
         </div>
 

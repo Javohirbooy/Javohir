@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { getOlympiadGateState } from "@/app/actions/olympiad-participant";
+import { isOlympiadExamTerminalStatus } from "@/lib/olympiad/exam-state-machine";
 import { OlympiadRulesFlow } from "@/components/olympiad/olympiad-rules-flow";
 
 export const metadata = {
@@ -10,7 +11,7 @@ export const metadata = {
 export default async function OlympiadRulesPage() {
   const g = await getOlympiadGateState();
   if (!g.ok) redirect("/olympiada/join");
-  if (g.sessionStatus === "SUBMITTED") redirect("/olympiada/submitted");
+  if (isOlympiadExamTerminalStatus(g.sessionStatus) || g.sessionStatus === "SUBMITTING") redirect("/olympiada/submitted");
   if (g.sessionStatus === "ACTIVE") redirect(`/olympiada/test/${g.sessionId}`);
   if (g.sessionStatus === "WAITING") redirect("/olympiada/waiting-room");
 

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import * as Sentry from "@sentry/nextjs";
 import { runOlympiadOverdueFinalization } from "@/lib/olympiad/finalize-overdue-worker";
+import { recordOlympiadFinalizeHeartbeat } from "@/lib/worker/olympiad-cron-heartbeat";
 
 /** Prisma + worker mantiq — Edge emas. */
 export const runtime = "nodejs";
@@ -52,9 +53,25 @@ async function handleFinalize(req: Request) {
       maxRounds,
     });
 
+    await recordOlympiadFinalizeHeartbeat({
+      at: new Date().toISOString(),
+      ok: true,
+      finalized: stats.finalized,
+      repaired: stats.repaired,
+      skipped: stats.skipped,
+      errors: stats.errors,
+      durationMs: stats.durationMs,
+      runId: stats.runId,
+    });
+
     return NextResponse.json({ ok: true, ...stats });
   } catch (e) {
     Sentry.captureException(e, { tags: { component: "cron", route: "olympiad-finalize" } });
+    await recordOlympiadFinalizeHeartbeat({
+      at: new Date().toISOString(),
+      ok: false,
+      errors: 1,
+    });
     return NextResponse.json({ ok: false, error: "internal_error" }, { status: 500 });
   }
 }

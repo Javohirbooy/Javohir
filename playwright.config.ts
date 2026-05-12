@@ -25,6 +25,7 @@ export default defineConfig({
     env: {
       ...process.env,
       E2E_RELAX_SERVER_ACTION_RATE_LIMIT: "1",
+      E2E_RELAX_DISTRIBUTED_RATE_LIMIT: "1",
       /** `next start` production assert: http preview + no VERCEL_URL */
       ALLOW_INSECURE_SITE_URL: "1",
       /** Cron route authorization in production `next start` */

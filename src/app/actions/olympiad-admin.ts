@@ -13,7 +13,10 @@ import {
 } from "@/lib/olympiad/code-crypto";
 import { writeAuditLog } from "@/lib/audit";
 import { runManualOlympiadSessionFinalization } from "@/lib/olympiad/finalize-overdue-worker";
+import { issueCertificatesForOlympiad, revokeCertificateByVerifyId } from "@/lib/olympiad/certificate-service";
+import { readOlympiadFinalizeHeartbeat, type OlympiadCronHeartbeatPayload } from "@/lib/worker/olympiad-cron-heartbeat";
 import { OLYMPIAD_FINALIZATION_REASON } from "@/lib/olympiad/finalization-constants";
+import { isOlympiadPublishIncludeAutoFinalized } from "@/lib/olympiad/feature-flags";
 import type { Session } from "next-auth";
 import { z } from "zod";
 
@@ -302,19 +305,34 @@ export async function publishOlympiadResultsAction(
     return { ok: false, error: "Ruxsat yo‘q." };
   }
   const now = new Date();
-  const results = await prisma.olympiadResult.findMany({
+  const includeAuto = isOlympiadPublishIncludeAutoFinalized();
+  const all = await prisma.olympiadResult.findMany({
     where: { olympiadId },
     orderBy: [{ score: "desc" }, { id: "asc" }],
-    select: { id: true },
+    select: { id: true, score: true, autoFinalized: true },
   });
-  let rank = 1;
+
+  const forRanking = all.filter((r) => includeAuto || !r.autoFinalized);
+  const rankById = new Map<string, number>();
+  let denseRank = 1;
+  for (let i = 0; i < forRanking.length; i++) {
+    const r = forRanking[i]!;
+    if (i > 0 && (r.score ?? 0) < (forRanking[i - 1]!.score ?? 0)) {
+      denseRank++;
+    }
+    rankById.set(r.id, denseRank);
+  }
+
   await prisma.$transaction(async (tx) => {
-    for (const r of results) {
+    for (const r of all) {
       await tx.olympiadResult.update({
         where: { id: r.id },
-        data: { rank, published: true, approvedAt: now },
+        data: {
+          rank: rankById.get(r.id) ?? null,
+          published: true,
+          approvedAt: now,
+        },
       });
-      rank += 1;
     }
     await tx.olympiad.update({
       where: { id: olympiadId },
@@ -326,71 +344,11 @@ export async function publishOlympiadResultsAction(
     action: "OLYMPIAD_RESULTS_PUBLISH",
     entityType: "Olympiad",
     entityId: olympiadId,
-    metadata: { count: results.length },
+    metadata: { count: all.length, includeAutoFinalized: includeAuto },
   });
   revalidatePath(`/admin/oimpiadalar/${olympiadId}`);
   revalidatePath(`/oqituvchi/oimpiadalar/${olympiadId}`);
-  return { ok: true, count: results.length };
-}
-
-export async function exportOlympiadResultsCsv(olympiadId: string): Promise<
-  { ok: true; csv: string; filename: string } | { ok: false; error: string }
-> {
-  const session = await auth();
-  if (!session?.user?.id) return { ok: false, error: "Kirish talab qilinadi." };
-  try {
-    await assertOlympiadManage(session, olympiadId);
-  } catch {
-    return { ok: false, error: "Ruxsat yo‘q." };
-  }
-  const olymp = await prisma.olympiad.findUnique({
-    where: { id: olympiadId },
-    select: { title: true, slug: true },
-  });
-  if (!olymp) return { ok: false, error: "Topilmadi." };
-
-  const rows = await prisma.olympiadResult.findMany({
-    where: { olympiadId },
-    include: {
-      participant: {
-        select: {
-          firstName: true,
-          lastName: true,
-          gradeLabel: true,
-          schoolName: true,
-          region: true,
-        },
-      },
-    },
-    orderBy: [{ rank: "asc" }, { score: "desc" }],
-  });
-
-  const header = ["rank", "score", "maxScore", "firstName", "lastName", "grade", "school", "region", "published"];
-  const lines = [header.join(",")];
-  for (const r of rows) {
-    const p = r.participant;
-    lines.push(
-      [
-        r.rank ?? "",
-        r.score ?? "",
-        r.maxScore ?? "",
-        csvEscape(p.firstName),
-        csvEscape(p.lastName),
-        csvEscape(p.gradeLabel),
-        csvEscape(p.schoolName),
-        csvEscape(p.region),
-        r.published ? "1" : "0",
-      ].join(","),
-    );
-  }
-  const csv = lines.join("\n");
-  const filename = `olympiad-${olymp.slug}-results.csv`;
-  return { ok: true, csv, filename };
-}
-
-function csvEscape(s: string) {
-  if (/[",\n]/.test(s)) return `"${s.replace(/"/g, '""')}"`;
-  return s;
+  return { ok: true, count: all.length };
 }
 
 export async function listOlympiadsForDashboard() {
@@ -455,6 +413,7 @@ export type OlympiadFinalizationInsights = {
     participant: { firstName: string; lastName: string; gradeLabel: string };
   }[];
   recentWorkerRuns: { id: string; createdAt: Date; metadata: Record<string, unknown> }[];
+  workerHeartbeat: OlympiadCronHeartbeatPayload | null;
 };
 
 export async function getOlympiadFinalizationInsights(olympiadId: string): Promise<OlympiadFinalizationInsights | null> {
@@ -467,7 +426,7 @@ export async function getOlympiadFinalizationInsights(olympiadId: string): Promi
   }
 
   const now = new Date();
-  const [autoFinalizedCount, disconnectedTimeoutCount, manualAdminCount, overdueActiveCount, stuckSessions, audits] =
+  const [autoFinalizedCount, disconnectedTimeoutCount, manualAdminCount, overdueActiveCount, stuckSessions, audits, workerHeartbeat] =
     await Promise.all([
       prisma.olympiadSession.count({ where: { olympiadId, autoFinalized: true } }),
       prisma.olympiadSession.count({
@@ -497,6 +456,7 @@ export async function getOlympiadFinalizationInsights(olympiadId: string): Promi
         take: 10,
         select: { id: true, createdAt: true, metadataJson: true },
       }),
+      readOlympiadFinalizeHeartbeat(),
     ]);
 
   const recentWorkerRuns = audits.map((a) => {
@@ -516,6 +476,7 @@ export async function getOlympiadFinalizationInsights(olympiadId: string): Promi
     overdueActiveCount,
     stuckSessions,
     recentWorkerRuns,
+    workerHeartbeat,
   };
 }
 
@@ -538,6 +499,66 @@ export async function manualFinalizeOlympiadSessionFormAction(formData: FormData
     actorUserId: session.user.id,
     forceEvenIfNotOverdue,
   });
+  revalidatePath(`${revalidatePrefix}/${olympiadId}`);
+  revalidatePath(revalidatePrefix);
+}
+
+export async function issueOlympiadCertificatesFormAction(formData: FormData): Promise<void> {
+  const session = await auth();
+  if (!session?.user?.id) return;
+  const olympiadId = String(formData.get("olympiadId") ?? "");
+  const revalidatePrefix = String(formData.get("revalidatePrefix") ?? "/admin/oimpiadalar");
+  if (!olympiadId) return;
+  try {
+    await assertOlympiadManage(session, olympiadId);
+  } catch {
+    return;
+  }
+  try {
+    const stats = await issueCertificatesForOlympiad(olympiadId);
+    await writeAuditLog({
+      actorUserId: session.user.id,
+      action: "OLYMPIAD_CERTIFICATES_ISSUED",
+      entityType: "Olympiad",
+      entityId: olympiadId,
+      metadata: stats,
+    });
+  } catch (e) {
+    await writeAuditLog({
+      actorUserId: session.user.id,
+      action: "OLYMPIAD_CERTIFICATES_ISSUE_FAILED",
+      entityType: "Olympiad",
+      entityId: olympiadId,
+      metadata: { message: e instanceof Error ? e.message : String(e) },
+    });
+  }
+  revalidatePath(`${revalidatePrefix}/${olympiadId}`);
+  revalidatePath(revalidatePrefix);
+}
+
+export async function revokeOlympiadCertificateFormAction(formData: FormData): Promise<void> {
+  const session = await auth();
+  if (!session?.user?.id) return;
+  const olympiadId = String(formData.get("olympiadId") ?? "");
+  const verifyPublicId = String(formData.get("verifyPublicId") ?? "").trim();
+  const reason = String(formData.get("reason") ?? "Admin bekor qildi").trim();
+  const revalidatePrefix = String(formData.get("revalidatePrefix") ?? "/admin/oimpiadalar");
+  if (!olympiadId || !verifyPublicId) return;
+  try {
+    await assertOlympiadManage(session, olympiadId);
+  } catch {
+    return;
+  }
+  const out = await revokeCertificateByVerifyId(verifyPublicId, olympiadId, session.user.id, reason || "Admin bekor qildi");
+  if (out.ok) {
+    await writeAuditLog({
+      actorUserId: session.user.id,
+      action: "OLYMPIAD_CERTIFICATE_REVOKED",
+      entityType: "Olympiad",
+      entityId: olympiadId,
+      metadata: { verifyPublicId },
+    });
+  }
   revalidatePath(`${revalidatePrefix}/${olympiadId}`);
   revalidatePath(revalidatePrefix);
 }

@@ -5,18 +5,20 @@ import { requirePermission } from "@/lib/authz";
 import { DashboardCard } from "@/components/dashboard/dashboard-card";
 import { ClientMiniBar } from "@/components/charts/client-mini-bar";
 import { ProgressBar } from "@/components/ui/progress-bar";
+import { getAdminOlympiadRiskSnapshot } from "@/lib/olympiad/dashboard-stats";
 import { BRAND } from "@/lib/brand";
-import { Layers, GraduationCap, Activity, Sparkles } from "lucide-react";
+import { Layers, GraduationCap, Activity, Sparkles, Trophy } from "lucide-react";
 
 export default async function AdminDashboardPage() {
   const session = await auth();
   requirePermission(session, "ANALYTICS_GLOBAL", { redirectTo: "/" });
 
-  const [users, grades, tests, results] = await Promise.all([
+  const [users, grades, tests, results, olympiad] = await Promise.all([
     prisma.user.groupBy({ by: ["role"], _count: { _all: true } }),
     prisma.grade.count(),
     prisma.test.count(),
     prisma.testResult.count(),
+    getAdminOlympiadRiskSnapshot(),
   ]);
 
   const roleLabels: Record<string, string> = {
@@ -39,6 +41,7 @@ export default async function AdminDashboardPage() {
     { href: "/admin/fanlar", label: "Fanlar boshqaruvi", desc: "CRUD, sinf biriktirish, meta", icon: Layers },
     { href: "/admin/sinflar", label: "Sinflar", desc: "Barcha sinflar va ranglar", icon: GraduationCap },
     { href: "/admin/testlar", label: "Testlar", desc: "Platforma testlari", icon: Activity },
+    { href: "/admin/oimpiadalar", label: "Olimpiadalar", desc: "Monitoring, natijalar, sertifikatlar", icon: Trophy },
     { href: "/", label: "Landing", desc: "Marketing sahifa", icon: Sparkles },
   ];
 
@@ -68,7 +71,7 @@ export default async function AdminDashboardPage() {
 
       <div>
         <h2 className="mb-3 text-sm font-bold uppercase tracking-widest text-violet-200/80">Tezkor amallar</h2>
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
           {quick.map((q) => (
             <Link key={q.href} href={q.href}>
               <DashboardCard className="group h-full p-5 transition hover:border-violet-400/30">
@@ -96,6 +99,50 @@ export default async function AdminDashboardPage() {
           <ProgressBar value={activity} className="mt-4 from-violet-400 to-fuchsia-500" trackClassName="bg-white/10" />
         </DashboardCard>
       </div>
+
+      <DashboardCard>
+        <h2 className="text-lg font-bold text-white">Olimpiada operatsiyalari</h2>
+          <p className="mt-1 text-sm text-white/55">Monitoring, yakunlash va xavfsizlik indikatorlari.</p>
+          <dl className="mt-4 grid gap-3 text-sm sm:grid-cols-2">
+            <div>
+              <dt className="text-white/50">Faol olimpiadalar (draftsiz)</dt>
+              <dd className="text-xl font-black text-white">{olympiad.totalNonDraft}</dd>
+            </div>
+            <div>
+              <dt className="text-white/50">Muddati o‘tgan, lekin ACTIVE sessiya</dt>
+              <dd className="text-xl font-black text-amber-200">{olympiad.overdueActive}</dd>
+            </div>
+            <div>
+              <dt className="text-white/50">Shubhali sessiya (skor ≥20)</dt>
+              <dd className="text-xl font-black text-rose-200">{olympiad.suspiciousSessions}</dd>
+            </div>
+            <div>
+              <dt className="text-white/50">Chiqarilgan sertifikatlar</dt>
+              <dd className="text-xl font-black text-emerald-200">{olympiad.certificatesIssued}</dd>
+            </div>
+            <div>
+              <dt className="text-white/50">Noto‘g‘ri kod (24 soat)</dt>
+              <dd className="text-xl font-black text-white">{olympiad.invalidAttempts24h}</dd>
+            </div>
+            <div>
+              <dt className="text-white/50">Redis / RL</dt>
+              <dd className="font-semibold text-white">
+                {olympiad.redisConfigured ? "Upstash yoqilgan" : "Upstash yo‘q"}
+                {" · "}
+                {olympiad.rateLimitStrict ? "qattiq RL" : "best-effort RL"}
+              </dd>
+            </div>
+          </dl>
+          <p className="mt-4 text-xs text-white/45">
+            Worker yakunlash:{" "}
+            {olympiad.heartbeat
+              ? `${olympiad.heartbeat.at} — ${olympiad.heartbeat.ok ? "OK" : "xato"}`
+              : "ma’lumot yo‘q (Redis yoki cron)"}
+          </p>
+          <Link href="/admin/oimpiadalar" className="mt-4 inline-block text-sm font-semibold text-cyan-300 hover:underline">
+            Olimpiadalar boshqaruvi →
+          </Link>
+      </DashboardCard>
 
       <DashboardCard>
         <h2 className="text-lg font-bold text-white">Keyingi qadam</h2>

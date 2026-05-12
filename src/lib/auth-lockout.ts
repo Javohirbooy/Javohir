@@ -1,7 +1,9 @@
 import { createHash } from "crypto";
+import * as Sentry from "@sentry/nextjs";
 import { logStructured } from "@/lib/logger";
 import { logSecurityEvent } from "@/lib/security-events";
 import { getUpstashRedis } from "@/lib/upstash-redis";
+import { isStrictDistributedRateLimitPolicy } from "@/lib/redis-strict-policy";
 
 const FAIL_KEY_TTL_SEC = 900;
 const LOCKOUT_TTL_SEC = 900;
@@ -18,6 +20,7 @@ export function loginFingerprint(ip: string, normalizedIdentifier: string): stri
 }
 
 export async function isLoginBlocked(fingerprint: string): Promise<boolean> {
+  const strict = isStrictDistributedRateLimitPolicy();
   const redis = getUpstashRedis();
   if (redis) {
     try {
@@ -28,7 +31,17 @@ export async function isLoginBlocked(fingerprint: string): Promise<boolean> {
       return v !== null && v !== undefined;
     } catch (e) {
       console.error("[auth-lockout] redis get", e);
+      if (strict) {
+        logStructured("error", "auth.lockout.redis_read_failed_strict", { fpPrefix: fingerprint.slice(0, 8) });
+        Sentry.captureException(e, { tags: { component: "auth_lockout", op: "get" } });
+        /** Fail closed: Redis holatini tekshira olmasak — kirishni rad etamiz. */
+        return true;
+      }
     }
+  } else if (strict) {
+    logStructured("error", "auth.lockout.no_redis_strict", { fpPrefix: fingerprint.slice(0, 8) });
+    /** Rate limit allaqachon fail-closed; bu yerda “hammani bloklash” qilmaymiz. */
+    return false;
   }
   const m = memoryStore.get(fingerprint);
   if (!m) return false;
@@ -39,6 +52,7 @@ export async function isLoginBlocked(fingerprint: string): Promise<boolean> {
 }
 
 export async function registerFailedAttempt(fingerprint: string): Promise<void> {
+  const strict = isStrictDistributedRateLimitPolicy();
   const redis = getUpstashRedis();
   if (redis) {
     try {
@@ -65,7 +79,15 @@ export async function registerFailedAttempt(fingerprint: string): Promise<void> 
       return;
     } catch (e) {
       console.error("[auth-lockout] redis incr", e);
+      if (strict) {
+        Sentry.captureException(e, { tags: { component: "auth_lockout", op: "incr" } });
+        logStructured("error", "auth.lockout.redis_write_failed_strict", { fpPrefix: fingerprint.slice(0, 8) });
+        return;
+      }
     }
+  } else if (strict) {
+    logStructured("error", "auth.lockout.no_redis_strict_incr", { fpPrefix: fingerprint.slice(0, 8) });
+    return;
   }
 
   const now = Date.now();
@@ -102,6 +124,7 @@ export async function registerFailedAttempt(fingerprint: string): Promise<void> 
 }
 
 export async function clearLoginAttempts(fingerprint: string): Promise<void> {
+  const strict = isStrictDistributedRateLimitPolicy();
   const redis = getUpstashRedis();
   if (redis) {
     try {
@@ -110,7 +133,13 @@ export async function clearLoginAttempts(fingerprint: string): Promise<void> {
       return;
     } catch (e) {
       console.error("[auth-lockout] redis del", e);
+      if (strict) {
+        Sentry.captureException(e, { tags: { component: "auth_lockout", op: "del" } });
+        return;
+      }
     }
+  } else if (strict) {
+    return;
   }
   memoryStore.delete(fingerprint);
 }

@@ -499,6 +499,8 @@ model OlympiadAttempt {
   optionPermutationsJson String          @default("{}")
   answersJson            String?
   lastAutoSavedAt        DateTime?
+  /// Monotonik autosave/submit ketma-ketligi (replay himoyasi, server atomik yangilanish).
+  autosaveSeq            Int             @default(0)
   session                OlympiadSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
 }
 
@@ -528,8 +530,10 @@ model OlympiadResult {
   createdAt          DateTime             @default(now())
   finalizedAt        DateTime?
   finalizationReason String?
-  autoFinalized      Boolean              @default(false)
-  session            OlympiadSession      @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  autoFinalized               Boolean              @default(false)
+  submissionCanonicalSha256   String?
+  submissionIntegritySig      String?
+  session                     OlympiadSession      @relation(fields: [sessionId], references: [id], onDelete: Cascade)
   participant        OlympiadParticipant  @relation(fields: [participantId], references: [id], onDelete: Cascade)
   olympiad           Olympiad             @relation(fields: [olympiadId], references: [id], onDelete: Cascade)
   certificate        OlympiadCertificate?
@@ -540,12 +544,19 @@ model OlympiadResult {
 }
 
 model OlympiadCertificate {
-  id          String         @id @default(cuid())
-  resultId    String         @unique
-  templateKey String?
-  issuedAt    DateTime?
-  metaJson    String         @default("{}")
-  result      OlympiadResult @relation(fields: [resultId], references: [id], onDelete: Cascade)
+  id              String         @id @default(cuid())
+  resultId        String         @unique
+  /// Jamoat tekshiruvi: URL / QR (taxminiy topilmasin — uzun random).
+  verifyPublicId  String?        @unique
+  templateKey     String?
+  issuedAt        DateTime?
+  revokedAt       DateTime?
+  revokeReason    String?
+  pdfUrl          String?
+  medal           String?
+  contentSha256   String?
+  metaJson        String         @default("{}")
+  result          OlympiadResult @relation(fields: [resultId], references: [id], onDelete: Cascade)
 }
 
 model OlympiadInvalidCodeAttempt {

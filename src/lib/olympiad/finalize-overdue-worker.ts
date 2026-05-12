@@ -3,7 +3,10 @@ import * as Sentry from "@sentry/nextjs";
 import { prisma } from "@/lib/prisma";
 import { writeAuditLog } from "@/lib/audit";
 import { logStructured } from "@/lib/logger";
+import { isOlympiadMonitorRedisEventsEnabled } from "@/lib/olympiad/feature-flags";
+import { emitOlympiadMonitorEvent } from "@/lib/olympiad/olympiad-redis-events";
 import { scoreOlympiadAttempt } from "@/lib/olympiad/scoring";
+import { sha256HexUtf8, signSubmissionIntegrityV1 } from "@/lib/olympiad/submission-integrity";
 import {
   OLYMPIAD_DISCONNECT_MS_BEFORE_DEADLINE,
   OLYMPIAD_FINALIZATION_REASON,
@@ -40,6 +43,27 @@ function randomRunId() {
   return `olf_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 10)}`;
 }
 
+function withSubmissionIntegrityFields<T extends { sessionId: string; participantId: string; olympiadId: string; score: number; maxScore: number; answersJson: string; finalizedAt: Date }>(
+  row: T,
+): T & { submissionIntegritySig: string | null; submissionCanonicalSha256: string | null } {
+  const finalizedAtIso = row.finalizedAt.toISOString();
+  const integrity = signSubmissionIntegrityV1({
+    v: 1,
+    sessionId: row.sessionId,
+    olympiadId: row.olympiadId,
+    participantId: row.participantId,
+    score: row.score,
+    maxScore: row.maxScore,
+    answersSha256: sha256HexUtf8(row.answersJson),
+    finalizedAtIso,
+  });
+  return {
+    ...row,
+    submissionIntegritySig: integrity?.sigHex ?? null,
+    submissionCanonicalSha256: integrity?.canonicalSha256 ?? null,
+  };
+}
+
 function violationTypeForReason(reason: OlympiadFinalizationReason): string {
   switch (reason) {
     case OLYMPIAD_FINALIZATION_REASON.DISCONNECTED_TIMEOUT:
@@ -69,7 +93,7 @@ export async function finalizeOlympiadSessionInTx(
   const locked = await tx.$queryRaw<Array<{ id: string }>>`
     SELECT id FROM "OlympiadSession"
     WHERE id = ${sessionId}
-      AND status = ${"ACTIVE"}
+      AND status IN ('ACTIVE', 'SUBMITTING')
       AND (${overdueClause})
     FOR UPDATE
   `;
@@ -79,7 +103,7 @@ export async function finalizeOlympiadSessionInTx(
     where: { id: sessionId },
     include: { olympiad: true, attempt: true },
   });
-  if (!session || session.status !== "ACTIVE") return "skipped";
+  if (!session || (session.status !== "ACTIVE" && session.status !== "SUBMITTING")) return "skipped";
 
   if (
     isLeaseHeldByOtherWorker({
@@ -105,7 +129,7 @@ export async function finalizeOlympiadSessionInTx(
     await tx.olympiadSession.update({
       where: { id: session.id },
       data: {
-        status: "SUBMITTED",
+        status: "FINALIZED",
         submittedAt: session.submittedAt ?? existingResult.finalizedAt ?? existingResult.createdAt ?? at,
         finalizedAt: existingResult.finalizedAt ?? existingResult.createdAt ?? at,
         finalizationReason: existingResult.finalizationReason,
@@ -164,7 +188,7 @@ export async function finalizeOlympiadSessionInTx(
   }
 
   const sessionFinalizePatch = {
-    status: "SUBMITTED" as const,
+    status: "FINALIZED" as const,
     submittedAt: at,
     finalizedAt: at,
     finalizationReason: effectiveReason,
@@ -174,20 +198,21 @@ export async function finalizeOlympiadSessionInTx(
   };
 
   if (!session.attempt) {
+    const base = {
+      sessionId: session.id,
+      participantId: session.participantId,
+      olympiadId: session.olympiadId,
+      score: 0,
+      maxScore: 0,
+      published: publishedDefault,
+      approvedAt: publishedDefault ? at : null,
+      answersJson: JSON.stringify([]),
+      finalizedAt: at,
+      finalizationReason: effectiveReason,
+      autoFinalized: true,
+    };
     await tx.olympiadResult.create({
-      data: {
-        sessionId: session.id,
-        participantId: session.participantId,
-        olympiadId: session.olympiadId,
-        score: 0,
-        maxScore: 0,
-        published: publishedDefault,
-        approvedAt: publishedDefault ? at : null,
-        answersJson: JSON.stringify([]),
-        finalizedAt: at,
-        finalizationReason: effectiveReason,
-        autoFinalized: true,
-      },
+      data: withSubmissionIntegrityFields(base),
     });
     await tx.olympiadSession.update({
       where: { id: session.id },
@@ -208,20 +233,22 @@ export async function finalizeOlympiadSessionInTx(
     include: { questions: { orderBy: { order: "asc" } } },
   });
   if (!test) {
+    const answersJson = attempt.answersJson ?? "[]";
+    const base = {
+      sessionId: session.id,
+      participantId: session.participantId,
+      olympiadId: session.olympiadId,
+      score: 0,
+      maxScore: 0,
+      published: publishedDefault,
+      approvedAt: publishedDefault ? at : null,
+      answersJson,
+      finalizedAt: at,
+      finalizationReason: effectiveReason,
+      autoFinalized: true,
+    };
     await tx.olympiadResult.create({
-      data: {
-        sessionId: session.id,
-        participantId: session.participantId,
-        olympiadId: session.olympiadId,
-        score: 0,
-        maxScore: 0,
-        published: publishedDefault,
-        approvedAt: publishedDefault ? at : null,
-        answersJson: attempt.answersJson ?? "[]",
-        finalizedAt: at,
-        finalizationReason: effectiveReason,
-        autoFinalized: true,
-      },
+      data: withSubmissionIntegrityFields(base),
     });
     await tx.olympiadSession.update({
       where: { id: session.id },
@@ -240,20 +267,22 @@ export async function finalizeOlympiadSessionInTx(
       where: { id: attempt.id },
       data: { answersJson: JSON.stringify(displayAnswers), lastAutoSavedAt: at },
     });
+    const answersJson = JSON.stringify(displayAnswers);
+    const base = {
+      sessionId: session.id,
+      participantId: session.participantId,
+      olympiadId: session.olympiadId,
+      score,
+      maxScore,
+      published: publishedDefault,
+      approvedAt: publishedDefault ? at : null,
+      answersJson,
+      finalizedAt: at,
+      finalizationReason: effectiveReason,
+      autoFinalized: true,
+    };
     await tx.olympiadResult.create({
-      data: {
-        sessionId: session.id,
-        participantId: session.participantId,
-        olympiadId: session.olympiadId,
-        score,
-        maxScore,
-        published: publishedDefault,
-        approvedAt: publishedDefault ? at : null,
-        answersJson: JSON.stringify(displayAnswers),
-        finalizedAt: at,
-        finalizationReason: effectiveReason,
-        autoFinalized: true,
-      },
+      data: withSubmissionIntegrityFields(base),
     });
     await tx.olympiadSession.update({
       where: { id: session.id },
@@ -265,7 +294,7 @@ export async function finalizeOlympiadSessionInTx(
       await tx.olympiadSession.update({
         where: { id: session.id },
         data: {
-          status: "SUBMITTED",
+          status: "FINALIZED",
           submittedAt: at,
           finalizedAt: r?.finalizedAt ?? r?.createdAt ?? at,
           finalizationReason: r?.finalizationReason,
@@ -292,7 +321,7 @@ async function finalizeSessionWithDedicatedTransaction(
   sessionId: string,
   ctx: FinalizeOlympiadSessionTxContext,
 ): Promise<"finalized" | "skipped" | "repaired"> {
-  return prisma.$transaction(
+  const out = await prisma.$transaction(
     (tx) => finalizeOlympiadSessionInTx(tx, sessionId, ctx),
     {
       maxWait: 10_000,
@@ -300,6 +329,21 @@ async function finalizeSessionWithDedicatedTransaction(
       isolationLevel: Prisma.TransactionIsolationLevel.ReadCommitted,
     },
   );
+  if ((out === "finalized" || out === "repaired") && isOlympiadMonitorRedisEventsEnabled()) {
+    const s = await prisma.olympiadSession.findFirst({
+      where: { id: sessionId },
+      select: { olympiadId: true },
+    });
+    if (s) {
+      void emitOlympiadMonitorEvent({
+        type: "exam_state_changed",
+        olympiadId: s.olympiadId,
+        sessionId,
+        meta: { source: "finalize_worker", outcome: out },
+      });
+    }
+  }
+  return out;
 }
 
 /**
@@ -327,7 +371,7 @@ export async function runOlympiadOverdueFinalization(options?: {
   for (rounds = 0; rounds < maxRounds; rounds++) {
     const candidates = await prisma.$queryRaw<Array<{ id: string }>>`
       SELECT id FROM "OlympiadSession"
-      WHERE status = ${"ACTIVE"}
+      WHERE status IN ('ACTIVE', 'SUBMITTING')
         AND "serverEndsAt" IS NOT NULL
         AND "serverEndsAt" < ${at}
       ORDER BY "serverEndsAt" ASC
