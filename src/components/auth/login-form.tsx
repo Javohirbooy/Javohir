@@ -6,6 +6,7 @@ import { useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { LogIn, Mail, Lock } from "lucide-react";
 import { signInWithCredentials } from "@/lib/credentials-sign-in";
+import { loginFailureMessageFromCredentialCode } from "@/lib/auth-login-messages";
 
 async function fetchSessionRole(): Promise<string | undefined> {
   const r = await fetch(`${window.location.origin}/api/auth/session`, {
@@ -56,13 +57,14 @@ export function LoginForm() {
       }
       if (res == null || !res.ok) {
         const reason = res && !res.ok ? res.reason : "";
+        const credCode = res && !res.ok ? res.credentialCode : undefined;
         const credMsg =
           reason === "CredentialsSignin" || reason.includes("AccessDenied") || reason.includes("callback");
         setError(
           res == null
             ? "Kirish javobi kutilmadi. Internet yoki serverni tekshirib, qayta urinib ko‘ring."
             : credMsg || reason.startsWith("http_") || reason === "not_json_429"
-              ? "Email/ism-familiya yoki parol noto‘g‘ri. Email tasdiqlangan va akkaunt faolligini tekshiring."
+              ? loginFailureMessageFromCredentialCode(credCode)
               : "Kirishda muammo yuz berdi. Sahifani yangilab qayta urinib ko‘ring.",
         );
         return;

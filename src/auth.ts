@@ -24,6 +24,13 @@ import {
   LOGIN_RATE_LIMIT_ATTEMPTS,
   LOGIN_RATE_LIMIT_WINDOW_MS,
 } from "@/lib/auth-rate-limits";
+import {
+  LoginAccountInactive,
+  LoginEmailNotVerified,
+  LoginLockout,
+  LoginRateLimited,
+  LoginRedisUnavailable,
+} from "@/lib/auth-login-errors";
 
 const credentialsSchema = z.object({
   identifier: z.string().trim().min(1),
@@ -86,7 +93,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         if (await isLoginBlocked(fp)) {
           logStructured("warn", "auth.login_blocked", { fpPrefix: fp.slice(0, 8) });
           logSecurityEvent("auth.blocked", { fpPrefix: fp.slice(0, 8) });
-          return null;
+          throw new LoginLockout();
         }
 
         const ipRl = await takeRateLimitSlot("auth_login_ip", ip, ipRlCap, LOGIN_IP_WINDOW_MS, {
@@ -99,7 +106,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             backend: ipRl.backend,
           });
           logSecurityEvent("auth.suspicious", { scope: "ip", backend: ipRl.backend });
-          return null;
+          throw ipRl.backend === "redis_unavailable" ? new LoginRedisUnavailable() : new LoginRateLimited();
         }
 
         const userRl = await takeRateLimitSlot("auth_login_user", normalizedIdentifier, LOGIN_RATE_LIMIT_ATTEMPTS, LOGIN_RATE_LIMIT_WINDOW_MS, {
@@ -113,7 +120,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             backend: userRl.backend,
           });
           logSecurityEvent("auth.suspicious", { scope: "identifier", backend: userRl.backend });
-          return null;
+          throw userRl.backend === "redis_unavailable" ? new LoginRedisUnavailable() : new LoginRateLimited();
         }
 
         const emailLike = normalizedIdentifier.includes("@");
@@ -155,13 +162,13 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           if (process.env.IQM_AUTH_DEBUG === "1") {
             console.warn("[iqm-auth] credentials: email not verified or pending", identifier);
           }
-          return null;
+          throw new LoginEmailNotVerified();
         }
         if (user.status && user.status !== "ACTIVE") {
           if (process.env.IQM_AUTH_DEBUG === "1") {
             console.warn("[iqm-auth] credentials: user not ACTIVE", identifier, user.status);
           }
-          return null;
+          throw new LoginAccountInactive();
         }
         const storedPassword = user.passwordHash ?? "";
         const isBcrypt = storedPassword.startsWith(BCRYPT_PREFIX);

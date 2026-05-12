@@ -4,7 +4,24 @@
  */
 import { getCsrfToken } from "next-auth/react";
 
-export type CredentialsSignInResult = { ok: true } | { ok: false; reason: string };
+export type CredentialsSignInResult =
+  | { ok: true }
+  | { ok: false; reason: string; credentialCode?: string };
+
+function parseAuthRedirect(urlStr: string): { error?: string; code?: string } {
+  try {
+    const u =
+      urlStr.startsWith("http://") || urlStr.startsWith("https://")
+        ? new URL(urlStr)
+        : new URL(urlStr, typeof window !== "undefined" ? window.location.origin : "http://localhost");
+    return {
+      error: u.searchParams.get("error") ?? undefined,
+      code: u.searchParams.get("code") ?? undefined,
+    };
+  } catch {
+    return {};
+  }
+}
 
 export async function signInWithCredentials(identifier: string, password: string): Promise<CredentialsSignInResult> {
   const csrfToken = await getCsrfToken();
@@ -38,11 +55,12 @@ export async function signInWithCredentials(identifier: string, password: string
       return { ok: false, reason: "json_parse" };
     }
     let authErr: string | undefined;
+    let authCode: string | undefined;
     try {
       const raw = data.url ?? `${window.location.origin}/`;
-      const u =
-        raw.startsWith("http://") || raw.startsWith("https://") ? new URL(raw) : new URL(raw, window.location.origin);
-      authErr = u.searchParams.get("error") ?? undefined;
+      const parsed = parseAuthRedirect(raw);
+      authErr = parsed.error;
+      authCode = parsed.code;
     } catch {
       authErr = undefined;
     }
@@ -50,7 +68,7 @@ export async function signInWithCredentials(identifier: string, password: string
       return { ok: false, reason: `http_${res.status}` };
     }
     if (authErr) {
-      return { ok: false, reason: authErr };
+      return { ok: false, reason: authErr, credentialCode: authCode };
     }
     return { ok: true };
   }
@@ -62,14 +80,16 @@ export async function signInWithCredentials(identifier: string, password: string
       return { ok: false, reason: "redirect_no_location" };
     }
     let authErr: string | undefined;
+    let authCode: string | undefined;
     try {
       const u = new URL(loc, window.location.origin);
       authErr = u.searchParams.get("error") ?? undefined;
+      authCode = u.searchParams.get("code") ?? undefined;
     } catch {
       authErr = undefined;
     }
     if (authErr) {
-      return { ok: false, reason: authErr };
+      return { ok: false, reason: authErr, credentialCode: authCode };
     }
     return { ok: true };
   }
