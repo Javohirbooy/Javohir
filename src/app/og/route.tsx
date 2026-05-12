@@ -3,7 +3,8 @@ import { BRAND } from "@/lib/brand";
 import { OG_IMAGE_HEIGHT, OG_IMAGE_WIDTH } from "@/lib/og/dimensions";
 import { renderBrandOg } from "@/lib/og/render-brand-og";
 
-export const runtime = "edge";
+/** `next/og` Node da; edge marshrut ogohlantirishini bermaydi. */
+export const runtime = "nodejs";
 
 function clamp(s: string, max: number): string {
   const t = s.replace(/\s+/g, " ").trim();

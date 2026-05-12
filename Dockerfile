@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1.6
 # Prisma: glibc (bookworm) — Alpine musl bilan engine muammolarini oldini oladi.
-FROM node:22-bookworm-slim AS builder
+FROM node:24-bookworm-slim AS builder
 WORKDIR /app
 
 RUN apt-get update \
@@ -26,7 +26,7 @@ RUN npx prisma generate \
   && npm run build \
   && npm prune --omit=dev
 
-FROM node:22-bookworm-slim AS runner
+FROM node:24-bookworm-slim AS runner
 WORKDIR /app
 
 RUN apt-get update \
