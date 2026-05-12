@@ -134,6 +134,15 @@ export function parseMcqTextToDraftQuestions(raw: string): ParsedDraftQuestion[]
           }
           continue;
         }
+        // Har bir qator alohida: "- A" yoki "+ B" (bitta marker).
+        if (signed.length === 1) {
+          const m = signed[0]!;
+          const text = m[2]?.trim();
+          if (text) {
+            optLines.push({ text, isCorrect: m[1] === "+" });
+          }
+          continue;
+        }
       }
       const t = parsed.trim();
       if (!t) continue;

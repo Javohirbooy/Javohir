@@ -1,0 +1,74 @@
+? I ___ my homework already.
+- did
++ have done
+- do
+
+? She ___ to school yesterday.
+- has gone
++ went
+- goes
+
+? We ___ this movie before.
+- saw
++ have seen
+- see
+
+? They ___ dinner an hour ago.
++ had
+- have had
+- has had
+
+? I ___ him last week.
+- have met
++ met
+- meet
+
+? She ___ never ___ sushi.
+- did / eat
++ has / eaten
+- have / eat
+
+? We ___ in this house since 2020.
+- lived
++ have lived
+- live
+
+? He ___ his keys yesterday.
++ lost
+- has lost
+- lose
+
+? I ___ just ___ my friend.
+- did / call
++ have / called
+- has / call
+
+? They ___ to Samarkand last summer.
+- have gone
++ went
+- go
+
+? She ___ already ___ the book.
+- did / read
++ has / read
+- have / read
+
+? I ___ this game many times.
+- played
++ have played
+- play
+
+? We ___ breakfast at 7 o'clock.
++ had
+- have had
+- have
+
+? He ___ never ___ to Tashkent.
++ has / been
+- did / go
+- have / been
+
+? I ___ my phone two days ago.
++ lost
+- have lost
+- lose
