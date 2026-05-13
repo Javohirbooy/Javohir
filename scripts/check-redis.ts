@@ -1,8 +1,8 @@
 /**
  * Upstash ulanishini tekshiradi: `npm run redis:ping`
- * Kalitlar .env yoki muhit o‘zgaruvchilaridan olinadi.
+ * Kalitlar `.env` + `.env.local` (vercel pull) dan — `db-env-for-cli` bilan.
  */
-import "dotenv/config";
+import "./db-env-for-cli";
 import { Redis } from "@upstash/redis";
 
 async function main() {
