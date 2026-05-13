@@ -12,7 +12,7 @@ export function loginFailureMessageFromCredentialCode(code: string | undefined):
     case "middleware_rate_limited":
       return "Kirish so‘rovi cheklangan (server himoyasi). Bir necha daqiqadan keyin qayta urinib ko‘ring. Redis (Upstash) sozlanganligini tekshiring.";
     case "middleware_redis_unavailable":
-      return "Kirish vaqtincha ishlamayapti: Redis (Upstash) ulanmagan. Vercelda UPSTASH_REDIS_REST_URL va TOKEN qo‘shing yoki birozdan keyin qayta urinib ko‘ring.";
+      return "Kirish vaqtincha ishlamayapti: Redis (Upstash) ulanmagan yoki yangi deploy kutilmoqda. Vercelda UPSTASH_REDIS_REST_URL va UPSTASH_REDIS_REST_TOKEN (Production) qo‘yilgan bo‘lsa, «Redeploy» qiling; keyin qayta urinib ko‘ring.";
     case "lockout":
       return "Bir necha marta noto‘g‘ri parol kiritildi. Vaqtincha bloklangan — birozdan keyin urinib ko‘ring.";
     case "redis_unavailable":
