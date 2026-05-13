@@ -9,10 +9,13 @@
  *     DATABASE_URL="postgresql://..." npx tsx scripts/ensure-demo-java.ts
  *
  * Internetdagi sayt uchun: Vercelda ishlatiladigan DATABASE_URL bilan ishlating.
- * Oson yo‘l (CLI o‘rnatilgan bo‘lsa): `vercel env pull .env.production.local`
- * keyin: `$env:DATABASE_URL = (Get-Content .env.production.local | Select-String '^DATABASE_URL=').ToString().Split('=',2)[1].Trim('"')` yoki qo‘lda nusxa.
+ * Oson yo‘l: `vercel env pull .env.local` keyin `npm run demo:ensure-java`
+ * (skript `.env.local` dan `DATABASE_URL` ni ham o‘qiydi).
  */
-import "dotenv/config";
+import { config as loadEnv } from "dotenv";
+
+loadEnv({ path: ".env" });
+loadEnv({ path: ".env.local", override: true });
 import bcrypt from "bcryptjs";
 import { PrismaClient } from "@prisma/client";
 
