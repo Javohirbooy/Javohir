@@ -1,6 +1,9 @@
 import { captureRequestError } from "@sentry/nextjs";
+import { isNextProductionBuildPhase } from "@/lib/redis-strict-policy";
 
 export async function register() {
+  if (isNextProductionBuildPhase()) return;
+
   if (process.env.NEXT_RUNTIME === "nodejs") {
     await import("../sentry.server.config");
     const { assertProductionConfig } = await import("@/lib/env");

@@ -1,5 +1,6 @@
 import { PrismaClient } from "@prisma/client";
 import { getTunedDatabaseUrl } from "@/lib/prisma-database-url";
+import { isNextProductionBuildPhase } from "@/lib/redis-strict-policy";
 
 /**
  * Vercel + Neon integratsiyasi ba’zan `POSTGRES_PRISMA_URL` kabi nom bilan beradi.
@@ -47,16 +48,24 @@ const globalForPrisma = globalThis as typeof globalThis & {
   __IQ_MONITORING_PRISMA__?: PrismaClient;
 };
 
+/**
+ * Build bosqichida bundler marshrut modullarini baholashi uchun — haqiqiy ulanish bo‘lmaydi.
+ * Runtime’da DATABASE_URL bo‘lmasa xato beriladi.
+ */
+const PRISMA_BUILD_STUB_URL =
+  "postgresql://127.0.0.1:65534/prisma_build_stub?schema=public&connect_timeout=1";
+
 function createClient(): PrismaClient {
-  const databaseUrl = resolveDatabaseUrl();
+  let databaseUrl = resolveDatabaseUrl();
+  if (!databaseUrl && isNextProductionBuildPhase()) {
+    databaseUrl = PRISMA_BUILD_STUB_URL;
+  }
   if (!databaseUrl) {
     throw new Error(
       [
-        "PostgreSQL ulanishi topilmadi.",
-        "Vercel: loyiha → Settings → Environment Variables — quyidagilardan kamida bittasini Production (va kerak bo‘lsa Preview) uchun qo‘shing:",
-        "DATABASE_URL (tavsiya), yoki Neon/Vercel Postgres bergan POSTGRES_PRISMA_URL / POSTGRES_URL / NEON_DATABASE_URL.",
-        "Neon: Vercel → Storage → database ulanishi — odatda `DATABASE_URL` avtomatik yoziladi.",
-        "Migratsiya uchun ixtiyoriy: DIRECT_URL yoki DATABASE_URL_UNPOOLED (Neon to‘g‘ri ulanish).",
+        "DATABASE_URL o‘rnatilmagan (.env). Neon connection string qo‘shing.",
+        "Vercel: Settings → Environment Variables — DATABASE_URL (yoki POSTGRES_PRISMA_URL / NEON_DATABASE_URL) ni Production, Preview va **Build** muhitlari uchun ham ulang (Build uchun yo‘q bo‘lsa `npm run build` xato beradi).",
+        "Migratsiya: DIRECT_URL yoki POSTGRES_URL_NON_POOLING.",
       ].join(" "),
     );
   }

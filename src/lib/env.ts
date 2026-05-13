@@ -1,5 +1,5 @@
 import { isUpstashConfigured } from "@/lib/upstash-redis";
-import { mustEnforceDistributedRedisAtStartup } from "@/lib/redis-strict-policy";
+import { isNextProductionBuildPhase, mustEnforceDistributedRedisAtStartup } from "@/lib/redis-strict-policy";
 import {
   allowInsecureSiteUrl,
   isHttpsUrl,
@@ -58,6 +58,7 @@ export function validateServerEnv(): ValidateServerEnvResult {
  */
 export function assertProductionConfig() {
   if (process.env.NODE_ENV !== "production") return;
+  if (isNextProductionBuildPhase()) return;
 
   const relaxed = allowInsecureSiteUrl();
 
