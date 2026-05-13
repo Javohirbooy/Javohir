@@ -6,7 +6,14 @@ import { getTunedDatabaseUrl } from "@/lib/prisma-database-url";
  * Prisma `schema.prisma` asosan `DATABASE_URL` ni kutadi — bu yerda birinchi topilganini ishlatamiz.
  */
 function resolveDatabaseUrl(): string | undefined {
-  const keys = ["DATABASE_URL", "POSTGRES_PRISMA_URL", "POSTGRES_URL", "PRISMA_DATABASE_URL"] as const;
+  const keys = [
+    "DATABASE_URL",
+    "POSTGRES_PRISMA_URL",
+    "POSTGRES_URL",
+    "PRISMA_DATABASE_URL",
+    "NEON_DATABASE_URL",
+    "STORAGE_DATABASE_URL",
+  ] as const;
   for (const k of keys) {
     const v = process.env[k]?.trim();
     if (v) return v;
@@ -17,7 +24,8 @@ function resolveDatabaseUrl(): string | undefined {
 function resolveDirectUrl(pooledUrl: string): string {
   const explicit = process.env.DIRECT_URL?.trim();
   if (explicit) return explicit;
-  const unpooled = process.env.DATABASE_URL_UNPOOLED?.trim();
+  const unpooled =
+    process.env.DATABASE_URL_UNPOOLED?.trim() || process.env.POSTGRES_URL_NON_POOLING?.trim();
   if (unpooled) return unpooled;
   return pooledUrl;
 }
@@ -41,7 +49,7 @@ function createClient(): PrismaClient {
       [
         "PostgreSQL ulanishi topilmadi.",
         "Vercel: loyiha → Settings → Environment Variables — quyidagilardan kamida bittasini Production (va kerak bo‘lsa Preview) uchun qo‘shing:",
-        "DATABASE_URL (tavsiya), yoki Neon/Vercel Postgres bergan POSTGRES_PRISMA_URL / POSTGRES_URL.",
+        "DATABASE_URL (tavsiya), yoki Neon/Vercel Postgres bergan POSTGRES_PRISMA_URL / POSTGRES_URL / NEON_DATABASE_URL.",
         "Neon: Vercel → Storage → database ulanishi — odatda `DATABASE_URL` avtomatik yoziladi.",
         "Migratsiya uchun ixtiyoriy: DIRECT_URL yoki DATABASE_URL_UNPOOLED (Neon to‘g‘ri ulanish).",
       ].join(" "),

@@ -13,12 +13,24 @@ const BCRYPT_PREFIX = "$2";
 
 function dbHost(): string {
   const raw = process.env.DATABASE_URL?.trim() || "";
-  if (!raw) return "(DATABASE_URL bo‘sh — .env.local da Neon/Postgres URL yo‘q)";
+  if (!raw) {
+    const hasKey = Object.prototype.hasOwnProperty.call(process.env, "DATABASE_URL");
+    return hasKey
+      ? "(DATABASE_URL kaliti bor, lekin QIYMAT bo‘sh — Vercelda to‘ldiring yoki Sensitive tufayli pull bo‘shmagan)"
+      : "(DATABASE_URL kaliti yo‘q)";
+  }
   try {
     return new URL(raw).hostname;
   } catch {
     return "(URL noto‘g‘ri)";
   }
+}
+
+function envPresence(name: string): string {
+  if (!Object.prototype.hasOwnProperty.call(process.env, name)) return "kalit yo‘q";
+  const v = process.env[name];
+  if (v == null || !String(v).trim()) return "kalit bor, **QIYMAT BO‘SH**";
+  return `bor (${String(v).trim().length} belgi)`;
 }
 
 async function main() {
@@ -28,19 +40,32 @@ async function main() {
     "Eslatma: `vercel env pull` sizda **development** bo‘lsa, bu yerda ham development bazasi chiqadi.",
     "Internet sayti uchun: vercel env pull .env.local --environment production",
   );
-  const authSecret = process.env.AUTH_SECRET?.trim();
-  const nextAuthSecret = process.env.NEXTAUTH_SECRET?.trim();
-  console.log("AUTH_SECRET:", authSecret ? `bor (${authSecret.length} belgi)` : "YO‘Q");
-  console.log("NEXTAUTH_SECRET:", nextAuthSecret ? `bor (${nextAuthSecret.length} belgi)` : "YO‘Q");
-  console.log("NEXTAUTH_URL:", process.env.NEXTAUTH_URL?.trim() || "(yo‘q)");
-  console.log("AUTH_URL:", process.env.AUTH_URL?.trim() || "(yo‘q)");
+  console.log("DATABASE_URL:", envPresence("DATABASE_URL"));
+  console.log("DIRECT_URL:", envPresence("DIRECT_URL"));
+  console.log("AUTH_SECRET:", envPresence("AUTH_SECRET"));
+  console.log("NEXTAUTH_SECRET:", envPresence("NEXTAUTH_SECRET"));
+  console.log("NEXTAUTH_URL:", process.env.NEXTAUTH_URL?.trim() || "(qiymat bo‘sh yoki yo‘q)");
+  console.log("AUTH_URL:", process.env.AUTH_URL?.trim() || "(qiymat bo‘sh yoki yo‘q)");
   console.log("UPSTASH_REDIS_REST_URL:", process.env.UPSTASH_REDIS_REST_URL?.trim() ? "bor" : "YO‘Q");
+
+  const dbKeyHints = Object.keys(process.env)
+    .filter((k) => /DATABASE|POSTGRES|NEON|PRISMA|DIRECT_URL|POOLING|SQL/i.test(k))
+    .sort();
+  console.log("process.env da DB bilan bog‘liq kalit nomlari (qiymat chiqarilmaydi):", dbKeyHints.length ? dbKeyHints.join(", ") : "(hech biri — Vercelda Postgres/Neon ulanmagan yoki `env pull` noto‘g‘ri muhit)");
+
+  const authKeyHints = Object.keys(process.env)
+    .filter((k) => /^(AUTH_|NEXTAUTH_)/i.test(k))
+    .sort();
+  console.log("AUTH / NEXTAUTH kalit nomlari:", authKeyHints.length ? authKeyHints.join(", ") : "(yo‘q)");
   console.log("---");
 
   if (!process.env.DATABASE_URL?.trim()) {
     console.error(
-      "DATABASE_URL (yoki POSTGRES_PRISMA_URL / POSTGRES_URL) .env.local da topilmadi.\n" +
-        "Vercelda o‘zgaruvchi nomlarini tekshiring; `vercel env pull .env.local --environment production` qayta ishga tushiring.",
+      "PostgreSQL URL .env fayllarda topilmadi.\n" +
+        "1) Vercel → Settings → Environment Variables: `DATABASE_URL` (Production) borligini tekshiring.\n" +
+        "2) CMD: vercel env pull .env.local --environment production\n" +
+        "3) Yoki Neon ulanish qatorini qo‘lda `.env.local` ga yozing: DATABASE_URL=\"postgresql://...\"\n" +
+        "4) **Sensitive** deb belgilangan o‘zgaruvchilar ba’zan pull ga tushmaydi — shunda Dashboard dan nusxa oling.",
     );
     process.exitCode = 1;
     return;

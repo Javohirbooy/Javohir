@@ -65,7 +65,9 @@ export function assertProductionConfig() {
     const alt =
       process.env.POSTGRES_PRISMA_URL?.trim() ||
       process.env.POSTGRES_URL?.trim() ||
-      process.env.PRISMA_DATABASE_URL?.trim();
+      process.env.PRISMA_DATABASE_URL?.trim() ||
+      process.env.NEON_DATABASE_URL?.trim() ||
+      process.env.STORAGE_DATABASE_URL?.trim();
     if (!alt) {
       throw new Error(
         "[env] Production: DATABASE_URL yoki POSTGRES_PRISMA_URL / POSTGRES_URL (PostgreSQL ulanishi) majburiy.",

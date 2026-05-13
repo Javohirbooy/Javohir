@@ -6,8 +6,17 @@ import { config as loadEnv } from "dotenv";
 
 loadEnv({ path: ".env" });
 loadEnv({ path: ".env.local", override: true });
+/** Ba’zan `vercel env pull .env.production.local` ishlatiladi. */
+loadEnv({ path: ".env.production.local", override: true });
 
-const keys = ["DATABASE_URL", "POSTGRES_PRISMA_URL", "POSTGRES_URL", "PRISMA_DATABASE_URL"] as const;
+const keys = [
+  "DATABASE_URL",
+  "POSTGRES_PRISMA_URL",
+  "POSTGRES_URL",
+  "PRISMA_DATABASE_URL",
+  "NEON_DATABASE_URL",
+  "STORAGE_DATABASE_URL",
+] as const;
 let resolved: string | undefined;
 for (const k of keys) {
   const v = process.env[k]?.trim();
@@ -20,5 +29,8 @@ if (resolved && !process.env.DATABASE_URL?.trim()) {
   process.env.DATABASE_URL = resolved;
 }
 if (process.env.DATABASE_URL?.trim() && !process.env.DIRECT_URL?.trim()) {
-  process.env.DIRECT_URL = process.env.DATABASE_URL_UNPOOLED?.trim() || process.env.DATABASE_URL.trim();
+  process.env.DIRECT_URL =
+    process.env.DATABASE_URL_UNPOOLED?.trim() ||
+    process.env.POSTGRES_URL_NON_POOLING?.trim() ||
+    process.env.DATABASE_URL.trim();
 }
