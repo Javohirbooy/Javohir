@@ -26,15 +26,18 @@ import {
 } from "@/lib/auth-rate-limits";
 import {
   LoginAccountInactive,
+  LoginAmbiguousName,
   LoginEmailNotVerified,
   LoginLockout,
   LoginRateLimited,
   LoginRedisUnavailable,
+  LoginUnsupportedPasswordHash,
 } from "@/lib/auth-login-errors";
 
 const credentialsSchema = z.object({
   identifier: z.string().trim().min(1),
-  password: z.string().min(1),
+  /** Nusxa-qog‘ozdan yoki brauzer avto-to‘ldirishidan kelgan bosh/oxiridagi bo‘shliqlarni olib tashlash. */
+  password: z.string().trim().min(1),
 });
 
 const STUDENT_NUMBER_JWT_SYNC_MS = 30 * 60 * 1000;
@@ -147,7 +150,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           if (process.env.IQM_AUTH_DEBUG === "1") {
             console.warn("[iqm-auth] credentials: ambiguous name, ask for email", identifier);
           }
-          return null;
+          throw new LoginAmbiguousName();
         }
         if (process.env.IQM_AUTH_DEBUG === "1") {
           console.info("[iqm-auth] user found", {
@@ -177,7 +180,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           if (process.env.IQM_AUTH_DEBUG === "1") {
             console.warn("[iqm-auth] rejecting non-bcrypt credential row", { identifier, userId: user.id });
           }
-          return null;
+          throw new LoginUnsupportedPasswordHash();
         }
         const ok = await bcrypt.compare(password, storedPassword);
         if (process.env.IQM_AUTH_DEBUG === "1") {

@@ -12,8 +12,12 @@ export function loginFailureMessageFromCredentialCode(code: string | undefined):
       return "Bir necha marta noto‘g‘ri parol kiritildi. Vaqtincha bloklangan — birozdan keyin urinib ko‘ring.";
     case "redis_unavailable":
       return "Tizim vaqtincha himoya rejimida (Redis ulanishi). Bir ozdan keyin qayta urinib ko‘ring yoki administratorga xabar bering.";
+    case "ambiguous_name":
+      return "Bu ism-familiya bilan bir nechta akkaunt topildi. Iltimos, to‘liq email manzilingiz bilan kiring.";
+    case "unsupported_password_hash":
+      return "Bu akkaunt uchun parol formati yangilanishi kerak. «Parolni unutdingizmi» orqali yangi parol oling yoki administratorga murojaat qiling.";
     case "credentials":
     default:
-      return "Email/ism-familiya yoki parol noto‘g‘ri. Email tasdiqlangan va akkaunt faolligini tekshiring.";
+      return "Email/ism-familiya yoki parol noto‘g‘ri. Email tasdiqlangan va akkaunt faolligini tekshiring; parolni «Parolni unutdingizmi?» orqali ham yangilashingiz mumkin.";
   }
 }

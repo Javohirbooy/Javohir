@@ -37,3 +37,19 @@ export class LoginRedisUnavailable extends CredentialsSignin {
     this.code = "redis_unavailable";
   }
 }
+
+/** Bir xil ism-familiya bilan bir nechta akkaunt — email bilan kirish kerak. */
+export class LoginAmbiguousName extends CredentialsSignin {
+  constructor() {
+    super();
+    this.code = "ambiguous_name";
+  }
+}
+
+/** DB da bcrypt emas — kirish rad (admin parolni qayta o‘rnatishi kerak). */
+export class LoginUnsupportedPasswordHash extends CredentialsSignin {
+  constructor() {
+    super();
+    this.code = "unsupported_password_hash";
+  }
+}
