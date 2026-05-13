@@ -2,6 +2,27 @@ import { PrismaClient } from "@prisma/client";
 import { getTunedDatabaseUrl } from "@/lib/prisma-database-url";
 
 /**
+ * Vercel + Neon integratsiyasi ba’zan `POSTGRES_PRISMA_URL` kabi nom bilan beradi.
+ * Prisma `schema.prisma` asosan `DATABASE_URL` ni kutadi — bu yerda birinchi topilganini ishlatamiz.
+ */
+function resolveDatabaseUrl(): string | undefined {
+  const keys = ["DATABASE_URL", "POSTGRES_PRISMA_URL", "POSTGRES_URL", "PRISMA_DATABASE_URL"] as const;
+  for (const k of keys) {
+    const v = process.env[k]?.trim();
+    if (v) return v;
+  }
+  return undefined;
+}
+
+function resolveDirectUrl(pooledUrl: string): string {
+  const explicit = process.env.DIRECT_URL?.trim();
+  if (explicit) return explicit;
+  const unpooled = process.env.DATABASE_URL_UNPOOLED?.trim();
+  if (unpooled) return unpooled;
+  return pooledUrl;
+}
+
+/**
  * Namespaced singleton — avoids `globalThis.prisma` collisions with other libs/tutorials
  * and ensures dev HMR does not accidentally reuse a foreign Prisma instance.
  *
@@ -14,17 +35,28 @@ const globalForPrisma = globalThis as typeof globalThis & {
 };
 
 function createClient(): PrismaClient {
-  if (!process.env.DATABASE_URL) {
+  const databaseUrl = resolveDatabaseUrl();
+  if (!databaseUrl) {
     throw new Error(
-      "DATABASE_URL o‘rnatilmagan. Mahalliy: `edu-platform/.env` da Neon `postgresql://...` qo‘ying. Vercel: Settings → Environment Variables → DATABASE_URL (Production/Preview).",
+      [
+        "PostgreSQL ulanishi topilmadi.",
+        "Vercel: loyiha → Settings → Environment Variables — quyidagilardan kamida bittasini Production (va kerak bo‘lsa Preview) uchun qo‘shing:",
+        "DATABASE_URL (tavsiya), yoki Neon/Vercel Postgres bergan POSTGRES_PRISMA_URL / POSTGRES_URL.",
+        "Neon: Vercel → Storage → database ulanishi — odatda `DATABASE_URL` avtomatik yoziladi.",
+        "Migratsiya uchun ixtiyoriy: DIRECT_URL yoki DATABASE_URL_UNPOOLED (Neon to‘g‘ri ulanish).",
+      ].join(" "),
     );
   }
+  /** Boshqa kod `process.env.DATABASE_URL` ni kutishi mumkin (masalan, migratsiya CLI). */
+  if (!process.env.DATABASE_URL?.trim()) {
+    process.env.DATABASE_URL = databaseUrl;
+  }
   /** Vercelda ba’zan faqat bitta URL qo‘yiladi; `schema.prisma` `directUrl` talab qiladi. */
-  if (!process.env.DIRECT_URL) {
-    process.env.DIRECT_URL = process.env.DATABASE_URL;
+  if (!process.env.DIRECT_URL?.trim()) {
+    process.env.DIRECT_URL = resolveDirectUrl(databaseUrl);
   }
 
-  const tunedUrl = getTunedDatabaseUrl(process.env.DATABASE_URL) ?? process.env.DATABASE_URL;
+  const tunedUrl = getTunedDatabaseUrl(databaseUrl) ?? databaseUrl;
 
   return new PrismaClient({
     datasources: {
@@ -45,7 +77,7 @@ function getPrisma(): PrismaClient {
 /**
  * Lazy singleton: modul importida `PrismaClient` yaratilmaydi (Next.js build / Vercelda
  * `DATABASE_URL` ba’zan faqat runtime’da bo‘ladi). Birinchi `prisma.*` chaqiruvida ulanadi.
- * Ishlab chiqarishda `DATABASE_URL` baribir Vercel Environment Variables da bo‘lishi kerak.
+ * Ishlab chiqarishda PostgreSQL ulanishi (DATABASE_URL yoki POSTGRES_* muhit o‘zgaruvchilari) Vercelda bo‘lishi kerak.
  */
 export const prisma = new Proxy({} as PrismaClient, {
   get(_target, prop, receiver) {
