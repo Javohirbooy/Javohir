@@ -8,7 +8,8 @@ import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { StudentOlympiadTeaser } from "@/components/home/student-olympiad-teaser";
 import { BookOpen, FileQuestion } from "lucide-react";
-import { logStructured } from "@/lib/logger";
+import { tryPrismaPage } from "@/lib/server/try-prisma";
+import { DashboardDbErrorFallback } from "@/components/dashboard/dashboard-db-error-fallback";
 
 async function loadStudentDashboard(userId: string) {
   const user = await prisma.user.findUnique({
@@ -36,34 +37,11 @@ export default async function StudentDashboardPage() {
   if (!session?.user?.id) redirect("/kirish");
   if (session.user.role !== "STUDENT") redirect("/");
 
-  let payload: Awaited<ReturnType<typeof loadStudentDashboard>>;
-  try {
-    payload = await loadStudentDashboard(session.user.id);
-  } catch (e) {
-    logStructured("error", "oquvchi.dashboard_prisma_failed", {
-      message: e instanceof Error ? e.message : String(e),
-      userId: session.user.id,
-    });
-    return (
-      <div className="space-y-6">
-        <DashboardCard>
-          <h1 className="font-display text-xl font-bold tracking-tight">Panel vaqtincha yuklanmadi</h1>
-          <p className="mt-2 text-sm text-white/75">
-            Ma&apos;lumotlar bazasiga ulanishda xatolik yuz berdi. Internet va Vercelda{" "}
-            <code className="rounded bg-white/10 px-1">DATABASE_URL</code> ni tekshirib, sahifani yangilang.
-          </p>
-          <div className="mt-5 flex flex-wrap gap-2">
-            <Button href="/oquvchi" variant="primary" className="px-4 py-2 text-sm">
-              Qayta yuklash
-            </Button>
-            <Button href="/" variant="glass" className="px-4 py-2 text-sm">
-              Bosh sahifa
-            </Button>
-          </div>
-        </DashboardCard>
-      </div>
-    );
-  }
+  const loaded = await tryPrismaPage("oquvchi.dashboard_load", () => loadStudentDashboard(session.user.id), {
+    userId: session.user.id,
+  });
+  if (!loaded.ok) return <DashboardDbErrorFallback retryHref="/oquvchi" />;
+  const payload = loaded.data;
 
   if (!payload.ok) redirect("/kirish");
   const { user, recommended } = payload;

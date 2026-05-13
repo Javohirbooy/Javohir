@@ -3,22 +3,33 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/authz";
 import { DashboardCard } from "@/components/dashboard/dashboard-card";
+import { DashboardDbErrorFallback } from "@/components/dashboard/dashboard-db-error-fallback";
 import { SuperAdminCredentialsForm } from "@/components/super-admin/super-admin-credentials-form";
 import { getSuperAdminOlympiadSystemSnapshot } from "@/lib/olympiad/dashboard-stats";
 import { Shield } from "lucide-react";
+import { tryPrismaPage } from "@/lib/server/try-prisma";
 
 export default async function SuperAdminDashboardPage() {
   const session = await auth();
   requirePermission(session, "SITE_SETTINGS_SUPER", { redirectTo: "/" });
 
-  const [userCounts, tests, audit24h, olympiad] = await Promise.all([
-    prisma.user.groupBy({ by: ["role"], _count: { _all: true } }),
-    prisma.test.count(),
-    prisma.auditLog.count({
-      where: { createdAt: { gte: new Date(Date.now() - 24 * 60 * 60 * 1000) } },
-    }),
-    getSuperAdminOlympiadSystemSnapshot(),
-  ]);
+  const load = await tryPrismaPage(
+    "super_admin.dashboard_load",
+    async () => {
+      const [userCounts, tests, audit24h, olympiad] = await Promise.all([
+        prisma.user.groupBy({ by: ["role"], _count: { _all: true } }),
+        prisma.test.count(),
+        prisma.auditLog.count({
+          where: { createdAt: { gte: new Date(Date.now() - 24 * 60 * 60 * 1000) } },
+        }),
+        getSuperAdminOlympiadSystemSnapshot(),
+      ]);
+      return { userCounts, tests, audit24h, olympiad };
+    },
+    { actorId: session?.user?.id },
+  );
+  if (!load.ok) return <DashboardDbErrorFallback retryHref="/super-admin" />;
+  const { userCounts, tests, audit24h, olympiad } = load.data;
 
   const byRole = Object.fromEntries(userCounts.map((u) => [u.role, u._count._all])) as Record<string, number>;
 

@@ -3,23 +3,34 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/authz";
 import { DashboardCard } from "@/components/dashboard/dashboard-card";
+import { DashboardDbErrorFallback } from "@/components/dashboard/dashboard-db-error-fallback";
 import { ClientMiniBar } from "@/components/charts/client-mini-bar";
 import { ProgressBar } from "@/components/ui/progress-bar";
 import { getAdminOlympiadRiskSnapshot } from "@/lib/olympiad/dashboard-stats";
 import { BRAND } from "@/lib/brand";
 import { Layers, GraduationCap, Activity, Sparkles, Trophy } from "lucide-react";
+import { tryPrismaPage } from "@/lib/server/try-prisma";
 
 export default async function AdminDashboardPage() {
   const session = await auth();
   requirePermission(session, "ANALYTICS_GLOBAL", { redirectTo: "/" });
 
-  const [users, grades, tests, results, olympiad] = await Promise.all([
-    prisma.user.groupBy({ by: ["role"], _count: { _all: true } }),
-    prisma.grade.count(),
-    prisma.test.count(),
-    prisma.testResult.count(),
-    getAdminOlympiadRiskSnapshot(),
-  ]);
+  const load = await tryPrismaPage(
+    "admin.dashboard_load",
+    async () => {
+      const [users, grades, tests, results, olympiad] = await Promise.all([
+        prisma.user.groupBy({ by: ["role"], _count: { _all: true } }),
+        prisma.grade.count(),
+        prisma.test.count(),
+        prisma.testResult.count(),
+        getAdminOlympiadRiskSnapshot(),
+      ]);
+      return { users, grades, tests, results, olympiad };
+    },
+    { actorId: session?.user?.id },
+  );
+  if (!load.ok) return <DashboardDbErrorFallback retryHref="/admin" />;
+  const { users, grades, tests, results, olympiad } = load.data;
 
   const roleLabels: Record<string, string> = {
     SUPER_ADMIN: "Super adminlar",

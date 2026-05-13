@@ -1,7 +1,7 @@
 import { wrapRouteHandlerWithSentry } from "@sentry/nextjs";
 import { NextResponse } from "next/server";
 import { isUpstashConfigured } from "@/lib/upstash-redis";
-import { prisma } from "@/lib/prisma";
+import { prisma, isDatabaseConfigured } from "@/lib/prisma";
 import { isStrictDistributedRateLimitPolicy, mustEnforceDistributedRedisAtStartup } from "@/lib/redis-strict-policy";
 import { readOlympiadFinalizeHeartbeat } from "@/lib/worker/olympiad-cron-heartbeat";
 
@@ -11,6 +11,12 @@ type HealthBody = {
   redis?: { ok: boolean; checked: boolean };
   /** Hech qanday maxfiy token yo‘q — faqat mavjudlik */
   integrations?: { upstash: "on" | "off" };
+  /** Maxfiy qiymatlar chiqmaydi — deploy tekshiruvi uchun */
+  secrets?: {
+    databaseConfigured: boolean;
+    authSecretReady: boolean;
+    upstashConfigured: boolean;
+  };
   deployment?: { id?: string; env?: string };
   rateLimit?: {
     mode: "strict_distributed" | "best_effort";
@@ -34,11 +40,17 @@ async function getImpl(): Promise<NextResponse<HealthBody>> {
   const strictRl = isStrictDistributedRateLimitPolicy();
   const redisStartupRequired = mustEnforceDistributedRedisAtStartup();
   const upstashOn = isUpstashConfigured();
+  const authSecret = process.env.AUTH_SECRET?.trim() || process.env.NEXTAUTH_SECRET?.trim();
 
   const body: HealthBody = {
     status: database ? "ok" : "degraded",
     database,
     integrations: { upstash: upstashOn ? "on" : "off" },
+    secrets: {
+      databaseConfigured: isDatabaseConfigured(),
+      authSecretReady: Boolean(authSecret && authSecret.length >= 32),
+      upstashConfigured: upstashOn,
+    },
     deployment: {
       id: process.env.VERCEL_DEPLOYMENT_ID,
       env: process.env.VERCEL_ENV ?? process.env.NODE_ENV,

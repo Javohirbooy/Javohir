@@ -18,7 +18,7 @@ async function fetchSessionRole(): Promise<string | undefined> {
   return data?.user?.role;
 }
 
-async function fetchSessionRoleWithRetry(maxAttempts = 10, delayMs = 250): Promise<string | undefined> {
+async function fetchSessionRoleWithRetry(maxAttempts = 15, delayMs = 300): Promise<string | undefined> {
   for (let i = 0; i < maxAttempts; i++) {
     const role = await fetchSessionRole();
     if (role) return role;
@@ -73,6 +73,12 @@ export function LoginForm() {
       const role = await fetchSessionRoleWithRetry();
       if (process.env.NEXT_PUBLIC_AUTH_DEBUG === "1") {
         console.info("[iqm-login] session role", role);
+      }
+      if (!role) {
+        setError(
+          "Kirish muvaffaqiyatli, lekin sessiya cookie hali brauzerda to‘liq ko‘rinmayapti. Sahifani bir marta yangilang (F5) yoki 10 soniya kutib, yana «Kirish» bosing.",
+        );
+        return;
       }
       const dest =
         role === "SUPER_ADMIN"

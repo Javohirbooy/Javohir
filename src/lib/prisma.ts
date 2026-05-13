@@ -21,6 +21,11 @@ function resolveDatabaseUrl(): string | undefined {
   return undefined;
 }
 
+/** `/api/health` va startup — maxfiy URL chiqarmaydi. */
+export function isDatabaseConfigured(): boolean {
+  return Boolean(resolveDatabaseUrl());
+}
+
 function resolveDirectUrl(pooledUrl: string): string {
   const explicit = process.env.DIRECT_URL?.trim();
   if (explicit) return explicit;

@@ -3,29 +3,41 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import { DashboardCard } from "@/components/dashboard/dashboard-card";
+import { DashboardDbErrorFallback } from "@/components/dashboard/dashboard-db-error-fallback";
 import { ClientMiniBar } from "@/components/charts/client-mini-bar";
 import { Badge } from "@/components/ui/badge";
 import { getTeacherOlympiadSummary } from "@/lib/olympiad/dashboard-stats";
+import { tryPrismaPage } from "@/lib/server/try-prisma";
 
 export default async function TeacherDashboardPage() {
   const session = await auth();
   if (!session?.user?.id) redirect("/kirish");
   if (session.user.role !== "TEACHER") redirect("/");
 
-  const classes = await prisma.teacherOnClass.findMany({
-    where: { userId: session.user.id },
-    include: { grade: true },
-  });
-
-  const olympiad = await getTeacherOlympiadSummary(session.user.id);
-
-  const gradeIds = classes.map((c) => c.gradeId);
-  const recent = await prisma.testResult.findMany({
-    where: { test: { subject: { gradeId: { in: gradeIds } } } },
-    orderBy: [{ score: "desc" }, { createdAt: "desc" }],
-    take: 15,
-    include: { user: true, test: { include: { subject: { include: { grade: true } } } } },
-  });
+  const load = await tryPrismaPage(
+    "oqituvchi.dashboard_load",
+    async () => {
+      const classes = await prisma.teacherOnClass.findMany({
+        where: { userId: session.user.id },
+        include: { grade: true },
+      });
+      const olympiad = await getTeacherOlympiadSummary(session.user.id);
+      const gradeIds = classes.map((c) => c.gradeId);
+      const recent =
+        gradeIds.length === 0
+          ? []
+          : await prisma.testResult.findMany({
+              where: { test: { subject: { gradeId: { in: gradeIds } } } },
+              orderBy: [{ score: "desc" }, { createdAt: "desc" }],
+              take: 15,
+              include: { user: true, test: { include: { subject: { include: { grade: true } } } } },
+            });
+      return { classes, olympiad, recent };
+    },
+    { userId: session.user.id },
+  );
+  if (!load.ok) return <DashboardDbErrorFallback retryHref="/oqituvchi" />;
+  const { classes, olympiad, recent } = load.data;
 
   const chartData = classes.map((c) => ({
     name: `${c.grade.number}`,
