@@ -8,9 +8,13 @@
  *   bash:
  *     DATABASE_URL="postgresql://..." npx tsx scripts/ensure-demo-java.ts
  *
- * Internetdagi sayt uchun: Vercelda ishlatiladigan DATABASE_URL bilan ishlating.
- * Oson yo‘l: `vercel env pull .env.local` keyin `npm run demo:ensure-java`
- * (skript `.env.local` dan `DATABASE_URL` ni ham o‘qiydi).
+ * Internetdagi sayt uchun: Vercel **Production** bazasiga yozish kerak.
+ * `vercel env pull` odatda **development** ni tortadi — sayt esa Production `DATABASE_URL` ishlatadi.
+ *
+ * To‘g‘ri ketma-ketlik:
+ *   vercel env pull .env.local --environment production
+ *   npm run demo:ensure-java
+ * yoki bir qatorda: npm run demo:ensure-java:production
  */
 import { config as loadEnv } from "dotenv";
 
