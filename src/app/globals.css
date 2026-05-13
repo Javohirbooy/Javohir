@@ -226,6 +226,32 @@ body::before {
   color: #0f766e !important;
 }
 
+/**
+ * Yorug‘ tema: shisha kartochkalar (DashboardCard) ustida Tailwind `text-*-100` juda ochiq —
+ * yozuvlar deyarlin ko‘rinmaydi. Qorong‘i temada asl neon/pastel qoladi.
+ */
+html:not(.dark) .iq-theme .text-violet-100,
+html:not(.dark) .iq-theme .text-fuchsia-100,
+html:not(.dark) .iq-theme .text-sky-100,
+html:not(.dark) .iq-theme .text-cyan-100,
+html:not(.dark) .iq-theme .text-rose-100,
+html:not(.dark) .iq-theme .text-amber-100,
+html:not(.dark) .iq-theme .text-indigo-100,
+html:not(.dark) .iq-theme .text-purple-100,
+html:not(.dark) .iq-theme .text-teal-100,
+html:not(.dark) .iq-theme .text-lime-100 {
+  color: #0f172a !important;
+}
+
+html:not(.dark) .iq-theme .text-violet-200,
+html:not(.dark) .iq-theme .text-violet-200\/80 {
+  color: #5b21b6 !important;
+}
+
+html:not(.dark) .iq-theme .text-cyan-300\/90 {
+  color: #0f766e !important;
+}
+
 .iq-theme .border-white\/10,
 .iq-theme .border-white\/12,
 .iq-theme .border-white\/15,

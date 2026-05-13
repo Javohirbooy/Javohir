@@ -24,13 +24,13 @@ export function DashboardHeader({ className }: { className?: string }) {
           <Icon3DGlyph
             icon={Search}
             size="md"
-            className="text-emerald-300/70 transition-colors duration-300 group-focus-within:text-emerald-200"
+            className="text-emerald-600 transition-colors duration-300 group-focus-within:text-emerald-700 dark:text-emerald-300/80 dark:group-focus-within:text-emerald-200"
           />
         </span>
         <input
           type="search"
           placeholder="Qidiruv — testlar, fanlar..."
-          className="w-full rounded-2xl border border-emerald-100 bg-white py-3 pl-[3.25rem] pr-4 font-sans text-sm text-slate-700 outline-none ring-0 transition-all duration-300 placeholder:text-slate-400 focus:border-emerald-400/55 focus:bg-emerald-50/40 focus:shadow-[0_0_32px_-8px_rgba(34,197,94,0.2),inset_0_0_0_1px_rgba(34,197,94,0.1)] focus:ring-2 focus:ring-emerald-400/20"
+          className="w-full rounded-2xl border border-emerald-100 bg-white py-3 pl-[3.25rem] pr-4 font-sans text-sm text-slate-800 outline-none ring-0 transition-all duration-300 placeholder:text-slate-600 focus:border-emerald-400/55 focus:bg-emerald-50/40 focus:shadow-[0_0_32px_-8px_rgba(34,197,94,0.2),inset_0_0_0_1px_rgba(34,197,94,0.1)] focus:ring-2 focus:ring-emerald-400/20 dark:text-slate-200 dark:placeholder:text-slate-500"
           aria-label="Qidiruv"
         />
       </div>
