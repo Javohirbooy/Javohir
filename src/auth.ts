@@ -80,6 +80,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         }
         const parsed = credentialsSchema.safeParse(raw);
         if (!parsed.success) {
+          logStructured("warn", "auth.credentials_reject", { stage: "validation", detail: "schema" });
           if (process.env.IQM_AUTH_DEBUG === "1") {
             console.warn("[iqm-auth] credentials parse failed", parsed.error.flatten().fieldErrors);
           }
@@ -141,6 +142,10 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             });
         const user = users[0];
         if (!user) {
+          logStructured("warn", "auth.credentials_reject", {
+            stage: "user_not_found",
+            mode: emailLike ? "email" : "name",
+          });
           if (process.env.IQM_AUTH_DEBUG === "1") {
             console.warn("[iqm-auth] credentials: no user for identifier", identifier);
           }
@@ -196,6 +201,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           return null;
         }
         if (!user.role) {
+          logStructured("warn", "auth.credentials_reject", { stage: "role_missing", userId: user.id });
           if (process.env.IQM_AUTH_DEBUG === "1") {
             console.warn("[iqm-auth] credentials: user role missing", identifier);
           }

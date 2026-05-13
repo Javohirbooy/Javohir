@@ -45,6 +45,24 @@ export async function signInWithCredentials(identifier: string, password: string
     redirect: "manual",
   });
 
+  /**
+   * Edge middleware (`proxy.ts`) auth POST uchun Redis/rate-limit 429 qaytaradi.
+   * JSON + !res.ok bo‘lsa, quyidagi blok `http_429` bilan noto‘g‘ri parol xabariga olib kelardi.
+   */
+  if (res.status === 429) {
+    let credentialCode: "middleware_rate_limited" | "middleware_redis_unavailable" = "middleware_rate_limited";
+    const ct429 = res.headers.get("content-type") ?? "";
+    if (ct429.includes("application/json")) {
+      try {
+        const j = (await res.clone().json()) as { code?: string };
+        if (j.code === "middleware_redis_unavailable") credentialCode = "middleware_redis_unavailable";
+      } catch {
+        /* ignore */
+      }
+    }
+    return { ok: false, reason: "http_429", credentialCode };
+  }
+
   /** JSON rejimi (Auth.js): 200 + `{ url }` */
   const ct = res.headers.get("content-type") ?? "";
   if (ct.includes("application/json")) {

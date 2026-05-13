@@ -52,9 +52,21 @@ export default auth(async (req) => {
     });
     if (!rl.ok) {
       const retrySec = Math.max(1, Math.ceil(rl.retryAfterMs / 1000));
-      const res = NextResponse.json({ error: "Too Many Requests" }, { status: 429 });
+      const res = NextResponse.json(
+        {
+          error: "Too Many Requests",
+          /** Klient / loglar: noto‘g‘ri parol deb chalkashmasin */
+          code: rl.backend === "redis_unavailable" ? "middleware_redis_unavailable" : "middleware_rate_limited",
+          backend: rl.backend,
+        },
+        { status: 429 },
+      );
       res.headers.set("Retry-After", String(retrySec));
-      logStructured("warn", "auth.middleware_rate_limited", { backend: rl.backend, requestId: ctx.requestId });
+      logStructured("warn", "auth.middleware_rate_limited", {
+        backend: rl.backend,
+        requestId: ctx.requestId,
+        path: authPath,
+      });
       return withCsp(res, ctx);
     }
   }
