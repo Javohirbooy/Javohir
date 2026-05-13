@@ -42,7 +42,7 @@ export function ForgotPasswordForm() {
 
       {done ? (
         <p className="text-sm text-slate-700 dark:text-slate-300">
-          So‘rov qabul qilindi. Emailni tekshiring yoki keyinroq qayta urinib ko‘ring.
+          So‘rov qabul qilindi. Bir necha daqiqa ichida pochtangizni tekshiring (spam / reklama ham). Xat kelmasa, keyinroq qayta urinib ko‘ring yoki administratorga murojaat qiling.
         </p>
       ) : (
         <form className="space-y-5" onSubmit={onSubmit}>

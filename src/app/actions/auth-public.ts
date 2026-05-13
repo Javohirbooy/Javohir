@@ -126,6 +126,14 @@ export async function requestPasswordReset(input: unknown) {
   const parsed = forgotPasswordSchema.safeParse(input);
   if (!parsed.success) return errResult("Email noto‘g‘ri.", "VALIDATION_ERROR");
 
+  /** Barcha so‘rovlar uchun bir xil — email bor-yo‘qligini ochib bermaydi. */
+  if (process.env.NODE_ENV === "production" && !process.env.RESEND_API_KEY?.trim()) {
+    return errResult(
+      "Parolni tiklash xabarlari hozircha yoqilmagan. Administratorga murojaat qiling (Resend / email sozlamalari).",
+      "MAIL_NOT_CONFIGURED",
+    );
+  }
+
   const emailNorm = parsed.data.email.trim().toLowerCase();
   const user = await prisma.user.findUnique({ where: { email: emailNorm } });
 
