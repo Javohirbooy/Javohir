@@ -255,15 +255,23 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           const cached = studentNumberCache.get(token.id as string);
           if (cached && now - cached.at <= STUDENT_NUMBER_JWT_SYNC_MS) {
             token.studentNumber = cached.value;
+            token.studentNumberSyncedAt = now;
           } else {
-            const row = await prisma.user.findUnique({
-              where: { id: token.id as string },
-              select: { studentNumber: true },
-            });
-            token.studentNumber = row?.studentNumber ?? undefined;
-            studentNumberCache.set(token.id as string, { value: row?.studentNumber ?? undefined, at: now });
+            try {
+              const row = await prisma.user.findUnique({
+                where: { id: token.id as string },
+                select: { studentNumber: true },
+              });
+              token.studentNumber = row?.studentNumber ?? undefined;
+              studentNumberCache.set(token.id as string, { value: row?.studentNumber ?? undefined, at: now });
+              token.studentNumberSyncedAt = now;
+            } catch (e) {
+              logStructured("warn", "auth.jwt_student_number_sync_failed", {
+                message: e instanceof Error ? e.message : String(e),
+              });
+              /* JWT yangilanishi butun sessiyani buzmasin — keyingi so‘rovda qayta uriniladi. */
+            }
           }
-          token.studentNumberSyncedAt = now;
         }
       }
       return token;
