@@ -10,42 +10,55 @@ import {
 } from "@/app/actions/olympiad-admin";
 import { prisma } from "@/lib/prisma";
 import { DashboardCard } from "@/components/dashboard/dashboard-card";
+import { DashboardDbErrorFallback } from "@/components/dashboard/dashboard-db-error-fallback";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { OlympiadLiveMonitor } from "@/components/olympiad/olympiad-live-monitor";
 import { isOlympiadMonitorSseEnabled } from "@/lib/olympiad/feature-flags";
 import { OlympiadExportButton } from "@/components/olympiad/olympiad-export-button";
 import { OlympiadFinalizationSection } from "@/components/olympiad/olympiad-finalization-section";
+import { tryPrismaPage } from "@/lib/server/try-prisma";
 
 export async function OlympiadManageDetail({ id, basePath }: { id: string; basePath: string }) {
-  const olymp = await getOlympiadAdminDetail(id);
-  if (!olymp) notFound();
-
-  const certificates = await prisma.olympiadCertificate.findMany({
-    where: { result: { olympiadId: id } },
-    orderBy: { issuedAt: "desc" },
-    take: 80,
-    include: {
-      result: {
-        select: {
-          score: true,
-          rank: true,
-          participant: { select: { firstName: true, lastName: true } },
-        },
-      },
+  const load = await tryPrismaPage(
+    "olympiad.manage_detail_load",
+    async () => {
+      const olymp = await getOlympiadAdminDetail(id);
+      if (!olymp) return { mode: "not_found" as const };
+      const [certificates, violations] = await Promise.all([
+        prisma.olympiadCertificate.findMany({
+          where: { result: { olympiadId: id } },
+          orderBy: { issuedAt: "desc" },
+          take: 80,
+          include: {
+            result: {
+              select: {
+                score: true,
+                rank: true,
+                participant: { select: { firstName: true, lastName: true } },
+              },
+            },
+          },
+        }),
+        prisma.olympiadViolation.findMany({
+          where: { session: { olympiadId: id } },
+          orderBy: { createdAt: "desc" },
+          take: 80,
+          include: {
+            session: {
+              include: { participant: { select: { firstName: true, lastName: true, gradeLabel: true } } },
+            },
+          },
+        }),
+      ]);
+      return { mode: "ok" as const, olymp, certificates, violations };
     },
-  });
+    { olympiadId: id },
+  );
 
-  const violations = await prisma.olympiadViolation.findMany({
-    where: { session: { olympiadId: id } },
-    orderBy: { createdAt: "desc" },
-    take: 80,
-    include: {
-      session: {
-        include: { participant: { select: { firstName: true, lastName: true, gradeLabel: true } } },
-      },
-    },
-  });
+  if (!load.ok) return <DashboardDbErrorFallback retryHref={basePath} />;
+  if (load.data.mode === "not_found") return notFound();
+  const { olymp, certificates, violations } = load.data;
 
   return (
     <div className="space-y-8">

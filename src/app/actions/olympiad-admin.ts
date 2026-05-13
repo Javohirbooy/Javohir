@@ -4,7 +4,7 @@ import { randomBytes } from "crypto";
 import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
-import { sessionHasPermission } from "@/lib/permissions";
+import { canOlympiadManage } from "@/lib/permissions";
 import { assertOlympiadManage } from "@/lib/olympiad/authz";
 import {
   codeHintFromNormalized,
@@ -58,7 +58,7 @@ const createSchema = z.object({
 export async function getTestsEligibleForOlympiad() {
   const session = await auth();
   if (!session?.user?.id) return [];
-  if (!sessionHasPermission(session, "OLYMPIAD_MANAGE")) return [];
+  if (!canOlympiadManage(session)) return [];
 
   if (session.user.role === "ADMIN" || session.user.role === "SUPER_ADMIN") {
     return prisma.test.findMany({
@@ -116,7 +116,7 @@ export async function createOlympiadAction(
 ): Promise<{ ok: true; id: string } | { ok: false; error: string }> {
   const session = await auth();
   if (!session?.user?.id) return { ok: false, error: "Kirish talab qilinadi." };
-  if (!sessionHasPermission(session, "OLYMPIAD_MANAGE")) return { ok: false, error: "Ruxsat yo‘q." };
+  if (!canOlympiadManage(session)) return { ok: false, error: "Ruxsat yo‘q." };
 
   const parsed = createSchema.safeParse({
     title: formData.get("title"),
@@ -354,7 +354,7 @@ export async function publishOlympiadResultsAction(
 export async function listOlympiadsForDashboard() {
   const session = await auth();
   if (!session?.user?.id) return [];
-  if (!sessionHasPermission(session, "OLYMPIAD_MANAGE")) return [];
+  if (!canOlympiadManage(session)) return [];
 
   if (session.user.role === "ADMIN" || session.user.role === "SUPER_ADMIN") {
     return prisma.olympiad.findMany({

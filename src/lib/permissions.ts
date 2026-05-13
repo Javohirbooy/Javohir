@@ -24,6 +24,8 @@ export async function resolvePermissionKeysForRole(role: string): Promise<string
   const rr = roleFromString(role);
   if (!rr) return [];
 
+  const staticKeys = staticPermissionKeysForRole(rr);
+
   const [permCount, rows] = await Promise.all([
     prisma.permission.count(),
     prisma.rolePermission.findMany({
@@ -33,22 +35,24 @@ export async function resolvePermissionKeysForRole(role: string): Promise<string
   ]);
 
   if (permCount === 0) {
-    return staticPermissionKeysForRole(rr);
+    return staticKeys;
   }
 
-  const keys = rows.map((r) => r.permission.key).filter(isPermissionKey);
+  const dbKeys = rows.map((r) => r.permission.key).filter(isPermissionKey);
 
-  /** Seed qisman (masalan faqat admin rolidagi grantlar): DB da grant yo‘q bo‘lsa sessiya bo‘sh qolmasin. */
-  if (keys.length === 0) {
-    return staticPermissionKeysForRole(rr);
+  /** Grant yo‘q — to‘liq statik rol. */
+  if (dbKeys.length === 0) {
+    return staticKeys;
   }
+
+  /** DB + statik birlashmasi — qisman seed yangi modul kalitlarini (masalan OLYMPIAD_MANAGE) “olib tashlamasligi” uchun. */
+  const merged = new Set<string>([...staticKeys, ...dbKeys]);
 
   if (rr === "SUPER_ADMIN") {
-    const merged = new Set(keys);
     for (const k of SUPER_ADMIN_INVARIANT_KEYS) merged.add(k);
-    return [...merged].filter(isPermissionKey).sort((a, b) => PERMISSION_KEYS.indexOf(a) - PERMISSION_KEYS.indexOf(b));
   }
-  return keys;
+
+  return [...merged].filter(isPermissionKey).sort((a, b) => PERMISSION_KEYS.indexOf(a) - PERMISSION_KEYS.indexOf(b));
 }
 
 export function canAccessAdminPanel(role: string | undefined): boolean {
@@ -63,4 +67,14 @@ export function sessionHasPermission(session: Session | null | undefined, key: P
   const keys = session?.user?.permissionKeys;
   if (!keys?.length) return false;
   return keys.includes(key);
+}
+
+/**
+ * Olimpiada boshqaruvi: platforma ADMIN/SUPER_ADMIN har doim (JWT kalitlari qisman bo‘lsa ham).
+ * O‘qituvchi — faqat `OLYMPIAD_MANAGE` bilan.
+ */
+export function canOlympiadManage(session: Session | null | undefined): boolean {
+  const role = session?.user?.role;
+  if (role === "ADMIN" || role === "SUPER_ADMIN") return true;
+  return sessionHasPermission(session, "OLYMPIAD_MANAGE");
 }

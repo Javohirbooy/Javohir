@@ -2,15 +2,24 @@ import Link from "next/link";
 import { auth } from "@/auth";
 import { listOlympiadsForDashboard } from "@/app/actions/olympiad-admin";
 import { DashboardCard } from "@/components/dashboard/dashboard-card";
+import { DashboardDbErrorFallback } from "@/components/dashboard/dashboard-db-error-fallback";
 import { Button } from "@/components/ui/button";
-import { requirePermission } from "@/lib/authz";
+import { requireAuth } from "@/lib/authz";
+import { canOlympiadManage } from "@/lib/permissions";
+import { tryPrismaPage } from "@/lib/server/try-prisma";
+import { redirect } from "next/navigation";
 
 const BASE = "/oqituvchi/oimpiadalar";
 
 export default async function TeacherOlympiadsPage() {
   const session = await auth();
-  requirePermission(session, "OLYMPIAD_MANAGE", { redirectTo: "/oqituvchi" });
-  const rows = await listOlympiadsForDashboard();
+  requireAuth(session);
+  if (!canOlympiadManage(session)) redirect("/oqituvchi");
+  const load = await tryPrismaPage("oqituvchi.olympiads_list", () => listOlympiadsForDashboard(), {
+    actorId: session.user.id,
+  });
+  if (!load.ok) return <DashboardDbErrorFallback retryHref="/oqituvchi/oimpiadalar" />;
+  const rows = load.data;
 
   return (
     <div className="space-y-6">

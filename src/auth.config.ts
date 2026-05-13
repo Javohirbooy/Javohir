@@ -34,7 +34,13 @@ export const authConfig = {
         }
       }
       if (trigger === "update" && token.role) {
-        token.permissionKeys = staticPermissionKeysForRole(token.role as string);
+        const staticKeys = staticPermissionKeysForRole(String(token.role));
+        const prev = Array.isArray(token.permissionKeys) ? token.permissionKeys : [];
+        token.permissionKeys = [...new Set([...staticKeys, ...prev])];
+      }
+      /** Eski JWT / token.permissionKeys yo‘q — middleware va RSC sessiyasida ruxsatlar bo‘sh qolmasin. */
+      if (token.role && (!Array.isArray(token.permissionKeys) || token.permissionKeys.length === 0)) {
+        token.permissionKeys = staticPermissionKeysForRole(String(token.role));
       }
       return token;
     },
@@ -50,9 +56,13 @@ export const authConfig = {
         session.user.mustChangePassword = Boolean(token.mustChangePassword);
         session.user.studentNumber =
           typeof token.studentNumber === "number" ? token.studentNumber : undefined;
-        session.user.permissionKeys = Array.isArray(token.permissionKeys)
-          ? (token.permissionKeys as string[])
-          : [];
+        {
+          const fromToken = Array.isArray(token.permissionKeys) ? (token.permissionKeys as string[]) : [];
+          session.user.permissionKeys =
+            fromToken.length > 0
+              ? fromToken
+              : staticPermissionKeysForRole(String(token.role ?? ""));
+        }
       }
       return session;
     },

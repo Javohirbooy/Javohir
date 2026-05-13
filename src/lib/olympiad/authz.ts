@@ -20,14 +20,12 @@ export async function getOlympiadForManage(olympiadId: string) {
 /** Mutatsiya: admin/super yoki mas'ul/yaratgan o‘qituvchi. */
 export async function assertOlympiadManage(session: Session | null, olympiadId: string): Promise<void> {
   if (!session?.user?.id) throw new Error("UNAUTHENTICATED");
-  if (!sessionHasPermission(session, "OLYMPIAD_MANAGE" as PermissionKey)) {
-    throw new Error("FORBIDDEN");
-  }
   const row = await getOlympiadForManage(olympiadId);
   if (!row) throw new Error("NOT_FOUND");
   const role = session.user.role;
   if (role === "SUPER_ADMIN" || role === "ADMIN") return;
   if (role === "TEACHER") {
+    if (!sessionHasPermission(session, "OLYMPIAD_MANAGE" as PermissionKey)) throw new Error("FORBIDDEN");
     if (row.createdByUserId === session.user.id || row.responsibleUserId === session.user.id) return;
   }
   throw new Error("FORBIDDEN");
@@ -35,6 +33,8 @@ export async function assertOlympiadManage(session: Session | null, olympiadId: 
 
 export function assertOlympiadMonitor(session: Session | null): void {
   if (!session?.user?.id) throw new Error("UNAUTHENTICATED");
+  const role = session.user.role;
+  if (role === "SUPER_ADMIN" || role === "ADMIN") return;
   const ok =
     sessionHasPermission(session, "OLYMPIAD_MONITOR" as PermissionKey) ||
     sessionHasPermission(session, "OLYMPIAD_MANAGE" as PermissionKey);
