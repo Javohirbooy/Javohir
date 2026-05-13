@@ -37,7 +37,9 @@ async function main() {
   await upsertDemoUser("admin@demo.uz", "ADMIN", "Demo Admin");
   await upsertDemoUser("teacher@demo.uz", "TEACHER", "Demo Teacher");
   await upsertDemoUser("student@demo.uz", "STUDENT", "Demo Student");
-  console.log("Demo users ensured: super/admin/teacher/student @demo.uz — parol: password (bcrypt)");
+  /** UI / kirish namunasida ko‘pincha ishlatiladi — `scripts/ensure-demo-java.ts` bilan bir xil parol. */
+  await upsertDemoUser("java@gmail.com", "SUPER_ADMIN", "Demo Super Admin");
+  console.log("Demo users ensured: super/admin/teacher/student @demo.uz + java@gmail.com — parol: password (bcrypt)");
 }
 
 main()
