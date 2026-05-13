@@ -34,6 +34,7 @@
     "test:e2e": "playwright test",
     "test:e2e:stress": "playwright test -c playwright.stress.config.ts",
     "redis:ping": "tsx scripts/check-redis.ts",
+    "db:integrity": "tsx scripts/db-integrity-check.ts",
     "verify:login": "tsx scripts/verify-login-password.ts",
     "stress:auth-post": "tsx scripts/stress-auth-post.ts",
     "load:test:exam": "node scripts/load-test-exam-full.mjs",

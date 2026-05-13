@@ -33,6 +33,7 @@ import {
   LoginRedisUnavailable,
   LoginUnsupportedPasswordHash,
 } from "@/lib/auth-login-errors";
+import { prismaEmailInsensitive } from "@/lib/user-email";
 
 const credentialsSchema = z.object({
   identifier: z.string().trim().min(1),
@@ -130,9 +131,10 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         const emailLike = normalizedIdentifier.includes("@");
         const users = emailLike
           ? await prisma.user.findMany({
-              where: { email: normalizedIdentifier },
-              take: 2,
+              where: { email: prismaEmailInsensitive(normalizedIdentifier) },
+              take: 3,
               select: authorizeUserSelect,
+              orderBy: { createdAt: "asc" },
             })
           : await prisma.user.findMany({
               where: { name: { equals: identifier, mode: "insensitive" } },
@@ -140,7 +142,17 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
               take: 2,
               select: authorizeUserSelect,
             });
-        const user = users[0];
+        let user = users[0];
+        if (emailLike && users.length > 1) {
+          logStructured("error", "auth.duplicate_email_ci_collision", {
+            count: users.length,
+            hint: "run npm run db:integrity — bir xil email turli registrda",
+          });
+          user =
+            users.find((u) => u.email.toLowerCase() === normalizedIdentifier) ??
+            users.find((u) => u.email === normalizedIdentifier) ??
+            users[0];
+        }
         if (!user) {
           logStructured("warn", "auth.credentials_reject", {
             stage: "user_not_found",

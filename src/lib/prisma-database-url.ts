@@ -9,6 +9,13 @@ function hasQueryKey(url: string, key: string): boolean {
   return new RegExp(`[?&]${key}=`, "i").test(url);
 }
 
+/** Neon / cloud Postgres: `sslmode=require` bo‘lmasa ba’zi muhitlarda ulanish xato yoki sekin. */
+function ensureSslModeForRemote(url: string): string {
+  if (/localhost|127\.0\.0\.1/i.test(url)) return url;
+  if (hasQueryKey(url, "sslmode")) return url;
+  return setOrReplaceQueryParam(url, "sslmode", "require");
+}
+
 function setOrReplaceQueryParam(url: string, key: string, value: string): string {
   const re = new RegExp(`([?&])${key}=[^&]*`, "i");
   if (re.test(url)) return url.replace(re, `$1${key}=${encodeURIComponent(value)}`);
@@ -41,5 +48,5 @@ export function getTunedDatabaseUrl(raw: string | undefined): string | undefined
     url = setOrReplaceQueryParam(url, "pool_timeout", "40");
   }
 
-  return url;
+  return ensureSslModeForRemote(url);
 }

@@ -71,11 +71,15 @@ function createClient(): PrismaClient {
 
   const tunedUrl = getTunedDatabaseUrl(databaseUrl) ?? databaseUrl;
 
+  const debugQueries = process.env.PRISMA_DEBUG_QUERIES === "1";
   return new PrismaClient({
     datasources: {
       db: { url: tunedUrl },
     },
-    log: process.env.NODE_ENV === "development" ? ["error", "warn"] : ["error"],
+    log:
+      debugQueries ? (["query", "error", "warn"] as const) : process.env.NODE_ENV === "development"
+        ? (["error", "warn"] as const)
+        : (["error"] as const),
   });
 }
 

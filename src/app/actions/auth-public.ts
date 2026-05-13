@@ -11,6 +11,7 @@ import { logStructured, logStructuredFromRequest } from "@/lib/logger";
 import { throttleServerAction } from "@/lib/action-rate-limit";
 import { isStrictDistributedRateLimitPolicy } from "@/lib/redis-strict-policy";
 import { errResult, okResult } from "@/lib/action-result";
+import { prismaEmailInsensitive } from "@/lib/user-email";
 import {
   contactSchema,
   forgotPasswordSchema,
@@ -41,7 +42,7 @@ export async function registerStudent(input: unknown) {
   const { name, email, password } = parsed.data;
   const emailNorm = email.trim().toLowerCase();
 
-  const exists = await prisma.user.findUnique({ where: { email: emailNorm } });
+  const exists = await prisma.user.findFirst({ where: { email: prismaEmailInsensitive(emailNorm) } });
   if (exists) {
     return errResult("Bu email allaqachon ro‘yxatdan o‘tgan.", "CONFLICT");
   }
@@ -135,7 +136,7 @@ export async function requestPasswordReset(input: unknown) {
   }
 
   const emailNorm = parsed.data.email.trim().toLowerCase();
-  const user = await prisma.user.findUnique({ where: { email: emailNorm } });
+  const user = await prisma.user.findFirst({ where: { email: prismaEmailInsensitive(emailNorm) } });
 
   /** Timing — har doim muvaffaqiyat ko‘rinishi (user yo‘q bo‘lsa ham). */
   if (!user || user.status === "BLOCKED" || user.status === "INACTIVE") {

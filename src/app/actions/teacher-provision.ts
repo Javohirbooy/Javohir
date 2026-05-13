@@ -8,6 +8,7 @@ import { sessionHasPermission } from "@/lib/permissions";
 import { writeAuditLog } from "@/lib/audit";
 import type { ActionResult } from "@/lib/action-result";
 import { errResult, okResult } from "@/lib/action-result";
+import { prismaEmailInsensitive } from "@/lib/user-email";
 
 function normalizeEmail(e: string) {
   return e.trim().toLowerCase();
@@ -41,7 +42,7 @@ export async function adminCreateTeacherWithAssignments(formData: FormData): Pro
     if (!gradeSet.has(s.gradeId)) return;
   }
 
-  const exists = await prisma.user.findUnique({ where: { email } });
+  const exists = await prisma.user.findFirst({ where: { email: prismaEmailInsensitive(email) } });
   if (exists) return;
 
   const passwordHash = await bcrypt.hash(password, 12);
@@ -101,7 +102,7 @@ export async function adminCreateTeacherWithAssignmentsResult(formData: FormData
     if (!gradeSet.has(s.gradeId)) return errResult("Fan va sinf mos emas.", "VALIDATION_ERROR");
   }
 
-  const exists = await prisma.user.findUnique({ where: { email } });
+  const exists = await prisma.user.findFirst({ where: { email: prismaEmailInsensitive(email) } });
   if (exists) return errResult("Bu email allaqachon ishlatilgan.", "CONFLICT");
 
   const passwordHash = await bcrypt.hash(password, 12);
@@ -176,7 +177,7 @@ export async function adminCreateTeacherFormAction(_prev: TeacherProvisionState,
     }
   }
 
-  const exists = await prisma.user.findUnique({ where: { email } });
+  const exists = await prisma.user.findFirst({ where: { email: prismaEmailInsensitive(email) } });
   if (exists) return { ok: false, error: "Bu email allaqachon ishlatilgan." };
 
   const passwordHash = await bcrypt.hash(password, 12);
@@ -236,7 +237,7 @@ export async function adminUpdateTeacherFormAction(_prev: TeacherProvisionState,
   const teacher = await prisma.user.findFirst({ where: { id: teacherId, role: "TEACHER" } });
   if (!teacher) return { ok: false, error: "O‘qituvchi topilmadi." };
 
-  const emailOwner = await prisma.user.findUnique({ where: { email } });
+  const emailOwner = await prisma.user.findFirst({ where: { email: prismaEmailInsensitive(email) } });
   if (emailOwner && emailOwner.id !== teacherId) return { ok: false, error: "Bu email boshqa foydalanuvchiga tegishli." };
 
   const subjects = await prisma.subject.findMany({

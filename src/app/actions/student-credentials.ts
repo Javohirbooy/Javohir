@@ -8,6 +8,7 @@ import { sessionHasPermission } from "@/lib/permissions";
 import { writeAuditLog } from "@/lib/audit";
 import { teacherManagesStudent } from "@/lib/teacher-scope";
 import { allocateNextStudentNumber } from "@/lib/student-number";
+import { prismaEmailInsensitive } from "@/lib/user-email";
 
 export type StudentFormState = { ok: boolean; error?: string } | null;
 
@@ -23,8 +24,13 @@ function parseStatus(raw: string): string {
 }
 
 async function assertUniqueEmail(email: string, excludeUserId?: string) {
-  const existing = await prisma.user.findUnique({ where: { email } });
-  if (existing && existing.id !== excludeUserId) {
+  const existing = await prisma.user.findFirst({
+    where: {
+      email: prismaEmailInsensitive(email),
+      ...(excludeUserId ? { NOT: { id: excludeUserId } } : {}),
+    },
+  });
+  if (existing) {
     return { ok: false as const, error: "Bu email allaqachon ro‘yxatdan o‘tgan." };
   }
   return { ok: true as const };

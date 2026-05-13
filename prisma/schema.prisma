@@ -72,6 +72,9 @@ model User {
   authTokens           AuthToken[]
   olympiadsCreated     Olympiad[]                 @relation("OlympiadCreatedBy")
   olympiadsResponsible Olympiad[]                 @relation("OlympiadResponsible")
+
+  @@index([role])
+  @@index([status])
 }
 
 /// EMAIL_VERIFY | PASSWORD_RESET — token clientga yuboriladi, DBda faqat hash saqlanadi.
