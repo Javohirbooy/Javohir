@@ -26,6 +26,7 @@ export function parsePublicEnv(): { ok: true; data: PublicEnv } | { ok: false; e
 /** Server-only (hech qachon `NEXT_PUBLIC_` prefiksisiz clientga chiqmasin). */
 const serverSecretsSchema = z.object({
   AUTH_SECRET: z.string().min(32).optional(),
+  NEXTAUTH_SECRET: z.string().min(32).optional(),
   DATABASE_URL: z.string().min(1).optional(),
   DIRECT_URL: z.string().min(1).optional(),
   AUTH_URL: z.string().url().optional(),

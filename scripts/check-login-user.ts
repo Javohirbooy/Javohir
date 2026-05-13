@@ -2,17 +2,20 @@
  * One-off: inspect why credentials login may reject (no secrets printed).
  * Usage: npx tsx scripts/check-login-user.ts [email...]
  */
-import { config } from "dotenv";
-
-config();
+import "./db-env-for-cli";
 
 import { PrismaClient } from "@prisma/client";
-
-const prisma = new PrismaClient();
 
 const BCRYPT_PREFIX = "$2";
 
 async function main() {
+  if (!process.env.DATABASE_URL?.trim()) {
+    console.error("DATABASE_URL topilmadi (.env / .env.local).");
+    process.exitCode = 1;
+    return;
+  }
+  const prisma = new PrismaClient();
+  try {
   const args = process.argv.slice(2).filter(Boolean);
   const emails =
     args.length > 0
@@ -81,11 +84,13 @@ async function main() {
       console.log(`emails containing "${needle}":`, JSON.stringify(like, null, 2));
     }
   }
+  } finally {
+    await prisma.$disconnect();
+  }
 }
 
 main()
   .catch((e: Error) => {
     console.error("ERR", e.message);
     process.exitCode = 1;
-  })
-  .finally(() => prisma.$disconnect());
+  });

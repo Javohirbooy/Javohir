@@ -7,8 +7,8 @@ import { staticPermissionKeysForRole } from "@/lib/static-role-permissions";
  * To‘liq provayderlar va audit — `auth.ts` da.
  */
 export const authConfig = {
-  /** Edge middleware JWT tekshiruvi uchun majburiy (Vercel). AUTH_SECRET env bilan bir xil. */
-  secret: process.env.AUTH_SECRET,
+  /** Edge middleware JWT: `AUTH_SECRET` (Auth.js v5); ba’zi loyihalar hali `NEXTAUTH_SECRET` ishlatadi. */
+  secret: process.env.AUTH_SECRET?.trim() || process.env.NEXTAUTH_SECRET?.trim(),
   trustHost: true,
   pages: { signIn: "/kirish" },
   session: { strategy: "jwt", maxAge: 60 * 60 * 24 * 7 },

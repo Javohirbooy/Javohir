@@ -62,12 +62,22 @@ export function assertProductionConfig() {
   const relaxed = allowInsecureSiteUrl();
 
   if (!process.env.DATABASE_URL?.trim()) {
-    throw new Error("[env] Production: DATABASE_URL majburiy.");
+    const alt =
+      process.env.POSTGRES_PRISMA_URL?.trim() ||
+      process.env.POSTGRES_URL?.trim() ||
+      process.env.PRISMA_DATABASE_URL?.trim();
+    if (!alt) {
+      throw new Error(
+        "[env] Production: DATABASE_URL yoki POSTGRES_PRISMA_URL / POSTGRES_URL (PostgreSQL ulanishi) majburiy.",
+      );
+    }
   }
 
-  const secret = process.env.AUTH_SECRET;
+  const secret = process.env.AUTH_SECRET?.trim() || process.env.NEXTAUTH_SECRET?.trim();
   if (!secret || secret.length < 32) {
-    throw new Error("[env] Production: AUTH_SECRET kamida 32 belgi bo‘lishi kerak.");
+    throw new Error(
+      "[env] Production: AUTH_SECRET yoki NEXTAUTH_SECRET kamida 32 belgi bo‘lishi kerak (NextAuth sessiyasi).",
+    );
   }
 
   const site = process.env.NEXT_PUBLIC_SITE_URL?.trim();

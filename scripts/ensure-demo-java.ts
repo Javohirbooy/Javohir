@@ -16,14 +16,9 @@
  *   npm run demo:ensure-java
  * yoki bir qatorda: npm run demo:ensure-java:production
  */
-import { config as loadEnv } from "dotenv";
-
-loadEnv({ path: ".env" });
-loadEnv({ path: ".env.local", override: true });
+import "./db-env-for-cli";
 import bcrypt from "bcryptjs";
 import { PrismaClient } from "@prisma/client";
-
-const prisma = new PrismaClient();
 
 const EMAIL = "java@gmail.com";
 const PLAIN_PASSWORD = "password";
@@ -47,49 +42,52 @@ async function main() {
     process.exit(1);
   }
 
-  console.log("Ulangan bazaning hosti:", safeDbTargetHint(rawUrl));
+  const prisma = new PrismaClient();
 
-  const passwordHash = await bcrypt.hash(PLAIN_PASSWORD, 12);
+  try {
+    console.log("Ulangan bazaning hosti:", safeDbTargetHint(rawUrl));
 
-  const user = await prisma.user.upsert({
-    where: { email: EMAIL },
-    create: {
-      email: EMAIL,
-      name: NAME,
-      passwordHash,
-      role: "SUPER_ADMIN",
-      status: "ACTIVE",
-      emailVerified: true,
-      mustChangePassword: false,
-      locale: "uz",
-      avatarEmoji: "⚡",
-    },
-    update: {
-      passwordHash,
-      name: NAME,
-      role: "SUPER_ADMIN",
-      status: "ACTIVE",
-      emailVerified: true,
-      mustChangePassword: false,
-    },
-  });
+    const passwordHash = await bcrypt.hash(PLAIN_PASSWORD, 12);
 
-  const verify = await prisma.user.findUnique({
-    where: { email: EMAIL },
-    select: { passwordHash: true },
-  });
-  const match = verify?.passwordHash ? await bcrypt.compare(PLAIN_PASSWORD, verify.passwordHash) : false;
+    const user = await prisma.user.upsert({
+      where: { email: EMAIL },
+      create: {
+        email: EMAIL,
+        name: NAME,
+        passwordHash,
+        role: "SUPER_ADMIN",
+        status: "ACTIVE",
+        emailVerified: true,
+        mustChangePassword: false,
+        locale: "uz",
+        avatarEmoji: "⚡",
+      },
+      update: {
+        passwordHash,
+        name: NAME,
+        role: "SUPER_ADMIN",
+        status: "ACTIVE",
+        emailVerified: true,
+        mustChangePassword: false,
+      },
+    });
 
-  console.log(`OK — ${user.email} tayyor. Kirish: email=${EMAIL}, parol=${PLAIN_PASSWORD}`);
-  console.log("Parol tekshiruvi (bcrypt):", match ? "MOS_KELADI" : "XATO (qayta urinib ko‘ring)");
-  if (!match) process.exit(1);
+    const verify = await prisma.user.findUnique({
+      where: { email: EMAIL },
+      select: { passwordHash: true },
+    });
+    const match = verify?.passwordHash ? await bcrypt.compare(PLAIN_PASSWORD, verify.passwordHash) : false;
+
+    console.log(`OK — ${user.email} tayyor. Kirish: email=${EMAIL}, parol=${PLAIN_PASSWORD}`);
+    console.log("Parol tekshiruvi (bcrypt):", match ? "MOS_KELADI" : "XATO (qayta urinib ko‘ring)");
+    if (!match) process.exit(1);
+  } finally {
+    await prisma.$disconnect();
+  }
 }
 
 main()
   .catch((e) => {
     console.error(e);
     process.exit(1);
-  })
-  .finally(async () => {
-    await prisma.$disconnect();
   });

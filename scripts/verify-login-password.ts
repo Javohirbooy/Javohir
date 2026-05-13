@@ -2,14 +2,10 @@
  * Parol mosligini tekshirish (maxfiy chiqarilmaydi).
  * Ishlatish: npx tsx scripts/verify-login-password.ts <email> <parol>
  */
-import { config } from "dotenv";
-
-config();
+import "./db-env-for-cli";
 
 import bcrypt from "bcryptjs";
 import { PrismaClient } from "@prisma/client";
-
-const prisma = new PrismaClient();
 
 async function main() {
   const email = process.argv[2]?.trim().toLowerCase();
@@ -19,6 +15,13 @@ async function main() {
     process.exitCode = 1;
     return;
   }
+  if (!process.env.DATABASE_URL?.trim()) {
+    console.error("DATABASE_URL topilmadi.");
+    process.exitCode = 1;
+    return;
+  }
+  const prisma = new PrismaClient();
+  try {
   const u = await prisma.user.findUnique({
     where: { email },
     select: { passwordHash: true },
@@ -29,11 +32,13 @@ async function main() {
   }
   const ok = await bcrypt.compare(password, u.passwordHash);
   console.log("result:", ok ? "PASSWORD_MATCH" : "PASSWORD_MISMATCH");
+  } finally {
+    await prisma.$disconnect();
+  }
 }
 
 main()
   .catch((e: Error) => {
     console.error("ERR", e.message);
     process.exitCode = 1;
-  })
-  .finally(() => prisma.$disconnect());
+  });

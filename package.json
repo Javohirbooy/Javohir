@@ -24,6 +24,7 @@
     "demo:ensure-java": "tsx scripts/ensure-demo-java.ts",
     "env:pull:production": "vercel env pull .env.local --environment production",
     "demo:ensure-java:production": "vercel env pull .env.local --environment production && tsx scripts/ensure-demo-java.ts",
+    "login:diagnose": "tsx scripts/prod-login-readiness.ts",
     "db:backfill-student-numbers": "tsx scripts/backfill-student-numbers.ts",
     "typecheck": "tsc --noEmit",
     "verify": "npm run lint && npm run typecheck && npm run test:unit && npm run build",
