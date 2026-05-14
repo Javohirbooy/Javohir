@@ -1,10 +1,16 @@
 import Link from "next/link";
 import { BRAND } from "@/lib/brand";
+import { DEFAULT_LOCALE } from "@/lib/i18n/constants";
 import { getServerLocale } from "@/lib/i18n/resolve-locale";
 import { t } from "@/lib/i18n/t";
 
 export async function SiteFooter() {
-  const locale = await getServerLocale();
+  let locale = DEFAULT_LOCALE;
+  try {
+    locale = await getServerLocale();
+  } catch (e) {
+    console.error("[site-footer] locale", e);
+  }
   const year = new Date().getFullYear();
   return (
     <footer className="relative z-10 mt-auto border-t border-emerald-100 bg-white/85 py-12 text-slate-700 backdrop-blur-xl dark:border-slate-800 dark:bg-slate-950/85 dark:text-slate-300">

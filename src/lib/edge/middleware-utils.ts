@@ -26,7 +26,16 @@ export function withCsp(res: NextResponse, ctx: EdgeContext): NextResponse {
 export function nextWithRequestHeaders(req: NextRequest, ctx: EdgeContext): NextResponse {
   const requestHeaders = applyCspNonceToRequestHeaders(req.headers, ctx.nonce);
   requestHeaders.set("x-request-id", ctx.requestId);
-  return withCsp(NextResponse.next({ request: { headers: requestHeaders } }), ctx);
+  const res = NextResponse.next({ request: { headers: requestHeaders } });
+  /**
+   * `/api/*` javoblarida markaziy CSP `style-src` da `nonce` bo‘lganda brauzer `'unsafe-inline'` ni e’tiborsiz qiladi;
+   * shuning uchun `/api/health?ui=1` kabi HTML dagi `<style>` bloklanadi. API marshrutlariga CSP qo‘ymaymiz.
+   */
+  if (req.nextUrl.pathname.startsWith("/api/")) {
+    res.headers.set("x-request-id", ctx.requestId);
+    return res;
+  }
+  return withCsp(res, ctx);
 }
 
 export function getEdgeClientIp(req: NextRequest): string {

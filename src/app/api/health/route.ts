@@ -89,7 +89,7 @@ function healthHtmlPage(body: HealthBody, httpStatus: number): string {
 <body>
   <div class="mx card">
     <div class="hd">
-      <div class="pill"><span>HTTP ${httpStatus}</span><code>${escapeHtml(body.status)}</code></div>
+      <div class="pill"><span>HTTP ${httpStatus}</span> <code>${escapeHtml(body.status)}</code></div>
       <h1>Tizim holati</h1>
       <p class="lead">Xavfsizlik: maxfiy kalitlar va ulanish qatorlari chiqmaydi. Faqat holat belgilari.</p>
     </div>

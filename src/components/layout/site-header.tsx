@@ -1,10 +1,15 @@
 import { auth } from "@/auth";
 import { PremiumNavbar } from "@/components/layout/premium-navbar";
+import { DEFAULT_LOCALE } from "@/lib/i18n/constants";
 import { getServerLocale } from "@/lib/i18n/resolve-locale";
 import type { AppRole } from "@/lib/permissions";
 
 export async function SiteHeader() {
-  const [session, locale] = await Promise.all([auth(), getServerLocale()]);
+  const [sRes, lRes] = await Promise.allSettled([auth(), getServerLocale()]);
+  if (sRes.status === "rejected") console.error("[site-header] auth", sRes.reason);
+  if (lRes.status === "rejected") console.error("[site-header] locale", lRes.reason);
+  const session = sRes.status === "fulfilled" ? sRes.value : null;
+  const locale = lRes.status === "fulfilled" ? lRes.value : DEFAULT_LOCALE;
   const sessionLite = session?.user
     ? { name: session.user.name, email: session.user.email, image: session.user.image, role: session.user.role as AppRole }
     : null;
