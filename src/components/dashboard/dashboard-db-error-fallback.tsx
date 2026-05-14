@@ -26,7 +26,7 @@ export function DashboardDbErrorFallback({ retryHref }: Props) {
           <Button href={retryHref} variant="primary" className="px-4 py-2 text-sm">
             Qayta yuklash
           </Button>
-          <Button href="/api/health" variant="glass" className="px-4 py-2 text-sm">
+          <Button href="/api/health?ui=1" variant="glass" className="px-4 py-2 text-sm">
             Holat (health)
           </Button>
           <Button href="/" variant="glass" className="px-4 py-2 text-sm">

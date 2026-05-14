@@ -97,7 +97,7 @@ export function SegmentErrorUi({
         <Button type="button" onClick={reset} className="px-5">
           Qayta urinish
         </Button>
-        <Button href="/api/health" variant="outline" className="px-5">
+        <Button href="/api/health?ui=1" variant="outline" className="px-5">
           Holat
         </Button>
         <Button href={c.panelHref} variant="glass" className="px-5">
