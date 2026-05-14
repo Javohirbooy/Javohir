@@ -524,73 +524,77 @@ export function OlympiadExamRunner({
         </div>
       ) : null}
 
-      <header className="sticky top-16 z-40 mb-4 rounded-2xl border border-emerald-400/35 bg-gradient-to-br from-emerald-900/95 via-slate-900/92 to-teal-950/95 pb-3 pt-[max(0.25rem,env(safe-area-inset-top))] shadow-lg shadow-emerald-950/30 ring-1 ring-white/10 backdrop-blur-xl">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <header className="sticky top-16 z-40 mb-4 rounded-2xl border border-slate-200/95 bg-white/98 px-1 pb-3 pt-[max(0.35rem,env(safe-area-inset-top))] text-slate-900 shadow-xl shadow-slate-900/10 ring-1 ring-emerald-500/15 backdrop-blur-xl dark:border-slate-200 dark:bg-slate-50 dark:text-slate-900">
+        <div className="flex flex-col gap-3 px-2 sm:flex-row sm:items-center sm:justify-between sm:px-3">
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-2">
-              <p className={cn(olympiadType.overline, "text-emerald-100 drop-shadow-[0_1px_2px_rgba(0,0,0,0.45)]")}>Imtihon</p>
+              <p className={cn(olympiadType.overline, "text-emerald-700 dark:text-emerald-700")}>Imtihon</p>
               {saveFlash ? (
-                <span className="inline-flex items-center gap-1 rounded-full bg-[#22C55E]/25 px-2.5 py-0.5 text-xs font-semibold text-white ring-1 ring-[#22C55E]/50 motion-reduce:animate-none animate-[iq-fade-up_0.35s_ease-out]">
+                <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-semibold text-emerald-900 ring-1 ring-emerald-400/50 motion-reduce:animate-none animate-[iq-fade-up_0.35s_ease-out]">
                   <Check className="h-3.5 w-3.5 shrink-0" aria-hidden />
                   Saqlangan
                 </span>
               ) : saveBusy ? (
-                <span className="inline-flex items-center gap-1 text-xs font-medium text-emerald-50 drop-shadow-[0_1px_2px_rgba(0,0,0,0.4)]" aria-live="polite">
-                  <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin" aria-hidden />
+                <span className="inline-flex items-center gap-1 text-xs font-semibold text-slate-600" aria-live="polite">
+                  <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin text-emerald-600" aria-hidden />
                   Saqlanmoqda…
                 </span>
               ) : (
-                <span className="inline-flex items-center gap-1.5 text-xs font-medium text-emerald-50 drop-shadow-[0_1px_2px_rgba(0,0,0,0.4)]">
-                  <StatusIndicator tone="neutral" label="Avtosave holati" />
+                <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-700">
+                  <StatusIndicator tone="success" label="Avtosave holati" />
                   Tayyor
                 </span>
               )}
             </div>
-            <p className="mt-1 truncate text-sm font-semibold text-white drop-shadow-[0_1px_3px_rgba(0,0,0,0.5)] sm:text-base">{title}</p>
+            <p className="mt-1 truncate text-sm font-bold text-slate-900 sm:text-base">{title}</p>
             <div className="mt-2 max-w-md space-y-2">
-              <OlympiadExamProgressBar value={progress} trackClassName="bg-black/25 ring-1 ring-white/10" />
+              <OlympiadExamProgressBar value={progress} trackClassName="bg-slate-200 ring-1 ring-slate-300/70 dark:bg-slate-200" />
               <div>
-                <p className="mb-0.5 text-[10px] font-semibold uppercase tracking-wide text-emerald-100 drop-shadow-[0_1px_2px_rgba(0,0,0,0.45)]">
-                  Javoblar (momentum)
-                </p>
+                <p className="mb-0.5 text-[10px] font-bold uppercase tracking-wide text-slate-600">Javoblar (momentum)</p>
                 <OlympiadExamProgressBar
                   value={momentum}
-                  trackClassName="bg-black/25 ring-1 ring-white/10"
-                  barClassName="from-emerald-400 via-teal-400 to-cyan-400"
+                  trackClassName="bg-slate-200 ring-1 ring-slate-300/70 dark:bg-slate-200"
+                  barClassName="from-emerald-500 via-teal-500 to-cyan-500"
                 />
               </div>
             </div>
-            <div className="mt-1 flex flex-wrap items-center gap-2 text-xs font-semibold text-emerald-50 drop-shadow-[0_1px_2px_rgba(0,0,0,0.45)]">
+            <div className="mt-1 flex flex-wrap items-center gap-2 text-xs font-bold text-slate-800">
               <span>
                 Savol {step + 1} / {questions.length}
               </span>
               {stress >= 40 ? (
-                <span className="rounded-full bg-amber-500/25 px-2 py-0.5 text-[11px] font-semibold text-amber-50 ring-1 ring-amber-400/50">
+                <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-bold text-amber-950 ring-1 ring-amber-300/70">
                   Barqarorlik: avval joriy savolni yakunlang
                 </span>
               ) : null}
             </div>
           </div>
           <div className="flex shrink-0 flex-wrap items-center gap-2 sm:flex-col sm:items-end md:flex-row md:items-center">
-            <TimerBadge totalSeconds={badgeTotalSeconds} warnBelowSeconds={600} criticalBelowSeconds={60} onExpire={handleTimerExpire} />
+            <TimerBadge
+              appearance="lightToolbar"
+              totalSeconds={badgeTotalSeconds}
+              warnBelowSeconds={600}
+              criticalBelowSeconds={60}
+              onExpire={handleTimerExpire}
+            />
             <button
               type="button"
               onClick={toggleExamSound}
-              className="inline-flex min-h-[44px] min-w-[44px] items-center justify-center gap-2 rounded-xl border border-emerald-300/40 bg-emerald-950/45 px-3 text-sm font-semibold text-white shadow-sm outline-none transition hover:bg-emerald-800/55 focus-visible:ring-2 focus-visible:ring-emerald-300 focus-visible:ring-offset-2 focus-visible:ring-offset-emerald-950"
+              className="inline-flex min-h-[44px] min-w-[44px] items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-3 text-sm font-semibold text-slate-800 shadow-sm outline-none transition hover:border-emerald-400 hover:bg-emerald-50/80 focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:border-slate-300 dark:bg-white dark:text-slate-900 dark:hover:bg-emerald-50"
               aria-pressed={soundOn}
               aria-label={soundOn ? "Avtosave ovozini o‘chirish" : "Avtosave ovozini yoqish"}
             >
-              {soundOn ? <Volume2 className="h-5 w-5 shrink-0" aria-hidden /> : <VolumeX className="h-5 w-5 shrink-0" aria-hidden />}
+              {soundOn ? <Volume2 className="h-5 w-5 shrink-0 text-emerald-700" aria-hidden /> : <VolumeX className="h-5 w-5 shrink-0 text-slate-500" aria-hidden />}
               <span className="hidden sm:inline">{soundOn ? "Ovoz" : "Ovozsiz"}</span>
             </button>
             <button
               type="button"
               onClick={() => setFocusMode((f) => !f)}
-              className="inline-flex min-h-[44px] min-w-[44px] items-center justify-center gap-2 rounded-xl border border-emerald-300/40 bg-emerald-950/45 px-3 text-sm font-semibold text-white shadow-sm outline-none transition hover:bg-emerald-800/55 focus-visible:ring-2 focus-visible:ring-emerald-300 focus-visible:ring-offset-2 focus-visible:ring-offset-emerald-950"
+              className="inline-flex min-h-[44px] min-w-[44px] items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-3 text-sm font-semibold text-slate-800 shadow-sm outline-none transition hover:border-emerald-400 hover:bg-emerald-50/80 focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:border-slate-300 dark:bg-white dark:text-slate-900 dark:hover:bg-emerald-50"
               aria-pressed={focusMode}
               aria-label={focusMode ? "Savollar panelini ko‘rsatish" : "Fokus rejimi"}
             >
-              {focusMode ? <LayoutGrid className="h-5 w-5" aria-hidden /> : <Square className="h-5 w-5" aria-hidden />}
+              {focusMode ? <LayoutGrid className="h-5 w-5 text-emerald-700" aria-hidden /> : <Square className="h-5 w-5 text-slate-600" aria-hidden />}
               <span className="hidden sm:inline">{focusMode ? "Panel" : "Fokus"}</span>
             </button>
           </div>
@@ -600,21 +604,21 @@ export function OlympiadExamRunner({
       {hybridTip ? (
         <div
           role="status"
-          className="mb-4 motion-reduce:animate-none animate-[iq-fade-up_0.4s_ease-out_forwards] rounded-2xl border border-[#4F7CFF]/30 bg-gradient-to-r from-[#4F7CFF]/15 to-emerald-500/10 px-4 py-3 text-sm font-medium text-slate-900 shadow-sm dark:border-white/15 dark:from-sky-500/25 dark:to-emerald-500/10 dark:text-slate-100"
+          className="mb-4 motion-reduce:animate-none animate-[iq-fade-up_0.4s_ease-out_forwards] rounded-2xl border border-slate-200/90 bg-white/95 px-4 py-3 text-sm font-semibold text-slate-800 shadow-md ring-1 ring-emerald-500/10 dark:border-slate-200 dark:bg-white dark:text-slate-900"
         >
           {hybridTip}
         </div>
       ) : null}
 
       {strict ? (
-        <div className="mb-4 rounded-2xl border border-emerald-400/45 bg-gradient-to-r from-emerald-600/40 via-teal-700/35 to-emerald-800/40 p-4 text-sm text-white shadow-md shadow-black/25 ring-1 ring-emerald-300/30 backdrop-blur-sm">
-          <p className="font-medium leading-relaxed text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.35)]">
+        <div className="mb-4 rounded-2xl border border-emerald-200/90 bg-emerald-50/95 p-4 text-sm text-slate-800 shadow-md ring-1 ring-emerald-300/40 dark:border-emerald-200 dark:bg-emerald-50 dark:text-slate-900">
+          <p className="font-semibold leading-relaxed">
             Xavfsiz rejim: nusxa ko&apos;chirish, yangi varaq va to&apos;liq ekrandan chiqish qayd etiladi.
           </p>
           <Button
             type="button"
             variant="secondary"
-            className="mt-3 min-h-[44px] border border-white/30 bg-white text-emerald-900 shadow-sm hover:bg-emerald-50"
+            className="mt-3 min-h-[44px] border border-emerald-600/25 bg-white font-semibold text-emerald-900 shadow-sm hover:bg-emerald-100/80"
             onClick={requestFs}
           >
             <Maximize2 className="mr-2 h-4 w-4" />
@@ -706,7 +710,7 @@ export function OlympiadExamRunner({
       </div>
 
       <nav
-        className="fixed bottom-0 left-0 right-0 z-40 flex gap-3 border-t border-emerald-500/25 bg-gradient-to-r from-emerald-950/98 via-slate-950/98 to-teal-950/98 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] ps-[max(0.75rem,env(safe-area-inset-left))] pe-[max(0.75rem,env(safe-area-inset-right))] shadow-[0_-8px_30px_-10px_rgba(6,78,59,0.45)] backdrop-blur-xl sm:hidden"
+        className="fixed bottom-0 left-0 right-0 z-40 flex gap-3 border-t border-slate-200/95 bg-white/98 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] ps-[max(0.75rem,env(safe-area-inset-left))] pe-[max(0.75rem,env(safe-area-inset-right))] shadow-[0_-10px_40px_-12px_rgba(15,23,42,0.12)] backdrop-blur-xl dark:border-slate-200 dark:bg-slate-50 sm:hidden"
         aria-label="Savol navigatsiyasi"
       >
         <Button variant="secondary" type="button" className="min-h-[48px] flex-1" onClick={prev} disabled={step === 0}>

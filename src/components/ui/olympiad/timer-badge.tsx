@@ -22,6 +22,8 @@ export function TimerBadge({
   onExpire,
   className,
   size = "lg",
+  /** Oq/yengil sarlavha panelida — `html.dark` bo‘lsa ham yorqin kontrast. */
+  appearance = "default",
 }: {
   totalSeconds: number;
   warnBelowSeconds?: number;
@@ -29,6 +31,7 @@ export function TimerBadge({
   onExpire?: () => void;
   className?: string;
   size?: "md" | "lg";
+  appearance?: "default" | "lightToolbar";
 }) {
   const [left, setLeft] = React.useState(totalSeconds);
   const fired = React.useRef(false);
@@ -53,18 +56,43 @@ export function TimerBadge({
   const warn = left > 0 && left <= warnBelowSeconds;
   const critical = left > 0 && left <= criticalBelowSeconds;
 
+  const lightToolbarNormal =
+    "border-slate-300/90 bg-white text-slate-900 shadow-md shadow-slate-900/10 dark:border-slate-300 dark:bg-white dark:text-slate-900";
+  const lightToolbarWarn =
+    "border-amber-400/90 bg-amber-50 text-amber-950 shadow-md dark:border-amber-400 dark:bg-amber-50 dark:text-amber-950";
+  const lightToolbarCritical =
+    "border-rose-500/90 bg-rose-50 text-rose-950 shadow-md dark:border-rose-500 dark:bg-rose-50 dark:text-rose-950";
+
+  const defaultNormal =
+    "border-emerald-400/50 bg-emerald-50 text-emerald-950 shadow-md shadow-emerald-900/15 dark:border-emerald-400/50 dark:bg-emerald-950/85 dark:text-emerald-50";
+  const defaultWarn =
+    "border-[#F59E0B]/70 bg-[#F59E0B]/20 text-amber-950 shadow-[0_0_24px_-6px_rgba(245,158,11,0.45)] dark:border-amber-400/50 dark:bg-amber-950/40 dark:text-amber-50";
+  const defaultCritical =
+    "border-[#EF4444]/60 bg-[#EF4444]/20 text-rose-950 shadow-[0_0_28px_-6px_rgba(239,68,68,0.55)] dark:border-rose-400/50 dark:bg-rose-950/50 dark:text-rose-50";
+
+  const surface =
+    appearance === "lightToolbar"
+      ? critical
+        ? lightToolbarCritical
+        : warn
+          ? lightToolbarWarn
+          : lightToolbarNormal
+      : critical
+        ? defaultCritical
+        : warn
+          ? defaultWarn
+          : defaultNormal;
+
   return (
     <div
       className={cn(
         "flex min-h-[44px] items-center gap-2 rounded-2xl border px-4 py-2 font-mono font-bold tabular-nums shadow-sm transition-[color,background-color,border-color,box-shadow] duration-300 motion-reduce:transition-none",
         size === "lg" ? "text-2xl sm:text-3xl" : "text-lg",
-        critical
-          ? "border-[#EF4444]/60 bg-[#EF4444]/20 text-rose-950 shadow-[0_0_28px_-6px_rgba(239,68,68,0.55)] dark:border-rose-400/50 dark:bg-rose-950/50 dark:text-rose-50"
-          : warn
-            ? "border-[#F59E0B]/70 bg-[#F59E0B]/20 text-amber-950 shadow-[0_0_24px_-6px_rgba(245,158,11,0.45)] dark:border-amber-400/50 dark:bg-amber-950/40 dark:text-amber-50"
-            : "border-emerald-400/50 bg-emerald-50 text-emerald-950 shadow-md shadow-emerald-900/15 dark:border-emerald-400/50 dark:bg-emerald-950/85 dark:text-emerald-50",
+        surface,
         warn && !critical && "animate-pulse motion-reduce:animate-none",
-        "outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-emerald-950",
+        appearance === "lightToolbar"
+          ? "outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white"
+          : "outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-emerald-950",
         className,
       )}
       role="timer"
