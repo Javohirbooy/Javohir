@@ -68,9 +68,15 @@ function healthHtmlPage(body: HealthBody, httpStatus: number): string {
       <dt>Rate limit rejimi</dt><dd>${escapeHtml(body.rateLimit?.mode ?? "—")}</dd>
       <dt>Deploy</dt><dd>${escapeHtml(body.deployment?.env ?? "—")} ${body.deployment?.id ? `· <span style="word-break:break-all">${escapeHtml(body.deployment.id)}</span>` : ""}</dd>
     </dl>
-    <p style="font-size:.875rem;color:#94a3b8">To‘liq JSON (nusxa olish uchun):</p>
-    <pre>${json}</pre>
-    <p class="foot">API uchun: <a href="/api/health">/api/health</a> (faqat JSON). Bosh sahifa: <a href="/">/</a></p>
+    <p style="font-size:.875rem;color:#94a3b8;margin-top:20px">Texnik ma’lumot (ixtiyoriy):</p>
+    <details style="margin-top:8px">
+      <summary style="cursor:pointer;color:#6ee7b7;font-size:.875rem;font-weight:600">To‘liq JSON ni ko‘rsatish</summary>
+      <pre style="margin-top:12px">${json}</pre>
+    </details>
+    <p class="foot">
+      <a href="/api/health">/api/health</a> — monitoring va skriptlar uchun JSON.<br/>
+      <a href="/">Bosh sahifa</a>
+    </p>
   </div>
 </body>
 </html>`;
