@@ -29,54 +29,91 @@ function escapeHtml(s: string): string {
   return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 }
 
-/** Brauzer uchun oddiy HTML — `?ui=1` (masalan “Holat” tugmasi). */
+function formatWorkerLine(w: unknown): string {
+  if (w == null) return "Hozircha yozuv yo‘q (cron ishlamagan bo‘lishi mumkin).";
+  if (typeof w === "object" && w !== null && "at" in w) {
+    const at = (w as { at?: unknown }).at;
+    if (typeof at === "string") return escapeHtml(at);
+  }
+  return escapeHtml(JSON.stringify(w));
+}
+
+/** Brauzer uchun — `?ui=1`. JSON API: `/api/health` */
 function healthHtmlPage(body: HealthBody, httpStatus: number): string {
   const json = escapeHtml(JSON.stringify(body, null, 2));
   const ok = body.status === "ok";
-  const badge = ok ? "OK" : "503";
-  const badgeBg = ok ? "#059669" : "#b45309";
+  const pillBg = ok ? "#16a34a" : "#ea580c";
+  const redisPingV =
+    body.redis?.checked === true ? (body.redis.ok ? "Muvaffaqiyatli" : "Xato") : "Tekshirilmagan";
+
+  const deployId = body.deployment?.id ? escapeHtml(body.deployment.id) : "—";
+  const deployEnv = escapeHtml(body.deployment?.env ?? "—");
+
   return `<!DOCTYPE html>
 <html lang="uz">
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="color-scheme" content="light"/>
   <title>Tizim holati — IQ Monitoring</title>
   <style>
-    body{font-family:system-ui,-apple-system,sans-serif;margin:0;padding:24px;background:#0f172a;color:#e2e8f0;line-height:1.5}
-    .wrap{max-width:42rem;margin:0 auto}
-    h1{font-size:1.25rem;margin:0 0 8px}
-    .sub{color:#94a3b8;font-size:.875rem;margin-bottom:20px}
-    .pill{display:inline-block;padding:4px 10px;border-radius:999px;font-weight:700;font-size:.75rem;background:${badgeBg};color:#fff;margin-bottom:16px}
-    dl{display:grid;gap:8px 16px;margin:16px 0;font-size:.875rem}
-    dt{color:#94a3b8}
-    dd{margin:0;font-weight:600}
-    pre{background:#020617;border:1px solid #334155;border-radius:12px;padding:16px;overflow:auto;font-size:12px;color:#cbd5e1}
-    a{color:#6ee7b7}
-    .foot{margin-top:20px;font-size:.8rem;color:#64748b}
+    *{box-sizing:border-box}
+    body{margin:0;min-height:100vh;font-family:ui-sans-serif,system-ui,-apple-system,sans-serif;background:linear-gradient(165deg,#ecfdf5 0%,#f8fafc 40%,#f1f5f9 100%);color:#0f172a;line-height:1.5;padding:24px 16px 48px}
+    .mx{max-width:28rem;margin:0 auto}
+    .card{background:#fff;border:1px solid #e2e8f0;border-radius:16px;box-shadow:0 4px 24px -4px rgba(15,23,42,.08);overflow:hidden}
+    .hd{padding:20px 20px 16px;border-bottom:1px solid #f1f5f9}
+    .pill{display:inline-flex;align-items:center;gap:8px;padding:6px 12px;border-radius:999px;background:${pillBg};color:#fff;font-size:12px;font-weight:700;letter-spacing:.02em}
+    .pill code{font-size:11px;opacity:.92;font-weight:600}
+    h1{margin:12px 0 0;font-size:1.35rem;font-weight:800;letter-spacing:-.02em;color:#0f172a}
+    .lead{margin:8px 0 0;font-size:14px;color:#64748b}
+    .bd{padding:4px 0 8px}
+    .row{display:flex;justify-content:space-between;gap:12px;padding:12px 20px;border-top:1px solid #f1f5f9;font-size:14px}
+    .row:first-of-type{border-top:none}
+    .k{color:#64748b;flex-shrink:0}
+    .v{font-weight:600;color:#0f172a;text-align:right;word-break:break-word}
+    .act{padding:16px 20px 20px;background:#f8fafc;border-top:1px solid #e2e8f0;display:flex;flex-direction:column;gap:10px}
+    .btn{display:inline-flex;align-items:center;justify-content:center;min-height:48px;padding:0 20px;border-radius:12px;font-size:15px;font-weight:700;text-decoration:none;border:none;cursor:pointer}
+    .btn-p{background:linear-gradient(135deg,#16a34a,#059669);color:#fff;box-shadow:0 2px 12px rgba(22,163,74,.35)}
+    .btn-p:hover{filter:brightness(1.05)}
+    .btn-s{background:#fff;color:#0f172a;border:1px solid #cbd5e1;font-weight:600;font-size:14px;min-height:44px}
+    .btn-s:hover{background:#f1f5f9}
+    details{margin:0 20px 16px;border:1px solid #e2e8f0;border-radius:12px;background:#fff}
+    summary{list-style:none;cursor:pointer;padding:12px 14px;font-size:13px;font-weight:600;color:#047857;display:flex;align-items:center;gap:8px}
+    summary::-webkit-details-marker{display:none}
+    summary::before{content:"▸";font-size:10px;transition:transform .15s}
+    details[open] summary::before{transform:rotate(90deg)}
+    pre{margin:0;padding:14px 16px 16px;border-top:1px solid #f1f5f9;background:#f8fafc;font-size:11px;line-height:1.45;overflow:auto;color:#334155;max-height:min(50vh,320px)}
+    .hint{font-size:12px;color:#94a3b8;text-align:center;padding:0 8px 16px}
   </style>
 </head>
 <body>
-  <div class="wrap">
-    <div class="pill">HTTP ${httpStatus} · ${badge}</div>
-    <h1>Tizim holati</h1>
-    <p class="sub">Bu sahifa faqat xizmat ko‘rsatish holatini ko‘rsatadi. Maxfiy kalitlar chiqmaydi.</p>
-    <dl>
-      <dt>Holat</dt><dd>${escapeHtml(body.status)}</dd>
-      <dt>Ma’lumotlar bazasi</dt><dd>${body.database ? "ulanish bor" : "xato / yo‘q"}</dd>
-      <dt>Upstash</dt><dd>${escapeHtml(body.integrations?.upstash ?? "—")}</dd>
-      <dt>Auth secret (≥32)</dt><dd>${body.secrets?.authSecretReady ? "tayyor" : "yo‘q / qisqa"}</dd>
-      <dt>Rate limit rejimi</dt><dd>${escapeHtml(body.rateLimit?.mode ?? "—")}</dd>
-      <dt>Deploy</dt><dd>${escapeHtml(body.deployment?.env ?? "—")} ${body.deployment?.id ? `· <span style="word-break:break-all">${escapeHtml(body.deployment.id)}</span>` : ""}</dd>
-    </dl>
-    <p style="font-size:.875rem;color:#94a3b8;margin-top:20px">Texnik ma’lumot (ixtiyoriy):</p>
-    <details style="margin-top:8px">
-      <summary style="cursor:pointer;color:#6ee7b7;font-size:.875rem;font-weight:600">To‘liq JSON ni ko‘rsatish</summary>
-      <pre style="margin-top:12px">${json}</pre>
+  <div class="mx card">
+    <div class="hd">
+      <div class="pill"><span>HTTP ${httpStatus}</span><code>${escapeHtml(body.status)}</code></div>
+      <h1>Tizim holati</h1>
+      <p class="lead">Xavfsizlik: maxfiy kalitlar va ulanish qatorlari chiqmaydi. Faqat holat belgilari.</p>
+    </div>
+    <div class="bd">
+      <div class="row"><span class="k">Holat</span><span class="v">${escapeHtml(body.status)}</span></div>
+      <div class="row"><span class="k">Ma&apos;lumotlar bazasi</span><span class="v">${body.database ? "Ulangan" : "Yo'q / xato"}</span></div>
+      <div class="row"><span class="k">Upstash Redis</span><span class="v">${escapeHtml(body.integrations?.upstash ?? "—")}</span></div>
+      <div class="row"><span class="k">Redis PING</span><span class="v">${redisPingV}</span></div>
+      <div class="row"><span class="k">AUTH_SECRET</span><span class="v">${body.secrets?.authSecretReady ? "Tayyor (≥32)" : "Yetarli emas"}</span></div>
+      <div class="row"><span class="k">Rate limit</span><span class="v">${escapeHtml(body.rateLimit?.mode ?? "—")}</span></div>
+      <div class="row"><span class="k">Redis startda majburiy</span><span class="v">${body.rateLimit?.redisRequiredAtStartup ? "Ha" : "Yo'q"}</span></div>
+      <div class="row"><span class="k">Muhit</span><span class="v">${deployEnv}</span></div>
+      <div class="row"><span class="k">Deploy ID</span><span class="v">${deployId}</span></div>
+      <div class="row"><span class="k">Olimpiada cron (oxirgi)</span><span class="v">${formatWorkerLine(body.workers?.olympiadFinalizeLast ?? null)}</span></div>
+    </div>
+    <details>
+      <summary>To‘liq JSON (dasturchilar uchun)</summary>
+      <pre>${json}</pre>
     </details>
-    <p class="foot">
-      <a href="/api/health">/api/health</a> — monitoring va skriptlar uchun JSON.<br/>
-      <a href="/">Bosh sahifa</a>
-    </p>
+    <p class="hint">Monitoring skriptlari uchun: <strong>/api/health</strong> (JSON, <code>Accept</code> bilan).</p>
+    <div class="act">
+      <a class="btn btn-p" href="/">Bosh sahifaga qaytish</a>
+      <a class="btn btn-s" href="/api/health" target="_blank" rel="noopener noreferrer">JSON ni yangi varaqda ochish</a>
+    </div>
   </div>
 </body>
 </html>`;
