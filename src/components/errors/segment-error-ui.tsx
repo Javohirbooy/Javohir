@@ -84,8 +84,9 @@ export function SegmentErrorUi({
       <h2 className="text-2xl font-bold text-slate-800 dark:text-slate-100">{c.title}</h2>
       <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">{c.hint}</p>
       <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
-        Texnik:{" "}
-        <code className="rounded bg-slate-100 px-1 py-0.5 dark:bg-slate-800">/api/health</code> — database va integratsiyalar.
+        Agar muammo davom etsa, administrator{" "}
+        <code className="rounded bg-slate-100 px-1 py-0.5 dark:bg-slate-800">/api/health</code> orqali DB va muhit
+        o‘zgaruvchilarini tekshirishi mumkin.
       </p>
       {error.digest ? (
         <p className="mt-4 font-mono text-xs text-slate-500 dark:text-slate-400" translate="no">

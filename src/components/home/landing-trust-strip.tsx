@@ -1,9 +1,15 @@
 import { Shield, Sparkles, Users } from "lucide-react";
 import { getServerLocale } from "@/lib/i18n/resolve-locale";
+import { DEFAULT_LOCALE, type AppLocale } from "@/lib/i18n/constants";
 import { t } from "@/lib/i18n/t";
 
 export async function LandingTrustStrip() {
-  const locale = await getServerLocale();
+  let locale: AppLocale;
+  try {
+    locale = await getServerLocale();
+  } catch {
+    locale = DEFAULT_LOCALE;
+  }
   const items = [
     { icon: Users, titleKey: "home.trust1Title" as const, bodyKey: "home.trust1Body" as const },
     { icon: Shield, titleKey: "home.trust2Title" as const, bodyKey: "home.trust2Body" as const },

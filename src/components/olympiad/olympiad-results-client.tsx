@@ -160,8 +160,10 @@ export function OlympiadResultsClient({ title, published, result }: OlympiadResu
                   </tr>
                 </thead>
                 <tbody>
-                  {result.perQuestion.map((q) => (
-                    <tr key={q.index} className="border-b border-slate-100 last:border-0 dark:border-slate-700/80">
+                  {[...result.perQuestion]
+                    .sort((a, b) => a.index - b.index)
+                    .map((q) => (
+                      <tr key={`pq-${q.index}`} className="border-b border-slate-100 last:border-0 dark:border-slate-700/80">
                       <td className="py-2 pr-2 align-top text-slate-500 dark:text-slate-400">{q.index}</td>
                       <td className="py-2 pr-2 align-top text-slate-800 dark:text-slate-100">
                         <span className="line-clamp-3 whitespace-pre-wrap">{q.text}</span>

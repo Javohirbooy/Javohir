@@ -1,67 +1,30 @@
-import { HeroSection } from "@/components/home/hero-section";
-import { LandingStatsSection } from "@/components/home/landing-stats-section";
-import { LandingSubjectsPreview } from "@/components/home/landing-subjects-preview";
-import { LandingTestPlatform } from "@/components/home/landing-test-platform";
-import { LandingOlympiadSection } from "@/components/home/landing-olympiad-section";
-import { LandingTrustStrip } from "@/components/home/landing-trust-strip";
-import { SectionTitle } from "@/components/ui/section-title";
-import { Card } from "@/components/ui/card";
+import { HomePageBody, HeroOnlyFallback } from "@/components/home/home-page-body";
 import { getServerLocale } from "@/lib/i18n/resolve-locale";
-import { t } from "@/lib/i18n/t";
-import { Cpu, LineChart, Shield, Users } from "lucide-react";
+import { DEFAULT_LOCALE } from "@/lib/i18n/constants";
 import { metadataFromSeoKey } from "@/lib/seo/public-page-metadata";
 
 export async function generateMetadata() {
-  const locale = await getServerLocale();
-  return metadataFromSeoKey(locale, "home");
+  try {
+    const locale = await getServerLocale();
+    return metadataFromSeoKey(locale, "home");
+  } catch {
+    return metadataFromSeoKey(DEFAULT_LOCALE, "home");
+  }
 }
 
 /** Bosh sahifa statistikasi `unstable_cache` bilan ~120s; DB yuki kamroq */
 export const revalidate = 120;
 
 export default async function HomePage() {
-  const locale = await getServerLocale();
-  const caps = [
-    { icon: Users, titleKey: "home.cap1Title" as const, bodyKey: "home.cap1Body" as const },
-    { icon: LineChart, titleKey: "home.cap2Title" as const, bodyKey: "home.cap2Body" as const },
-    { icon: Shield, titleKey: "home.cap3Title" as const, bodyKey: "home.cap3Body" as const },
-    { icon: Cpu, titleKey: "home.cap4Title" as const, bodyKey: "home.cap4Body" as const },
-  ];
-
-  return (
-    <>
-      <HeroSection />
-      <div className="mt-8 pb-14 sm:mt-12 sm:pb-16">
-        <LandingStatsSection />
-      </div>
-      <LandingTrustStrip />
-      <LandingSubjectsPreview />
-      <LandingTestPlatform />
-
-      <LandingOlympiadSection />
-
-      <section className="mx-auto max-w-6xl px-4 py-20 sm:px-6">
-        <SectionTitle
-          onDark
-          eyebrow={t(locale, "home.platformEyebrow")}
-          title={t(locale, "home.platformTitle")}
-          subtitle={t(locale, "home.platformSubtitle")}
-        />
-        <div className="mt-14 grid gap-6 md:grid-cols-2">
-          {caps.map(({ icon: Icon, titleKey, bodyKey }) => (
-            <Card
-              key={titleKey}
-              className="iq-3d-card border-emerald-100 bg-gradient-to-br from-white to-emerald-50/60 p-8 text-slate-800 hover:border-emerald-300/70"
-            >
-              <div className="iq-3d-chip flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-500/20 to-green-500/15 ring-1 ring-emerald-200">
-                <Icon className="h-7 w-7 text-emerald-700" />
-              </div>
-              <h3 className="mt-6 text-xl font-bold">{t(locale, titleKey)}</h3>
-              <p className="mt-3 text-sm leading-relaxed text-slate-600">{t(locale, bodyKey)}</p>
-            </Card>
-          ))}
-        </div>
-      </section>
-    </>
-  );
+  try {
+    return await HomePageBody();
+  } catch (err) {
+    console.error("[home-page]", err);
+    try {
+      return await HomePageBody({ skipDbSections: true });
+    } catch (err2) {
+      console.error("[home-page-fallback]", err2);
+      return <HeroOnlyFallback />;
+    }
+  }
 }

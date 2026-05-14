@@ -67,7 +67,7 @@ export async function getOlympiadPublicSpotlight(): Promise<{
     }),
     prisma.olympiadResult.findMany({
       where: { published: true, rank: { lte: 3 } },
-      orderBy: [{ finalizedAt: "desc" }, { createdAt: "desc" }],
+      orderBy: [{ finalizedAt: "desc" }, { rank: "asc" }, { createdAt: "desc" }],
       take: 8,
       select: {
         score: true,

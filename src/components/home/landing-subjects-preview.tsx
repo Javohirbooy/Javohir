@@ -1,15 +1,16 @@
 import Link from "next/link";
+import { ArrowUpRight } from "lucide-react";
 import { SUBJECT_CATALOG } from "@/lib/subject-catalog";
 import { SectionTitle } from "@/components/ui/section-title";
 import { cn } from "@/lib/utils";
 import { getServerLocale } from "@/lib/i18n/resolve-locale";
+import { DEFAULT_LOCALE } from "@/lib/i18n/constants";
 import { t } from "@/lib/i18n/t";
-import { ArrowUpRight } from "lucide-react";
 
 const preview = SUBJECT_CATALOG.slice(0, 8);
 
 export async function LandingSubjectsPreview() {
-  const locale = await getServerLocale();
+  const locale = await getServerLocale().catch(() => DEFAULT_LOCALE);
 
   return (
     <section className="mx-auto max-w-6xl px-4 py-20 sm:px-6">

@@ -981,7 +981,7 @@ export async function getOlympiadPostSubmitState(): Promise<
         : null;
     base.timeSpentSec = timeSpentSec;
 
-    if (row.attempt?.answersJson && result.answersJson) {
+    if (row.attempt && result.answersJson) {
       const test = await prisma.test.findUnique({
         where: { id: row.olympiad.testId },
         include: { questions: { orderBy: { order: "asc" } } },
@@ -989,20 +989,23 @@ export async function getOlympiadPostSubmitState(): Promise<
       if (test) {
         try {
           const order = JSON.parse(row.attempt.questionOrderJson) as string[];
-          const perms = JSON.parse(row.attempt.optionPermutationsJson) as Record<string, number[]>;
+          const permsRaw = row.attempt.optionPermutationsJson?.trim();
+          const perms = (permsRaw ? JSON.parse(permsRaw) : {}) as Record<string, number[]>;
           const displayAnswers = JSON.parse(result.answersJson) as number[];
           const analysis = analyzeOlympiadAttemptAnswers(order, perms, displayAnswers, test.questions);
           base.earnedPoints = analysis.earnedPoints;
           base.percentScore = analysis.percentScore;
           base.answeredCount = analysis.answeredCount;
           base.questionCount = order.length;
-          base.perQuestion = analysis.rows.map((q, i) => ({
+          const rows = analysis.rows.map((q, i) => ({
             index: i + 1,
             text: q.text.length > 140 ? `${q.text.slice(0, 140)}…` : q.text,
             maxPoints: q.maxPoints,
             earnedPoints: q.earnedPoints,
             correct: q.correct,
           }));
+          rows.sort((a, b) => a.index - b.index);
+          base.perQuestion = rows;
         } catch {
           base.perQuestion = [];
         }
