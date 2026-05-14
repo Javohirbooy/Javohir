@@ -25,9 +25,14 @@ export default async function AdminOlympiadsPage() {
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-2xl font-bold text-slate-900">Olimpiadalar</h1>
-        <Button href={`${BASE}/yangi`} variant="secondary">
-          Yangi olimpiada
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          <Button href={`${BASE}/natijalar`} variant="secondary">
+            Olimpiada natijalari
+          </Button>
+          <Button href={`${BASE}/yangi`} variant="secondary">
+            Yangi olimpiada
+          </Button>
+        </div>
       </div>
       <DashboardCard title="Ro‘yxat">
         <ul className="divide-y divide-slate-200 text-sm">

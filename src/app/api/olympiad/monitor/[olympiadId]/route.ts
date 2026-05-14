@@ -2,10 +2,16 @@ import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { assertOlympiadMonitorAccess } from "@/lib/olympiad/authz";
 import { getOlympiadMonitorSnapshot } from "@/lib/olympiad/monitor-snapshot";
+import { olympiadIdParamSchema, olympiadMonitorGetQuerySchema } from "@/lib/olympiad/schemas";
 
 export async function GET(req: Request, ctx: { params: Promise<{ olympiadId: string }> }) {
   const session = await auth();
-  const { olympiadId } = await ctx.params;
+  const rawParams = await ctx.params;
+  const idParsed = olympiadIdParamSchema.safeParse(rawParams.olympiadId);
+  if (!idParsed.success) {
+    return NextResponse.json({ ok: false, error: "invalid_params" }, { status: 400 });
+  }
+  const olympiadId = idParsed.data;
   try {
     await assertOlympiadMonitorAccess(session, olympiadId);
   } catch {
@@ -13,11 +19,18 @@ export async function GET(req: Request, ctx: { params: Promise<{ olympiadId: str
   }
 
   const url = new URL(req.url);
-  const limRaw = Number(url.searchParams.get("limit") ?? "120");
-  const takeSessions = Number.isFinite(limRaw) ? Math.min(200, Math.max(20, Math.floor(limRaw))) : 120;
-  const violRaw = Number(url.searchParams.get("violationLimit") ?? "6");
-  const takeViolations = Number.isFinite(violRaw) ? Math.min(20, Math.max(0, Math.floor(violRaw))) : 6;
-  const cursor = url.searchParams.get("cursor")?.trim() || null;
+  const parsed = olympiadMonitorGetQuerySchema.safeParse({
+    limit: url.searchParams.get("limit") ?? undefined,
+    violationLimit: url.searchParams.get("violationLimit") ?? undefined,
+    cursor: url.searchParams.get("cursor") ?? undefined,
+  });
+  if (!parsed.success) {
+    return NextResponse.json(
+      { ok: false, error: "invalid_query", issues: parsed.error.flatten() },
+      { status: 400 },
+    );
+  }
+  const { limit: takeSessions, violationLimit: takeViolations, cursor } = parsed.data;
 
   const snap = await getOlympiadMonitorSnapshot({
     olympiadId,

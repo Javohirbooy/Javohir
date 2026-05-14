@@ -12,6 +12,7 @@ import {
   OLYMPIAD_FINALIZATION_REASON,
   OLYMPIAD_FINALIZE_LEASE_MS,
   OLYMPIAD_FINALIZE_VIOLATION,
+  OLYMPIAD_STALE_SUBMITTING_LAST_SEEN_MS,
   type OlympiadFinalizationReason,
 } from "@/lib/olympiad/finalization-constants";
 import { isLeaseHeldByOtherWorker, parseOlympiadDisplayAnswers } from "@/lib/olympiad/finalize-logic";
@@ -22,10 +23,13 @@ const MAX_ROUNDS_PER_INVOCATION = 25;
 export type OlympiadFinalizeWorkerStats = {
   runId: string;
   rounds: number;
+  staleSubmittingRounds: number;
   candidatesSeen: number;
   finalized: number;
   skipped: number;
   repaired: number;
+  staleSubmittingFinalized: number;
+  staleSubmittingRepaired: number;
   errors: number;
   durationMs: number;
 };
@@ -70,6 +74,8 @@ function violationTypeForReason(reason: OlympiadFinalizationReason): string {
       return OLYMPIAD_FINALIZE_VIOLATION.DISCONNECTED_TIMEOUT;
     case OLYMPIAD_FINALIZATION_REASON.MANUAL_ADMIN_FINALIZE:
       return OLYMPIAD_FINALIZE_VIOLATION.MANUAL_ADMIN;
+    case OLYMPIAD_FINALIZATION_REASON.STALE_SUBMITTING_RECOVERY:
+      return OLYMPIAD_FINALIZE_VIOLATION.STALE_SUBMITTING;
     default:
       return OLYMPIAD_FINALIZE_VIOLATION.AUTO_TIMEOUT;
   }
@@ -367,6 +373,9 @@ export async function runOlympiadOverdueFinalization(options?: {
   let errors = 0;
   let candidatesSeen = 0;
   let rounds = 0;
+  let staleSubmittingRounds = 0;
+  let staleSubmittingFinalized = 0;
+  let staleSubmittingRepaired = 0;
 
   for (rounds = 0; rounds < maxRounds; rounds++) {
     const candidates = await prisma.$queryRaw<Array<{ id: string }>>`
@@ -408,17 +417,75 @@ export async function runOlympiadOverdueFinalization(options?: {
     }
   }
 
+  const staleCutoff = new Date(at.getTime() - OLYMPIAD_STALE_SUBMITTING_LAST_SEEN_MS);
+
+  for (staleSubmittingRounds = 0; staleSubmittingRounds < maxRounds; staleSubmittingRounds++) {
+    const stuck = await prisma.$queryRaw<Array<{ id: string }>>`
+      SELECT id FROM "OlympiadSession"
+      WHERE status = 'SUBMITTING'
+        AND "lastSeenAt" < ${staleCutoff}
+      ORDER BY "lastSeenAt" ASC
+      LIMIT ${batchLimit}
+    `;
+
+    if (stuck.length === 0) break;
+
+    candidatesSeen += stuck.length;
+
+    for (const row of stuck) {
+      try {
+        const out = await finalizeSessionWithDedicatedTransaction(row.id, {
+          at,
+          runId,
+          finalizationReason: OLYMPIAD_FINALIZATION_REASON.STALE_SUBMITTING_RECOVERY,
+          allowActiveNotOverdue: true,
+        });
+        if (out === "finalized") {
+          finalized += 1;
+          staleSubmittingFinalized += 1;
+        } else if (out === "repaired") {
+          repaired += 1;
+          staleSubmittingRepaired += 1;
+        } else skipped += 1;
+      } catch (err) {
+        errors += 1;
+        Sentry.captureException(err, {
+          tags: { worker: "olympiad-finalize-stale-submitting", sessionId: row.id },
+          extra: { runId, round: staleSubmittingRounds },
+        });
+        logStructured("error", "olympiad.finalize.stale_submitting_failed", {
+          runId,
+          sessionId: row.id,
+          round: staleSubmittingRounds,
+        });
+      }
+    }
+  }
+
   const durationMs = Date.now() - started;
+
+  // WHY: Metric-only — long-idle ACTIVE while deadline not passed may indicate client ghost tabs (no auto-finalize here).
+  const ghostActiveSessions = await prisma.olympiadSession.count({
+    where: {
+      status: "ACTIVE",
+      lastSeenAt: { lt: new Date(at.getTime() - 30 * 60 * 1000) },
+      serverEndsAt: { gt: at },
+    },
+  });
 
   logStructured("info", "olympiad.finalize.run_complete", {
     runId,
     rounds,
+    staleSubmittingRounds,
     candidatesSeen,
     finalized,
     skipped,
     repaired,
+    staleSubmittingFinalized,
+    staleSubmittingRepaired,
     errors,
     durationMs,
+    ghostActiveSessions,
     autoFinalized: finalized + repaired,
   });
 
@@ -426,7 +493,17 @@ export async function runOlympiadOverdueFinalization(options?: {
     category: "olympiad.finalize",
     message: "run_complete",
     level: errors > 0 ? "warning" : "info",
-    data: { runId, finalized, repaired, skipped, errors, durationMs },
+    data: {
+      runId,
+      finalized,
+      repaired,
+      skipped,
+      errors,
+      durationMs,
+      staleSubmittingFinalized,
+      staleSubmittingRepaired,
+      ghostActiveSessions,
+    },
   });
 
   try {
@@ -437,12 +514,16 @@ export async function runOlympiadOverdueFinalization(options?: {
       entityId: runId,
       metadata: {
         rounds,
+        staleSubmittingRounds,
         candidatesSeen,
         finalized,
         skipped,
         repaired,
+        staleSubmittingFinalized,
+        staleSubmittingRepaired,
         errors,
         durationMs,
+        ghostActiveSessions,
         at: at.toISOString(),
       },
     });
@@ -453,10 +534,13 @@ export async function runOlympiadOverdueFinalization(options?: {
   return {
     runId,
     rounds,
+    staleSubmittingRounds,
     candidatesSeen,
     finalized,
     skipped,
     repaired,
+    staleSubmittingFinalized,
+    staleSubmittingRepaired,
     errors,
     durationMs,
   };

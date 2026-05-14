@@ -56,7 +56,7 @@ export function OlympiadJoinForm() {
               required
               autoComplete="given-name"
               className={cn(
-                "mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-slate-900 outline-none ring-sky-500/30 focus:ring-2",
+                "mt-1 min-h-[44px] w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-slate-900 outline-none ring-sky-500/30 focus-visible:ring-2",
               )}
             />
           </div>
@@ -70,7 +70,7 @@ export function OlympiadJoinForm() {
               required
               autoComplete="family-name"
               className={cn(
-                "mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-slate-900 outline-none ring-sky-500/30 focus:ring-2",
+                "mt-1 min-h-[44px] w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-slate-900 outline-none ring-sky-500/30 focus-visible:ring-2",
               )}
             />
           </div>
@@ -87,7 +87,7 @@ export function OlympiadJoinForm() {
               required
               placeholder="Masalan: 8-A"
               className={cn(
-                "mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-slate-900 outline-none ring-sky-500/30 focus:ring-2",
+                "mt-1 min-h-[44px] w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-slate-900 outline-none ring-sky-500/30 focus-visible:ring-2",
               )}
             />
           </div>
@@ -104,7 +104,7 @@ export function OlympiadJoinForm() {
               max={99}
               required
               className={cn(
-                "mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-slate-900 outline-none ring-sky-500/30 focus:ring-2",
+                "mt-1 min-h-[44px] w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-slate-900 outline-none ring-sky-500/30 focus-visible:ring-2",
               )}
             />
           </div>
@@ -120,7 +120,7 @@ export function OlympiadJoinForm() {
             required
             autoComplete="organization"
             className={cn(
-              "mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-slate-900 outline-none ring-sky-500/30 focus:ring-2",
+              "mt-1 min-h-[44px] w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-slate-900 outline-none ring-sky-500/30 focus-visible:ring-2",
             )}
           />
         </div>
@@ -134,7 +134,7 @@ export function OlympiadJoinForm() {
             name="region"
             required
             className={cn(
-              "mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-slate-900 outline-none ring-sky-500/30 focus:ring-2",
+              "mt-1 min-h-[44px] w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-slate-900 outline-none ring-sky-500/30 focus-visible:ring-2",
             )}
           />
         </div>
@@ -149,7 +149,7 @@ export function OlympiadJoinForm() {
             type="tel"
             autoComplete="tel"
             className={cn(
-              "mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-slate-900 outline-none ring-sky-500/30 focus:ring-2",
+              "mt-1 min-h-[44px] w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-slate-900 outline-none ring-sky-500/30 focus-visible:ring-2",
             )}
           />
         </div>
@@ -164,7 +164,7 @@ export function OlympiadJoinForm() {
             required
             autoComplete="one-time-code"
             className={cn(
-              "mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 font-mono text-slate-900 outline-none ring-sky-500/30 focus:ring-2",
+              "mt-1 min-h-[44px] w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 font-mono text-slate-900 outline-none ring-sky-500/30 focus-visible:ring-2",
             )}
             placeholder="OLYMPIADA-8A-2026"
           />
@@ -176,7 +176,7 @@ export function OlympiadJoinForm() {
           </p>
         ) : null}
 
-        <Button type="submit" disabled={pending} className="w-full sm:w-auto">
+        <Button type="submit" disabled={pending} className="min-h-[48px] w-full sm:w-auto">
           {pending ? "Jo‘natilmoqda…" : "Davom etish"}
         </Button>
       </form>

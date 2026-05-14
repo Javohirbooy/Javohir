@@ -460,6 +460,8 @@ model OlympiadParticipant {
   results      OlympiadResult[]
 
   @@index([olympiadId])
+  // WHY: Publish ranking CTE joins on olympiad + gradeLabel for PARTITION BY; index keeps scans bounded.
+  @@index([olympiadId, gradeLabel])
 }
 
 model OlympiadSession {
@@ -491,6 +493,7 @@ model OlympiadSession {
   @@index([olympiadId, status])
   @@index([olympiadId, lastSeenAt])
   @@index([status, serverEndsAt])
+  @@index([status, lastSeenAt])
   @@index([olympiadId, autoFinalized])
   @@index([olympiadId, finalizationReason])
 }
@@ -517,6 +520,8 @@ model OlympiadViolation {
 
   @@index([sessionId])
   @@index([sessionId, createdAt])
+  // WHY: Anti-cheat / monitor queries filter by session + violation type.
+  @@index([sessionId, type])
 }
 
 model OlympiadResult {
@@ -542,6 +547,9 @@ model OlympiadResult {
   certificate        OlympiadCertificate?
 
   @@index([olympiadId, published])
+  @@index([olympiadId, score])
+  // WHY: SQL publish path filters `olympiadId` + optional `autoFinalized` and orders by score.
+  @@index([olympiadId, autoFinalized, score])
   @@index([participantId])
   @@index([olympiadId, autoFinalized])
 }

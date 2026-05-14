@@ -46,25 +46,57 @@ export async function emitOlympiadMonitorEvent(
   }
 }
 
-export async function readRecentOlympiadMonitorEvents(olympiadId: string, take: number): Promise<OlympiadMonitorEventPayload[]> {
+export type OlympiadMonitorRedisBundle = {
+  events: OlympiadMonitorEventPayload[];
+  readModel: Record<string, string> | null;
+  /** True when Redis client is missing or reads fail — UI can fall back to DB-only snapshots. */
+  redisUnavailable: boolean;
+};
+
+/**
+ * Single round-trip Redis bundle for the monitor SSE tick.
+ *
+ * WHY: Separating "empty events because none happened" from "Redis is down"
+ * lets the stream emit a stable degraded signal without hammering retries.
+ */
+export async function readOlympiadMonitorRedisBundle(
+  olympiadId: string,
+  takeEvents: number,
+): Promise<OlympiadMonitorRedisBundle> {
   const redis = getUpstashRedis();
-  if (!redis) return [];
+  if (!redis) {
+    return { events: [], readModel: null, redisUnavailable: true };
+  }
   const key = `${LIST_PREFIX}${olympiadId}`;
+  const statKey = `${STAT_PREFIX}${olympiadId}`;
   try {
-    const n = Math.min(200, Math.max(1, take));
-    const raw = await redis.lrange<string>(key, 0, n - 1);
-    const out: OlympiadMonitorEventPayload[] = [];
+    const n = Math.min(200, Math.max(1, takeEvents));
+    const [raw, h] = await Promise.all([
+      redis.lrange<string>(key, 0, n - 1),
+      redis.hgetall<Record<string, string>>(statKey),
+    ]);
+    const events: OlympiadMonitorEventPayload[] = [];
     for (const r of raw) {
       try {
-        out.push(JSON.parse(r) as OlympiadMonitorEventPayload);
+        events.push(JSON.parse(r) as OlympiadMonitorEventPayload);
       } catch {
         /* skip */
       }
     }
-    return out;
-  } catch {
-    return [];
+    const readModel = h && Object.keys(h).length ? h : null;
+    return { events, readModel, redisUnavailable: false };
+  } catch (e) {
+    void logStructured("warn", "olympiad.monitor_redis_bundle_failed", {
+      olympiadId: olympiadId.slice(0, 8),
+      message: e instanceof Error ? e.message : String(e),
+    });
+    return { events: [], readModel: null, redisUnavailable: true };
   }
+}
+
+export async function readRecentOlympiadMonitorEvents(olympiadId: string, take: number): Promise<OlympiadMonitorEventPayload[]> {
+  const b = await readOlympiadMonitorRedisBundle(olympiadId, take);
+  return b.events;
 }
 
 export async function readOlympiadReadModelCounters(olympiadId: string): Promise<Record<string, string> | null> {

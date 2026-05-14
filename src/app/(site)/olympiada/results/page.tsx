@@ -35,6 +35,14 @@ export default async function OlympiadResultsPage() {
                     revokedAt: r.certificate.revokedAt,
                   }
                 : null,
+              earnedPoints: r.earnedPoints,
+              percentScore: r.percentScore,
+              answeredCount: r.answeredCount,
+              questionCount: r.questionCount,
+              timeSpentSec: r.timeSpentSec,
+              schoolName: r.schoolName,
+              gradeLabel: r.gradeLabel,
+              perQuestion: r.perQuestion,
             }
           : null
       }

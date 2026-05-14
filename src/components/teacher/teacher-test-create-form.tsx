@@ -36,7 +36,7 @@ export type TeacherTestEditInitial = {
 };
 
 function emptyQuestion(): TeacherQuestionInput {
-  return { text: "", options: ["", "", "", ""], correctIndex: 0 };
+  return { text: "", options: ["", "", "", ""], correctIndex: 0, points: 1 };
 }
 
 export function TeacherTestCreateForm({
@@ -571,6 +571,21 @@ export function TeacherTestCreateForm({
                     </option>
                   ))}
                 </select>
+              </label>
+              <label className="mt-3 block text-xs font-semibold uppercase tracking-wide text-white/45">
+                Savol balli
+                <input
+                  type="number"
+                  inputMode="decimal"
+                  step="any"
+                  min={0.01}
+                  value={q.points ?? 1}
+                  onChange={(e) => {
+                    const v = Number(e.target.value);
+                    updateQuestion(qi, { points: Number.isFinite(v) ? v : 1 });
+                  }}
+                  className="mt-1 w-full max-w-[10rem] rounded-lg border border-white/15 bg-slate-900 px-2 py-1.5 text-sm text-white"
+                />
               </label>
             </div>
           ))}

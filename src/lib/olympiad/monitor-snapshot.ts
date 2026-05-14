@@ -53,22 +53,35 @@ export async function getOlympiadMonitorSnapshot(params: {
   const now = Date.now();
   const c = parseMonitorCursor(params.cursor);
 
-  const rows = await prisma.olympiadSession.findMany({
-    where: {
-      olympiadId,
-      ...(c
-        ? {
-            OR: [{ lastSeenAt: { lt: c.at } }, { AND: [{ lastSeenAt: c.at }, { id: { lt: c.id } }] }],
-          }
-        : {}),
-    },
-    include: {
-      participant: { select: { firstName: true, lastName: true, gradeLabel: true } },
-      violations: { orderBy: { createdAt: "desc" }, take: takeViolations },
-    },
-    orderBy: [{ lastSeenAt: "desc" }, { id: "desc" }],
-    take: takeSessions + 1,
-  });
+  const [rows, olympiad] = await Promise.all([
+    prisma.olympiadSession.findMany({
+      where: {
+        olympiadId,
+        ...(c
+          ? {
+              OR: [{ lastSeenAt: { lt: c.at } }, { AND: [{ lastSeenAt: c.at }, { id: { lt: c.id } }] }],
+            }
+          : {}),
+      },
+      include: {
+        participant: { select: { firstName: true, lastName: true, gradeLabel: true } },
+        violations: { orderBy: { createdAt: "desc" }, take: takeViolations },
+      },
+      orderBy: [{ lastSeenAt: "desc" }, { id: "desc" }],
+      take: takeSessions + 1,
+    }),
+    prisma.olympiad.findUnique({
+      where: { id: olympiadId },
+      select: {
+        title: true,
+        startsAt: true,
+        endsAt: true,
+        status: true,
+        durationMinutes: true,
+        resultsPublishedAt: true,
+      },
+    }),
+  ]);
 
   const hasMore = rows.length > takeSessions;
   const page = hasMore ? rows.slice(0, takeSessions) : rows;
@@ -99,18 +112,6 @@ export async function getOlympiadMonitorSnapshot(params: {
         at: v.createdAt.toISOString(),
       })),
     };
-  });
-
-  const olympiad = await prisma.olympiad.findUnique({
-    where: { id: olympiadId },
-    select: {
-      title: true,
-      startsAt: true,
-      endsAt: true,
-      status: true,
-      durationMinutes: true,
-      resultsPublishedAt: true,
-    },
   });
 
   return {

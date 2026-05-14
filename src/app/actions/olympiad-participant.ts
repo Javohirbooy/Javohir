@@ -19,7 +19,7 @@ import { generateSessionToken, hashOlympiadCode, hashSessionToken, normalizeOlym
 import { hashDeviceFingerprint, hashIp, hashUserAgent } from "@/lib/olympiad/ip-fp";
 import { olympiadJoinSchema } from "@/lib/olympiad/schemas";
 import { buildOptionPermutation, buildQuestionShuffle } from "@/lib/exam-shuffle";
-import { scoreOlympiadAttempt } from "@/lib/olympiad/scoring";
+import { scoreOlympiadAttempt, analyzeOlympiadAttemptAnswers } from "@/lib/olympiad/scoring";
 import { isOlympiadAnswerSigningEnabled, isOlympiadExamWatermarkEnabled, isOlympiadMultiTabDetectionEnabled } from "@/lib/olympiad/feature-flags";
 import { verifyOlympiadSignedAnswerPayload } from "@/lib/olympiad/verify-signed-exam-payload";
 import type { OlympiadAnswerSigningPayload } from "@/lib/olympiad/exam-types";
@@ -405,7 +405,9 @@ export async function olympiadAutosaveBatch(
   let chosenSigning: OlympiadAnswerSigningPayload | null | undefined;
 
   if (signingOn) {
-    const withSeq = items.filter((i) => i.signing && typeof i.signing.seq === "number");
+    const withSeq = items.filter(
+      (i) => i.signing && typeof i.signing.seq === "number" && Number.isInteger(i.signing.seq) && i.signing.seq >= 1,
+    );
     if (!withSeq.length) return { ok: false, error: "Imzo ketma-ketligi yo‘q." };
     chosen = withSeq.reduce((a, b) => (a.signing!.seq > b.signing!.seq ? a : b));
     chosenSigning = chosen.signing ?? null;
@@ -905,11 +907,19 @@ export async function getOlympiadPostSubmitState(): Promise<
           pdfUrl: string | null;
           revokedAt: string | null;
         };
+        earnedPoints: number | null;
+        percentScore: number | null;
+        answeredCount: number | null;
+        questionCount: number | null;
+        timeSpentSec: number | null;
+        schoolName: string | null;
+        gradeLabel: string | null;
+        perQuestion: { index: number; text: string; maxPoints: number; earnedPoints: number; correct: boolean }[];
       };
     }
 > {
   const row = await loadSessionByCookie();
-  if (!row) return { ok: false, error: "Sessiya yo‘q." };
+  if (!row) return { ok: false, error: "Sessiya topilmadi." };
   const result = await prisma.olympiadResult.findUnique({
     where: { sessionId: row.id },
     select: {
@@ -917,30 +927,98 @@ export async function getOlympiadPostSubmitState(): Promise<
       maxScore: true,
       published: true,
       rank: true,
+      answersJson: true,
       certificate: { select: { verifyPublicId: true, pdfUrl: true, revokedAt: true } },
     },
   });
+
+  let enriched: null | {
+    score: number;
+    maxScore: number | null;
+    published: boolean;
+    rank: number | null;
+    certificate: null | {
+      verifyPublicId: string;
+      pdfUrl: string | null;
+      revokedAt: string | null;
+    };
+    earnedPoints: number | null;
+    percentScore: number | null;
+    answeredCount: number | null;
+    questionCount: number | null;
+    timeSpentSec: number | null;
+    schoolName: string | null;
+    gradeLabel: string | null;
+    perQuestion: { index: number; text: string; maxPoints: number; earnedPoints: number; correct: boolean }[];
+  } = null;
+
+  if (result) {
+    const base = {
+      score: result.score ?? 0,
+      maxScore: result.maxScore,
+      published: result.published,
+      rank: result.rank,
+      certificate: result.certificate
+        ? {
+            verifyPublicId: result.certificate.verifyPublicId ?? "",
+            pdfUrl: result.certificate.revokedAt ? null : (result.certificate.pdfUrl ?? null),
+            revokedAt: result.certificate.revokedAt?.toISOString() ?? null,
+          }
+        : null,
+      earnedPoints: null as number | null,
+      percentScore: null as number | null,
+      answeredCount: null as number | null,
+      questionCount: null as number | null,
+      timeSpentSec: null as number | null,
+      schoolName: row.participant.schoolName,
+      gradeLabel: row.participant.gradeLabel,
+      perQuestion: [] as { index: number; text: string; maxPoints: number; earnedPoints: number; correct: boolean }[],
+    };
+
+    const timeSpentSec =
+      row.startedAt && row.submittedAt
+        ? Math.max(0, Math.round((row.submittedAt.getTime() - row.startedAt.getTime()) / 1000))
+        : null;
+    base.timeSpentSec = timeSpentSec;
+
+    if (row.attempt?.answersJson && result.answersJson) {
+      const test = await prisma.test.findUnique({
+        where: { id: row.olympiad.testId },
+        include: { questions: { orderBy: { order: "asc" } } },
+      });
+      if (test) {
+        try {
+          const order = JSON.parse(row.attempt.questionOrderJson) as string[];
+          const perms = JSON.parse(row.attempt.optionPermutationsJson) as Record<string, number[]>;
+          const displayAnswers = JSON.parse(result.answersJson) as number[];
+          const analysis = analyzeOlympiadAttemptAnswers(order, perms, displayAnswers, test.questions);
+          base.earnedPoints = analysis.earnedPoints;
+          base.percentScore = analysis.percentScore;
+          base.answeredCount = analysis.answeredCount;
+          base.questionCount = order.length;
+          base.perQuestion = analysis.rows.map((q, i) => ({
+            index: i + 1,
+            text: q.text.length > 140 ? `${q.text.slice(0, 140)}…` : q.text,
+            maxPoints: q.maxPoints,
+            earnedPoints: q.earnedPoints,
+            correct: q.correct,
+          }));
+        } catch {
+          base.perQuestion = [];
+        }
+      }
+    }
+
+    enriched = base;
+  }
+
   return {
     ok: true,
     sessionId: row.id,
     status: row.status,
     title: row.olympiad.title,
     submittedAt: row.submittedAt?.toISOString() ?? null,
-    result: result
-      ? {
-          score: result.score ?? 0,
-          maxScore: result.maxScore,
-          published: result.published,
-          rank: result.rank,
-          certificate: result.certificate
-            ? {
-                verifyPublicId: result.certificate.verifyPublicId ?? "",
-                pdfUrl: result.certificate.revokedAt ? null : (result.certificate.pdfUrl ?? null),
-                revokedAt: result.certificate.revokedAt?.toISOString() ?? null,
-              }
-            : null,
-        }
-      : null,
+    result: enriched,
   };
 }
 

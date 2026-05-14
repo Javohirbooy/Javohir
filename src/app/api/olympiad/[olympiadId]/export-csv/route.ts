@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { assertOlympiadManage } from "@/lib/olympiad/authz";
+import { allowOlympiadCsvExport } from "@/lib/olympiad/csv-export-rate-limit";
+import { olympiadIdParamSchema } from "@/lib/olympiad/schemas";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -16,7 +18,18 @@ function csvEscape(s: string) {
  */
 export async function GET(_req: Request, ctx: { params: Promise<{ olympiadId: string }> }) {
   const session = await auth();
-  const { olympiadId } = await ctx.params;
+  const rawParams = await ctx.params;
+  const parsedId = olympiadIdParamSchema.safeParse(rawParams.olympiadId);
+  if (!parsedId.success) {
+    return NextResponse.json({ error: "invalid_params" }, { status: 400 });
+  }
+  const olympiadId = parsedId.data;
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  }
+  if (!allowOlympiadCsvExport(session.user.id)) {
+    return NextResponse.json({ error: "rate_limited" }, { status: 429 });
+  }
   try {
     await assertOlympiadManage(session, olympiadId);
   } catch {
@@ -36,12 +49,22 @@ export async function GET(_req: Request, ctx: { params: Promise<{ olympiadId: st
   const stream = new ReadableStream({
     async start(controller) {
       controller.enqueue(encoder.encode(`${header}\n`));
-      const pageSize = 250;
+      // WHY: Smaller pages reduce peak memory while streaming; total rows still bounded by loop exit.
+      const pageSize = 200;
       let cursor: { id: string } | undefined;
+      let rowsWritten = 0;
+      // WHY: Hard cap prevents unbounded CSV streams if data grows unexpectedly (DoS via export).
+      const MAX_ROWS = 15_000;
       for (;;) {
+        if (rowsWritten >= MAX_ROWS) break;
         const rows = await prisma.olympiadResult.findMany({
           where: { olympiadId },
-          include: {
+          select: {
+            id: true,
+            rank: true,
+            score: true,
+            maxScore: true,
+            published: true,
             participant: {
               select: {
                 firstName: true,
@@ -58,6 +81,7 @@ export async function GET(_req: Request, ctx: { params: Promise<{ olympiadId: st
         });
         if (!rows.length) break;
         for (const r of rows) {
+          if (rowsWritten >= MAX_ROWS) break;
           const p = r.participant;
           const line = [
             r.rank ?? "",
@@ -71,6 +95,7 @@ export async function GET(_req: Request, ctx: { params: Promise<{ olympiadId: st
             r.published ? "1" : "0",
           ].join(",");
           controller.enqueue(encoder.encode(`${line}\n`));
+          rowsWritten += 1;
         }
         cursor = { id: rows[rows.length - 1]!.id };
         if (rows.length < pageSize) break;

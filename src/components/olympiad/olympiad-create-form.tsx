@@ -4,7 +4,7 @@ import { createOlympiadAction } from "@/app/actions/olympiad-admin";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useRouter } from "next/navigation";
-import { useActionState, useEffect } from "react";
+import { useActionState, useEffect, useState } from "react";
 
 type CreateState = { ok: true; id: string } | { ok: false; error: string } | null;
 
@@ -17,6 +17,8 @@ export function OlympiadCreateForm({
 }) {
   const router = useRouter();
   const [state, formAction, pending] = useActionState(createOlympiadAction, null as CreateState);
+  const [startsAt, setStartsAt] = useState("");
+  const [endsAt, setEndsAt] = useState("");
 
   useEffect(() => {
     if (state && "ok" in state && state.ok && state.id) {
@@ -60,15 +62,32 @@ export function OlympiadCreateForm({
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
             <label className="text-sm font-semibold text-slate-800" htmlFor="ol-cr-start">
-              Boshlanish
+              Boshlanish (mahalliy vaqt)
             </label>
-            <input id="ol-cr-start" name="startsAt" type="datetime-local" required className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-slate-900" />
+            <input
+              id="ol-cr-start"
+              name="startsAt"
+              type="datetime-local"
+              required
+              autoComplete="off"
+              value={startsAt}
+              onChange={(e) => setStartsAt(e.target.value)}
+              className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-slate-900"
+            />
           </div>
           <div>
             <label className="text-sm font-semibold text-slate-800" htmlFor="ol-cr-end">
-              Yakun (ixtiyoriy)
+              Yakun (ixtiyoriy, mustaqil)
             </label>
-            <input id="ol-cr-end" name="endsAt" type="datetime-local" className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-slate-900" />
+            <input
+              id="ol-cr-end"
+              name="endsAt"
+              type="datetime-local"
+              autoComplete="off"
+              value={endsAt}
+              onChange={(e) => setEndsAt(e.target.value)}
+              className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-slate-900"
+            />
           </div>
         </div>
         <div className="grid gap-4 sm:grid-cols-2">

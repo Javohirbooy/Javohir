@@ -62,6 +62,8 @@ async function handleFinalize(req: Request) {
       errors: stats.errors,
       durationMs: stats.durationMs,
       runId: stats.runId,
+      staleSubmittingFinalized: stats.staleSubmittingFinalized,
+      staleSubmittingRepaired: stats.staleSubmittingRepaired,
     });
 
     return NextResponse.json({ ok: true, ...stats });

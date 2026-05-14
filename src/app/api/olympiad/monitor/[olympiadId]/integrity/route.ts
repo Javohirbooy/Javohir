@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { assertOlympiadMonitorAccess } from "@/lib/olympiad/authz";
+import { olympiadMonitorIntegrityQuerySchema } from "@/lib/olympiad/schemas";
 import { prisma } from "@/lib/prisma";
 import { sha256HexUtf8, verifySubmissionIntegrityV1 } from "@/lib/olympiad/submission-integrity";
 
@@ -20,10 +21,13 @@ export async function GET(req: Request, ctx: { params: Promise<{ olympiadId: str
     return NextResponse.json({ error: "forbidden" }, { status: 403 });
   }
 
-  const sessionId = new URL(req.url).searchParams.get("sessionId")?.trim();
-  if (!sessionId) {
-    return NextResponse.json({ error: "sessionId_required" }, { status: 400 });
+  const q = olympiadMonitorIntegrityQuerySchema.safeParse({
+    sessionId: new URL(req.url).searchParams.get("sessionId") ?? undefined,
+  });
+  if (!q.success) {
+    return NextResponse.json({ error: "invalid_query", issues: q.error.flatten() }, { status: 400 });
   }
+  const sessionId = q.data.sessionId;
 
   const result = await prisma.olympiadResult.findUnique({
     where: { sessionId },

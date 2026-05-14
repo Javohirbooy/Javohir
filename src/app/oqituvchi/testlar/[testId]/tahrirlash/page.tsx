@@ -90,7 +90,7 @@ export default async function TeacherEditTestPage({ params }: Props) {
   const questions = test.questions.map((q) => {
     const opts = JSON.parse(q.optionsJson) as string[];
     const padded = [...opts, "", "", "", ""].slice(0, 4);
-    return { text: q.text, options: padded, correctIndex: q.correctIndex };
+    return { text: q.text, options: padded, correctIndex: q.correctIndex, points: q.points ?? 1 };
   });
 
   const edit: TeacherTestEditInitial = {

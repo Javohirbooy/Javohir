@@ -39,13 +39,13 @@ export function OlympiadRulesFlow({
         <li>Natijalar olimpiada sozlamalariga qarab kechiktirilgan holda e&apos;lon qilinishi mumkin.</li>
       </ul>
 
-      <div className="mt-6 flex items-start gap-3">
+      <div className="mt-6 flex min-h-[44px] flex-wrap items-start gap-3 rounded-xl py-1">
         <input
           id="ol-rules-agree"
           type="checkbox"
           checked={agree}
           onChange={(e) => setAgree(e.target.checked)}
-          className="mt-1 h-5 w-5 rounded border-slate-300"
+          className="mt-1.5 h-5 w-5 shrink-0 rounded border-slate-300 text-emerald-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/70"
         />
         <label htmlFor="ol-rules-agree" className="text-sm font-medium text-slate-800">
           Men qoidalarni o‘qidim va roziman.
@@ -60,7 +60,7 @@ export function OlympiadRulesFlow({
 
       <Button
         type="button"
-        className="mt-6"
+        className="mt-6 min-h-[48px]"
         disabled={!agree || pending}
         onClick={() => {
           setErr(null);

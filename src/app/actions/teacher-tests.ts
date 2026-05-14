@@ -15,6 +15,8 @@ export type TeacherQuestionInput = {
   text: string;
   options: string[];
   correctIndex: number;
+  /** Question weight in points; must be greater than 0. Defaults to 1. */
+  points?: number;
 };
 
 export type CreateTeacherTestInput = {
@@ -120,6 +122,12 @@ export async function createTest(input: CreateTeacherTestInput) {
 
   const qs = input.questions.filter((q) => q.text.trim() && q.options.filter(Boolean).length >= 2);
   if (!qs.length) return errResult("Kamida bitta to‘liq savol kiriting.", "VALIDATION_ERROR");
+  for (const q of qs) {
+    const pts = q.points ?? 1;
+    if (typeof pts !== "number" || !Number.isFinite(pts) || pts <= 0) {
+      return errResult("Har bir savol uchun ball musbat son bo‘lishi kerak.", "VALIDATION_ERROR");
+    }
+  }
 
   let topicId: string | null = input.topicId?.trim() || null;
   const topicTitle = input.topicTitle?.trim();
@@ -177,6 +185,7 @@ export async function createTest(input: CreateTeacherTestInput) {
             optionsJson: JSON.stringify(opts),
             correctIndex: Math.min(Math.max(0, q.correctIndex), Math.max(0, opts.length - 1)),
             order,
+            points: q.points ?? 1,
           };
         }),
       },
@@ -248,6 +257,12 @@ export async function updateTeacherTest(
 
   const qs = input.questions.filter((q) => q.text.trim() && q.options.filter(Boolean).length >= 2);
   if (!qs.length) return errResult("Kamida bitta to‘liq savol kiriting.", "VALIDATION_ERROR");
+  for (const q of qs) {
+    const pts = q.points ?? 1;
+    if (typeof pts !== "number" || !Number.isFinite(pts) || pts <= 0) {
+      return errResult("Har bir savol uchun ball musbat son bo‘lishi kerak.", "VALIDATION_ERROR");
+    }
+  }
 
   let topicId: string | null = input.topicId?.trim() || null;
   const topicTitle = input.topicTitle?.trim();
@@ -306,6 +321,7 @@ export async function updateTeacherTest(
               optionsJson: JSON.stringify(opts),
               correctIndex: Math.min(Math.max(0, q.correctIndex), Math.max(0, opts.length - 1)),
               order,
+              points: q.points ?? 1,
             };
           }),
         },

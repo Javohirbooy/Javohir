@@ -43,3 +43,8 @@ export function isOlympiadMonitorRedisEventsEnabled(): boolean {
 export function isOlympiadMonitorDbSnapshotSparseEnabled(): boolean {
   return process.env.OLYMPIAD_MONITOR_SPARSE_DB_SNAPSHOT === "1";
 }
+
+/** WHY: Dev-only noisy diagnostics must never ship enabled in production builds by accident. */
+export function isOlympiadDevPerfDiagnosticsEnabled(): boolean {
+  return process.env.NODE_ENV === "development" && process.env.NEXT_PUBLIC_OLYMPIAD_DEV_PERF === "1";
+}

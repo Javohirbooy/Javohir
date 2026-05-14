@@ -18,6 +18,7 @@ const items = [
   { href: "/admin/testlar", label: "Testlar", icon: "activity" as const },
   { href: "/admin/testlar/import", label: "Test import", icon: "scroll" as const },
   { href: "/admin/oimpiadalar", label: "Olimpiadalar", icon: "layers" as const },
+  { href: "/admin/oimpiadalar/natijalar", label: "Olimpiada natijalari", icon: "trophy" as const },
 ];
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {

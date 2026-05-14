@@ -17,6 +17,7 @@ import { OlympiadLiveMonitor } from "@/components/olympiad/olympiad-live-monitor
 import { isOlympiadMonitorSseEnabled } from "@/lib/olympiad/feature-flags";
 import { OlympiadExportButton } from "@/components/olympiad/olympiad-export-button";
 import { OlympiadFinalizationSection } from "@/components/olympiad/olympiad-finalization-section";
+import { OlympiadScheduleForm } from "@/components/olympiad/olympiad-schedule-form";
 import { tryPrismaPage } from "@/lib/server/try-prisma";
 
 export async function OlympiadManageDetail({ id, basePath }: { id: string; basePath: string }) {
@@ -76,6 +77,18 @@ export async function OlympiadManageDetail({ id, basePath }: { id: string; baseP
           <OlympiadExportButton olympiadId={id} />
         </div>
       </div>
+
+      <DashboardCard title="Olimpiada jadvali">
+        <p className="text-sm text-slate-600">
+          Boshlanish va yakun vaqtlari alohida saqlanadi; biri ikkinchisini avtomatik o‘zgartirmaydi. Yakunni bo‘sh qoldirsangiz, faqat test davomiyligi bilan chegaralanadi.
+        </p>
+        <OlympiadScheduleForm
+          key={olymp.updatedAt.toISOString()}
+          olympiadId={id}
+          startsAtIso={olymp.startsAt.toISOString()}
+          endsAtIso={olymp.endsAt?.toISOString() ?? null}
+        />
+      </DashboardCard>
 
       <DashboardCard title="Boshqaruv">
         <div className="flex flex-wrap gap-2">

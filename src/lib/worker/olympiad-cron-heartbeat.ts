@@ -12,6 +12,8 @@ export type OlympiadCronHeartbeatPayload = {
   errors?: number;
   durationMs?: number;
   runId?: string;
+  staleSubmittingFinalized?: number;
+  staleSubmittingRepaired?: number;
 };
 
 /** Tashqi cron / Vercel Cron muvaffaqiyatli ishlaganda Redis ga yoziladi (TTL 14 kun). */

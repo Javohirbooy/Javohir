@@ -17,6 +17,8 @@ import { issueCertificatesForOlympiad, revokeCertificateByVerifyId } from "@/lib
 import { readOlympiadFinalizeHeartbeat, type OlympiadCronHeartbeatPayload } from "@/lib/worker/olympiad-cron-heartbeat";
 import { OLYMPIAD_FINALIZATION_REASON } from "@/lib/olympiad/finalization-constants";
 import { isOlympiadPublishIncludeAutoFinalized } from "@/lib/olympiad/feature-flags";
+import { executeOlympiadPublishRankingInTx } from "@/lib/olympiad/publish-ranking-sql";
+import type { Prisma } from "@prisma/client";
 import type { Session } from "next-auth";
 import { z } from "zod";
 
@@ -47,12 +49,34 @@ const createSchema = z.object({
   description: z.string().max(4000).optional().nullable(),
   testId: z.string().min(1),
   responsibleUserId: z.string().optional().nullable(),
-  startsAt: z.string().min(1),
-  endsAt: z.string().optional().nullable(),
+  startsAt: z.string().trim().min(1, "Boshlanish vaqti majburiy."),
+  endsAt: z
+    .string()
+    .optional()
+    .nullable()
+    .transform((s) => {
+      if (s == null) return null;
+      const t = String(s).trim();
+      return t.length ? t : null;
+    }),
   durationMinutes: z.coerce.number().int().min(5).max(300),
   participantLimit: z.coerce.number().int().min(1).max(100_000).optional().nullable(),
   antiCheatStrictness: z.enum(["OFF", "STANDARD", "STRICT"]),
   resultVisibility: z.enum(["IMMEDIATE", "DELAYED"]),
+});
+
+const scheduleUpdateSchema = z.object({
+  olympiadId: z.string().min(1),
+  startsAt: z.string().trim().min(1, "Boshlanish vaqti majburiy."),
+  endsAt: z
+    .string()
+    .optional()
+    .nullable()
+    .transform((s) => {
+      if (s == null) return null;
+      const t = String(s).trim();
+      return t.length ? t : null;
+    }),
 });
 
 export async function getTestsEligibleForOlympiad() {
@@ -124,23 +148,33 @@ export async function createOlympiadAction(
     testId: formData.get("testId"),
     responsibleUserId: formData.get("responsibleUserId") || null,
     startsAt: formData.get("startsAt"),
-    endsAt: formData.get("endsAt") || null,
+    endsAt: formData.get("endsAt"),
     durationMinutes: formData.get("durationMinutes"),
     participantLimit: formData.get("participantLimit") || null,
     antiCheatStrictness: formData.get("antiCheatStrictness") ?? "STANDARD",
     resultVisibility: formData.get("resultVisibility") ?? "DELAYED",
   });
   if (!parsed.success) {
-    return { ok: false, error: parsed.error.flatten().fieldErrors.title?.[0] ?? "Ma’lumotlar noto‘g‘ri." };
+    const fe = parsed.error.flatten().fieldErrors;
+    const msg =
+      fe.startsAt?.[0] ??
+      fe.endsAt?.[0] ??
+      fe.durationMinutes?.[0] ??
+      fe.title?.[0] ??
+      "Ma’lumotlar noto‘g‘ri.";
+    return { ok: false, error: msg };
   }
   const v = parsed.data;
   const shuffleQuestions = formData.get("shuffleQuestions") === "on";
   const shuffleOptions = formData.get("shuffleOptions") === "on";
   const startsAt = new Date(v.startsAt);
-  const endsAt = v.endsAt ? new Date(v.endsAt) : null;
+  const endsAtRaw = typeof v.endsAt === "string" ? v.endsAt.trim() : "";
+  const endsAt = endsAtRaw.length > 0 ? new Date(endsAtRaw) : null;
   if (Number.isNaN(startsAt.getTime())) return { ok: false, error: "Boshlanish vaqti noto‘g‘ri." };
   if (endsAt && Number.isNaN(endsAt.getTime())) return { ok: false, error: "Yakun vaqti noto‘g‘ri." };
-  if (endsAt && endsAt <= startsAt) return { ok: false, error: "Yakun boshlanishdan keyin bo‘lishi kerak." };
+  if (endsAt && endsAt.getTime() <= startsAt.getTime()) {
+    return { ok: false, error: "Yakun vaqti boshlanish vaqtidan keyin bo‘lishi kerak (ikkala vaqt mustaqil)." };
+  }
 
   let responsibleUserId = v.responsibleUserId?.trim() || null;
   if (session.user.role === "TEACHER") {
@@ -188,6 +222,63 @@ export async function createOlympiadAction(
     return { ok: true, id: row.id };
   } catch {
     return { ok: false, error: "Yaratishda xato." };
+  }
+}
+
+export async function updateOlympiadScheduleAction(
+  _prev: null | { ok: true } | { ok: false; error: string },
+  formData: FormData,
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  const session = await auth();
+  if (!session?.user?.id) return { ok: false, error: "Kirish talab qilinadi." };
+  if (!canOlympiadManage(session)) return { ok: false, error: "Ruxsat yo‘q." };
+
+  const parsed = scheduleUpdateSchema.safeParse({
+    olympiadId: formData.get("olympiadId"),
+    startsAt: formData.get("startsAt"),
+    endsAt: formData.get("endsAt"),
+  });
+  if (!parsed.success) {
+    const fe = parsed.error.flatten().fieldErrors;
+    return {
+      ok: false,
+      error: fe.startsAt?.[0] ?? fe.endsAt?.[0] ?? fe.olympiadId?.[0] ?? "Jadval ma’lumotlari noto‘g‘ri.",
+    };
+  }
+  const { olympiadId, startsAt: startsRaw, endsAt: endsRaw } = parsed.data;
+  try {
+    await assertOlympiadManage(session, olympiadId);
+  } catch {
+    return { ok: false, error: "Ruxsat yo‘q." };
+  }
+
+  const startsAt = new Date(startsRaw);
+  const endsAt = endsRaw ? new Date(endsRaw) : null;
+  if (Number.isNaN(startsAt.getTime())) return { ok: false, error: "Boshlanish vaqti noto‘g‘ri." };
+  if (endsAt && Number.isNaN(endsAt.getTime())) return { ok: false, error: "Yakun vaqti noto‘g‘ri." };
+  if (endsAt && endsAt.getTime() <= startsAt.getTime()) {
+    return { ok: false, error: "Yakun vaqti boshlanish vaqtidan keyin bo‘lishi kerak." };
+  }
+
+  try {
+    await prisma.olympiad.update({
+      where: { id: olympiadId },
+      data: { startsAt, endsAt },
+    });
+    await writeAuditLog({
+      actorUserId: session.user.id,
+      action: "OLYMPIAD_SCHEDULE_UPDATE",
+      entityType: "Olympiad",
+      entityId: olympiadId,
+      metadata: { startsAt: startsAt.toISOString(), endsAt: endsAt?.toISOString() ?? null },
+    });
+    revalidatePath(`/admin/oimpiadalar/${olympiadId}`);
+    revalidatePath(`/oqituvchi/oimpiadalar/${olympiadId}`);
+    revalidatePath("/admin/oimpiadalar");
+    revalidatePath("/oqituvchi/oimpiadalar");
+    return { ok: true };
+  } catch {
+    return { ok: false, error: "Saqlashda xato." };
   }
 }
 
@@ -306,49 +397,37 @@ export async function publishOlympiadResultsAction(
   }
   const now = new Date();
   const includeAuto = isOlympiadPublishIncludeAutoFinalized();
-  const all = await prisma.olympiadResult.findMany({
-    where: { olympiadId },
-    orderBy: [{ score: "desc" }, { id: "asc" }],
-    select: { id: true, score: true, autoFinalized: true },
-  });
+  // WHY: Count only — ranking runs in SQL so we never materialize all rows in Node.
+  const count = await prisma.olympiadResult.count({ where: { olympiadId } });
 
-  const forRanking = all.filter((r) => includeAuto || !r.autoFinalized);
-  const rankById = new Map<string, number>();
-  let denseRank = 1;
-  for (let i = 0; i < forRanking.length; i++) {
-    const r = forRanking[i]!;
-    if (i > 0 && (r.score ?? 0) < (forRanking[i - 1]!.score ?? 0)) {
-      denseRank++;
-    }
-    rankById.set(r.id, denseRank);
-  }
-
-  await prisma.$transaction(async (tx) => {
-    for (const r of all) {
-      await tx.olympiadResult.update({
-        where: { id: r.id },
-        data: {
-          rank: rankById.get(r.id) ?? null,
-          published: true,
-          approvedAt: now,
-        },
+  await prisma.$transaction(
+    async (tx) => {
+      await executeOlympiadPublishRankingInTx(tx, {
+        olympiadId,
+        includeAutoFinalized: includeAuto,
+        approvedAt: now,
       });
-    }
-    await tx.olympiad.update({
-      where: { id: olympiadId },
-      data: { resultsPublishedAt: now },
-    });
-  });
+      await tx.olympiad.update({
+        where: { id: olympiadId },
+        data: { resultsPublishedAt: now },
+      });
+    },
+    { maxWait: 20_000, timeout: 120_000 },
+  );
   await writeAuditLog({
     actorUserId: session.user.id,
     action: "OLYMPIAD_RESULTS_PUBLISH",
     entityType: "Olympiad",
     entityId: olympiadId,
-    metadata: { count: all.length, includeAutoFinalized: includeAuto },
+    metadata: {
+      count,
+      includeAutoFinalized: includeAuto,
+      ranking: "sql_dense_rank_by_grade",
+    },
   });
   revalidatePath(`/admin/oimpiadalar/${olympiadId}`);
   revalidatePath(`/oqituvchi/oimpiadalar/${olympiadId}`);
-  return { ok: true, count: all.length };
+  return { ok: true, count };
 }
 
 export async function listOlympiadsForDashboard() {
@@ -561,4 +640,183 @@ export async function revokeOlympiadCertificateFormAction(formData: FormData): P
   }
   revalidatePath(`${revalidatePrefix}/${olympiadId}`);
   revalidatePath(revalidatePrefix);
+}
+
+const ADMIN_OLYMPIAD_RESULT_FILTER_MAX = 200;
+
+function clampAdminResultFilter(raw: string | undefined): string {
+  const t = (raw ?? "").trim();
+  if (!t) return "";
+  return t.length > ADMIN_OLYMPIAD_RESULT_FILTER_MAX ? t.slice(0, ADMIN_OLYMPIAD_RESULT_FILTER_MAX) : t;
+}
+
+export type AdminOlympiadResultRow = {
+  id: string;
+  rank: number | null;
+  score: number | null;
+  maxScore: number | null;
+  published: boolean;
+  olympiadId: string;
+  olympiadTitle: string;
+  firstName: string;
+  lastName: string;
+  gradeLabel: string;
+  schoolName: string;
+  timeSpentSec: number | null;
+  submittedAt: string | null;
+};
+
+export async function listAdminOlympiadResultsTable(params: {
+  olympiadId?: string;
+  gradeLabel?: string;
+  school?: string;
+  name?: string;
+  page: number;
+  pageSize: number;
+}): Promise<{ rows: AdminOlympiadResultRow[]; total: number; olympiadOptions: { id: string; title: string }[] } | null> {
+  const session = await auth();
+  if (!session?.user?.id || !canOlympiadManage(session)) return null;
+
+  const page = Math.max(1, Math.floor(params.page) || 1);
+  const pageSize = Math.min(100, Math.max(1, Math.floor(params.pageSize) || 25));
+
+  const participantWhere: Prisma.OlympiadParticipantWhereInput = {};
+  const g = clampAdminResultFilter(params.gradeLabel);
+  const s = clampAdminResultFilter(params.school);
+  const n = clampAdminResultFilter(params.name);
+  if (g) participantWhere.gradeLabel = { contains: g, mode: "insensitive" };
+  if (s) participantWhere.schoolName = { contains: s, mode: "insensitive" };
+  if (n) {
+    participantWhere.OR = [
+      { firstName: { contains: n, mode: "insensitive" } },
+      { lastName: { contains: n, mode: "insensitive" } },
+    ];
+  }
+
+  const where: Prisma.OlympiadResultWhereInput = {};
+  const oid = clampAdminResultFilter(params.olympiadId);
+  if (oid) where.olympiadId = oid;
+
+  if (session.user.role === "TEACHER") {
+    where.olympiad = {
+      OR: [{ createdByUserId: session.user.id }, { responsibleUserId: session.user.id }],
+    };
+  }
+
+  if (Object.keys(participantWhere).length) where.participant = participantWhere;
+
+  const olympiadWhere: Prisma.OlympiadWhereInput =
+    session.user.role === "TEACHER"
+      ? { OR: [{ createdByUserId: session.user.id }, { responsibleUserId: session.user.id }] }
+      : {};
+
+  const [total, rawRows, olympiadOptions] = await Promise.all([
+    prisma.olympiadResult.count({ where }),
+    prisma.olympiadResult.findMany({
+      where,
+      orderBy: [{ score: "desc" }, { id: "asc" }],
+      skip: (page - 1) * pageSize,
+      take: pageSize,
+      select: {
+        id: true,
+        rank: true,
+        score: true,
+        maxScore: true,
+        published: true,
+        olympiadId: true,
+        olympiad: { select: { title: true } },
+        participant: { select: { firstName: true, lastName: true, gradeLabel: true, schoolName: true } },
+        session: { select: { startedAt: true, submittedAt: true } },
+      },
+    }),
+    prisma.olympiad.findMany({
+      where: olympiadWhere,
+      select: { id: true, title: true },
+      orderBy: { startsAt: "desc" },
+      // WHY: Cap options dropdown size — unbounded olympiad lists hurt TTFB for admins.
+      take: 100,
+    }),
+  ]);
+
+  const rows: AdminOlympiadResultRow[] = rawRows.map((r) => {
+    const started = r.session.startedAt;
+    const ended = r.session.submittedAt;
+    const timeSpentSec =
+      started && ended ? Math.max(0, Math.round((ended.getTime() - started.getTime()) / 1000)) : null;
+    return {
+      id: r.id,
+      rank: r.rank,
+      score: r.score,
+      maxScore: r.maxScore,
+      published: r.published,
+      olympiadId: r.olympiadId,
+      olympiadTitle: r.olympiad.title,
+      firstName: r.participant.firstName,
+      lastName: r.participant.lastName,
+      gradeLabel: r.participant.gradeLabel,
+      schoolName: r.participant.schoolName,
+      timeSpentSec,
+      submittedAt: ended?.toISOString() ?? null,
+    };
+  });
+
+  return { total, rows, olympiadOptions };
+}
+
+function csvEscapeCell(v: string): string {
+  if (/[",\r\n]/.test(v)) return `"${v.replace(/"/g, '""')}"`;
+  return v;
+}
+
+export async function exportAdminOlympiadResultsCsv(filters: {
+  olympiadId?: string;
+  gradeLabel?: string;
+  school?: string;
+  name?: string;
+}): Promise<{ ok: true; csvText: string } | { ok: false; error: string }> {
+  const session = await auth();
+  if (!session?.user?.id || !canOlympiadManage(session)) return { ok: false, error: "Ruxsat yo‘q." };
+
+  // WHY: Streaming pages avoids a single 5000-row `findMany` (memory + DB load) and caps worst-case export size.
+  const MAX_CSV_ROWS = 2000;
+  const PAGE_SIZE = 100;
+  const header = ["Reyting", "Foiz", "Maks ball", "Ism", "Familiya", "Sinf", "Maktab", "Olimpiada", "Vaqt (s)", "E'lon"];
+  const lines = [header.join(",")];
+  let page = 1;
+  let totalRows = 0;
+  for (;;) {
+    if (totalRows >= MAX_CSV_ROWS) break;
+    const table = await listAdminOlympiadResultsTable({
+      olympiadId: clampAdminResultFilter(filters.olympiadId),
+      gradeLabel: clampAdminResultFilter(filters.gradeLabel),
+      school: clampAdminResultFilter(filters.school),
+      name: clampAdminResultFilter(filters.name),
+      page,
+      pageSize: PAGE_SIZE,
+    });
+    if (!table) return { ok: false, error: "Ma’lumot olinmadi." };
+    if (!table.rows.length) break;
+    for (const r of table.rows) {
+      if (totalRows >= MAX_CSV_ROWS) break;
+      lines.push(
+        [
+          csvEscapeCell(r.rank != null ? String(r.rank) : ""),
+          csvEscapeCell(r.score != null ? String(r.score) : ""),
+          csvEscapeCell(r.maxScore != null ? String(r.maxScore) : ""),
+          csvEscapeCell(r.firstName),
+          csvEscapeCell(r.lastName),
+          csvEscapeCell(r.gradeLabel),
+          csvEscapeCell(r.schoolName),
+          csvEscapeCell(r.olympiadTitle),
+          csvEscapeCell(r.timeSpentSec != null ? String(r.timeSpentSec) : ""),
+          csvEscapeCell(r.published ? "ha" : "yo‘q"),
+        ].join(","),
+      );
+      totalRows += 1;
+    }
+    if (table.rows.length < PAGE_SIZE) break;
+    page += 1;
+  }
+  const csvText = "\uFEFF" + lines.join("\r\n");
+  return { ok: true, csvText };
 }

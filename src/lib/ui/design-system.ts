@@ -21,7 +21,7 @@ export const olympiadType = {
   h3: "text-xl font-semibold tracking-tight sm:text-2xl",
   body: "text-base leading-relaxed",
   bodyLg: "text-lg leading-relaxed",
-  caption: "text-sm text-slate-600 dark:text-slate-400",
+  caption: "text-sm text-slate-700 dark:text-slate-300",
   overline: "text-xs font-semibold uppercase tracking-widest",
 } as const;
 
@@ -67,7 +67,8 @@ export const olympiadCard = {
 
 /** Micro-interaction utilities */
 export const olympiadMotion = {
-  lift: "hover:-translate-y-0.5 hover:shadow-lg transition-transform duration-200",
+  /** WHY: Hover lift is decorative; disabling it under `prefers-reduced-motion` avoids subtle layout jitter for sensitive users. */
+  lift: "hover:-translate-y-0.5 hover:shadow-lg transition-transform duration-200 motion-reduce:hover:translate-y-0 motion-reduce:transition-shadow",
   fadeIn: "opacity-0 animate-[iq-fade-up_0.4s_ease-out_forwards]",
   slideUp: "opacity-0 animate-[iq-fade-scale_0.4s_ease-out_forwards]",
   pulseWarn: "animate-pulse",

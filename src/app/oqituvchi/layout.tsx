@@ -14,6 +14,7 @@ const items = [
   { href: "/oqituvchi/oquvchilar", label: "O‘quvchilar", icon: "user" as const },
   { href: "/oqituvchi/reyting", label: "Reyting", icon: "trophy" as const },
   { href: "/oqituvchi/oimpiadalar", label: "Olimpiadalar", icon: "layers" as const },
+  { href: "/oqituvchi/oimpiadalar/natijalar", label: "Olimpiada natijalari", icon: "trophy" as const },
 ];
 
 export default function TeacherLayout({ children }: { children: React.ReactNode }) {

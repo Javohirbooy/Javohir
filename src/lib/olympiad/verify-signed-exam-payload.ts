@@ -26,7 +26,9 @@ export async function verifyOlympiadSignedAnswerPayload(
     return { ok: false, error: "Server sozlamasi: AUTH_SECRET talab qilinadi." };
   }
 
-  if (!signing || !Number.isFinite(signing.seq) || signing.seq < 1) {
+  // WHY: Strict integer bounds stop float / huge-seq abuse and keep DB `autosaveSeq` comparisons well-defined.
+  const MAX_CLIENT_SEQ = 50_000_000;
+  if (!signing || !Number.isInteger(signing.seq) || signing.seq < 1 || signing.seq > MAX_CLIENT_SEQ) {
     return { ok: false, error: "Imzolanmagan yoki noto‘liq javob paketi (seq)." };
   }
 

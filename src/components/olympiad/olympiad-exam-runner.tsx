@@ -33,6 +33,7 @@ import {
   playSoftSaveChime,
   shouldAutoFocusMode,
 } from "@/lib/olympiad/exam-hybrid-ux";
+import { isOlympiadDevPerfDiagnosticsEnabled } from "@/lib/olympiad/feature-flags";
 import { cn } from "@/lib/utils";
 import { Check, LayoutGrid, Loader2, Maximize2, Square, Volume2, VolumeX } from "lucide-react";
 
@@ -94,7 +95,11 @@ export function OlympiadExamRunner({
   const tabId = useMemo(() => (globalThis.crypto?.randomUUID?.() ?? `t${Date.now()}`) as string, []);
   const lastMultiTabViolationAt = useRef(0);
 
-  const [timerSec, setTimerSec] = useState(() => remainingSeconds(serverNow, serverEndsAt));
+  const [timerAnchor, setTimerAnchor] = useState(() => ({ serverNow, serverEndsAt }));
+  const timerAnchorRef = useRef(timerAnchor);
+  timerAnchorRef.current = timerAnchor;
+
+  const badgeTotalSeconds = remainingSeconds(timerAnchor.serverNow, timerAnchor.serverEndsAt);
   const [done, setDone] = useState<{ score: number } | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [pending, start] = useTransition();
@@ -113,6 +118,15 @@ export function OlympiadExamRunner({
   const milestoneSeedDone = useRef(false);
   const autoFocusApplied = useRef(false);
   const pulseTimer = useRef<number | null>(null);
+
+  const devRenderCount = useRef(0);
+  if (isOlympiadDevPerfDiagnosticsEnabled()) {
+    // WHY: Intentionally in render path — flag is dev-only; surfaces accidental render storms from timer/store churn.
+    devRenderCount.current += 1;
+    if (devRenderCount.current % 45 === 0) {
+      console.warn(`[olympiad-dev] OlympiadExamRunner render count=${devRenderCount.current}`);
+    }
+  }
 
   const q = questions[step];
   const progress = questions.length ? ((step + (done ? 1 : 0)) / questions.length) * 100 : 0;
@@ -140,12 +154,13 @@ export function OlympiadExamRunner({
       optionFlipLog.current = optionFlipLog.current.filter((o) => o.t > now - 25_000);
       const jumps = stepNavTimestamps.current.length;
       const flips = optionFlipLog.current.filter((o) => o.q === step && o.t > now - 20_000).length;
+      const timerSec = remainingSeconds(timerAnchorRef.current.serverNow, timerAnchorRef.current.serverEndsAt);
       const s = computeExamStressScore({
         stepJumpsLast25s: jumps,
         optionFlipsOnCurrentStep20s: flips,
         timerSec,
       });
-      setStress(s);
+      setStress((prev) => (prev === s ? prev : s));
       if (shouldAutoFocusMode(s) && !autoFocusApplied.current) {
         autoFocusApplied.current = true;
         setFocusMode(true);
@@ -154,7 +169,7 @@ export function OlympiadExamRunner({
       }
     }, 2000);
     return () => window.clearInterval(id);
-  }, [done, step, timerSec]);
+  }, [done, step]);
 
   useEffect(() => {
     if (done || !questions.length) return;
@@ -196,7 +211,8 @@ export function OlympiadExamRunner({
           lastQueuedJson.current = last.payloadJson;
         } else {
           if (res.error) setErr(res.error);
-          break;
+          // WHY: Jittered backoff reduces thundering herds when many tabs retry autosave after a transient 5xx.
+          await new Promise((r) => window.setTimeout(r, 350 + Math.random() * 900));
         }
       }
       if (anyOk) {
@@ -241,7 +257,7 @@ export function OlympiadExamRunner({
   }, []);
 
   useEffect(() => {
-    setTimerSec(remainingSeconds(serverNow, serverEndsAt));
+    setTimerAnchor({ serverNow, serverEndsAt });
   }, [serverNow, serverEndsAt]);
 
   useEffect(() => {
@@ -249,7 +265,7 @@ export function OlympiadExamRunner({
       void (async () => {
         const r = await syncOlympiadTimer(sessionId);
         if (r.ok && r.serverEndsAt) {
-          setTimerSec(remainingSeconds(r.serverNow, r.serverEndsAt));
+          setTimerAnchor({ serverNow: r.serverNow, serverEndsAt: r.serverEndsAt });
         }
       })();
     }, 30_000);
@@ -489,7 +505,7 @@ export function OlympiadExamRunner({
   }
 
   return (
-    <div className={cn("relative pb-28 sm:pb-6", strict && "select-none")}>
+    <div className={cn("relative min-w-0 overflow-x-hidden pb-[max(7.5rem,env(safe-area-inset-bottom)+5.5rem)] sm:pb-6", strict && "select-none")}>
       {enableExamWatermark && watermarkText ? (
         <div
           className="pointer-events-none fixed inset-0 z-[5] overflow-hidden opacity-[0.06] dark:opacity-[0.08]"
@@ -508,23 +524,23 @@ export function OlympiadExamRunner({
         </div>
       ) : null}
 
-      <header className="sticky top-0 z-30 mb-4 border-b border-white/10 bg-slate-950/85 pb-3 pt-1 backdrop-blur-xl dark:bg-slate-950/90">
+      <header className="sticky top-16 z-40 mb-4 border-b border-white/15 bg-slate-950/90 pb-3 pt-[max(0.25rem,env(safe-area-inset-top))] backdrop-blur-xl dark:bg-slate-950/95">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-2">
-              <p className={cn(olympiadType.overline, "text-white/70")}>Imtihon</p>
+              <p className={cn(olympiadType.overline, "text-white/85")}>Imtihon</p>
               {saveFlash ? (
-                <span className="inline-flex items-center gap-1 rounded-full bg-[#22C55E]/20 px-2.5 py-0.5 text-xs font-semibold text-emerald-100 ring-1 ring-[#22C55E]/40 animate-[iq-fade-up_0.35s_ease-out]">
-                  <Check className="h-3.5 w-3.5" aria-hidden />
+                <span className="inline-flex items-center gap-1 rounded-full bg-[#22C55E]/25 px-2.5 py-0.5 text-xs font-semibold text-emerald-50 ring-1 ring-[#22C55E]/50 motion-reduce:animate-none animate-[iq-fade-up_0.35s_ease-out]">
+                  <Check className="h-3.5 w-3.5 shrink-0" aria-hidden />
                   Saqlangan
                 </span>
               ) : saveBusy ? (
-                <span className="inline-flex items-center gap-1 text-xs text-white/70">
-                  <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden />
+                <span className="inline-flex items-center gap-1 text-xs font-medium text-white/85" aria-live="polite">
+                  <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin" aria-hidden />
                   Saqlanmoqda…
                 </span>
               ) : (
-                <span className="inline-flex items-center gap-1.5 text-xs text-white/50">
+                <span className="inline-flex items-center gap-1.5 text-xs font-medium text-white/80">
                   <StatusIndicator tone="neutral" label="Avtosave holati" />
                   Tayyor
                 </span>
@@ -534,7 +550,7 @@ export function OlympiadExamRunner({
             <div className="mt-2 max-w-md space-y-2">
               <OlympiadExamProgressBar value={progress} trackClassName="bg-white/15" />
               <div>
-                <p className="mb-0.5 text-[10px] font-semibold uppercase tracking-wide text-white/55">Javoblar (momentum)</p>
+                <p className="mb-0.5 text-[10px] font-semibold uppercase tracking-wide text-white/80">Javoblar (momentum)</p>
                 <OlympiadExamProgressBar
                   value={momentum}
                   trackClassName="bg-white/12"
@@ -542,33 +558,33 @@ export function OlympiadExamRunner({
                 />
               </div>
             </div>
-            <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-white/70">
+            <div className="mt-1 flex flex-wrap items-center gap-2 text-xs font-medium text-white/85">
               <span>
                 Savol {step + 1} / {questions.length}
               </span>
               {stress >= 40 ? (
-                <span className="rounded-full bg-white/10 px-2 py-0.5 text-[11px] text-amber-100 ring-1 ring-amber-400/30">
+                <span className="rounded-full bg-amber-500/25 px-2 py-0.5 text-[11px] font-semibold text-amber-50 ring-1 ring-amber-400/50">
                   Barqarorlik: avval joriy savolni yakunlang
                 </span>
               ) : null}
             </div>
           </div>
           <div className="flex shrink-0 flex-wrap items-center gap-2 sm:flex-col sm:items-end md:flex-row md:items-center">
-            <TimerBadge totalSeconds={timerSec} warnBelowSeconds={600} criticalBelowSeconds={60} onExpire={handleTimerExpire} />
+            <TimerBadge totalSeconds={badgeTotalSeconds} warnBelowSeconds={600} criticalBelowSeconds={60} onExpire={handleTimerExpire} />
             <button
               type="button"
               onClick={toggleExamSound}
-              className="inline-flex min-h-[44px] min-w-[44px] items-center justify-center gap-2 rounded-xl border border-white/20 bg-white/10 px-3 text-sm font-medium text-white transition hover:bg-white/15"
+              className="inline-flex min-h-[44px] min-w-[44px] items-center justify-center gap-2 rounded-xl border border-white/20 bg-white/10 px-3 text-sm font-medium text-white outline-none transition hover:bg-white/20 focus-visible:ring-2 focus-visible:ring-sky-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950"
               aria-pressed={soundOn}
               aria-label={soundOn ? "Avtosave ovozini o‘chirish" : "Avtosave ovozini yoqish"}
             >
-              {soundOn ? <Volume2 className="h-5 w-5" aria-hidden /> : <VolumeX className="h-5 w-5" aria-hidden />}
+              {soundOn ? <Volume2 className="h-5 w-5 shrink-0" aria-hidden /> : <VolumeX className="h-5 w-5 shrink-0" aria-hidden />}
               <span className="hidden sm:inline">{soundOn ? "Ovoz" : "Ovozsiz"}</span>
             </button>
             <button
               type="button"
               onClick={() => setFocusMode((f) => !f)}
-              className="inline-flex min-h-[44px] min-w-[44px] items-center justify-center gap-2 rounded-xl border border-white/20 bg-white/10 px-3 text-sm font-medium text-white transition hover:bg-white/15"
+              className="inline-flex min-h-[44px] min-w-[44px] items-center justify-center gap-2 rounded-xl border border-white/20 bg-white/10 px-3 text-sm font-medium text-white outline-none transition hover:bg-white/20 focus-visible:ring-2 focus-visible:ring-sky-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950"
               aria-pressed={focusMode}
               aria-label={focusMode ? "Savollar panelini ko‘rsatish" : "Fokus rejimi"}
             >
@@ -582,7 +598,7 @@ export function OlympiadExamRunner({
       {hybridTip ? (
         <div
           role="status"
-          className="mb-4 animate-[iq-fade-up_0.4s_ease-out_forwards] rounded-2xl border border-[#4F7CFF]/25 bg-gradient-to-r from-[#4F7CFF]/15 to-emerald-500/10 px-4 py-3 text-sm font-medium text-slate-800 shadow-sm dark:border-white/10 dark:from-sky-500/20 dark:to-emerald-500/10 dark:text-slate-100"
+          className="mb-4 motion-reduce:animate-none animate-[iq-fade-up_0.4s_ease-out_forwards] rounded-2xl border border-[#4F7CFF]/30 bg-gradient-to-r from-[#4F7CFF]/15 to-emerald-500/10 px-4 py-3 text-sm font-medium text-slate-900 shadow-sm dark:border-white/15 dark:from-sky-500/25 dark:to-emerald-500/10 dark:text-slate-100"
         >
           {hybridTip}
         </div>
@@ -603,9 +619,9 @@ export function OlympiadExamRunner({
       <div className="relative z-10 flex flex-col gap-4 lg:flex-row lg:items-start">
         <aside
           className={cn(
-            "lg:w-60 lg:shrink-0 lg:transition-all lg:duration-300",
+            "min-w-0 lg:w-60 lg:shrink-0 lg:transition-[opacity,transform] lg:duration-200 lg:motion-reduce:transition-none",
             focusMode && "hidden",
-            !focusMode && "lg:sticky lg:top-[7.5rem]",
+            !focusMode && "lg:sticky lg:top-32",
           )}
         >
           <QuestionNavigator
@@ -620,7 +636,7 @@ export function OlympiadExamRunner({
         <main className="min-w-0 flex-1" onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
           <ExamCard
             key={step}
-            className="relative animate-[iq-fade-up_0.35s_ease-out_forwards] shadow-2xl"
+            className="relative shadow-2xl motion-reduce:animate-none animate-[iq-fade-up_0.2s_ease-out_forwards] motion-reduce:transform-none"
           >
             <div className={cn(olympiadType.h3, "text-slate-900 dark:text-slate-100")}>
               <QuestionRichText content={q?.text ?? ""} className="font-bold leading-snug" />
@@ -635,8 +651,8 @@ export function OlympiadExamRunner({
                     type="button"
                     onClick={() => selectOption(idx)}
                     className={cn(
-                      "flex min-h-[52px] gap-3 rounded-2xl border-2 px-4 py-4 text-left text-sm font-semibold transition-all duration-200 active:scale-[0.98]",
-                      pulsing && "animate-[iq-fade-scale_0.45s_ease-out]",
+                      "flex min-h-[52px] gap-3 rounded-2xl border-2 px-4 py-4 text-left text-sm font-semibold outline-none transition-colors duration-150 motion-reduce:transition-none active:scale-[0.98] motion-reduce:active:scale-100 focus-visible:ring-2 focus-visible:ring-[#4F7CFF]/60 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-slate-900",
+                      pulsing && "motion-reduce:animate-none animate-[iq-fade-scale_0.45s_ease-out]",
                       selected
                         ? "border-[#4F7CFF] bg-[#4F7CFF]/10 text-slate-900 shadow-md ring-2 ring-[#4F7CFF]/30 dark:bg-[#4F7CFF]/20 dark:text-white"
                         : "border-slate-200 bg-white text-slate-800 hover:border-[#4F7CFF]/50 hover:shadow-md dark:border-slate-600 dark:bg-slate-800/80 dark:text-slate-100 dark:hover:border-sky-500/50",
@@ -683,7 +699,7 @@ export function OlympiadExamRunner({
       </div>
 
       <nav
-        className="fixed bottom-0 left-0 right-0 z-40 flex gap-3 border-t border-white/10 bg-slate-950/95 p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] backdrop-blur-xl sm:hidden"
+        className="fixed bottom-0 left-0 right-0 z-40 flex gap-3 border-t border-white/15 bg-slate-950/95 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] ps-[max(0.75rem,env(safe-area-inset-left))] pe-[max(0.75rem,env(safe-area-inset-right))] backdrop-blur-xl sm:hidden"
         aria-label="Savol navigatsiyasi"
       >
         <Button variant="secondary" type="button" className="min-h-[48px] flex-1" onClick={prev} disabled={step === 0}>
