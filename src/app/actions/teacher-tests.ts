@@ -9,6 +9,7 @@ import { teacherCanComposeTest } from "@/lib/teacher-scope";
 import { writeAuditLog } from "@/lib/audit";
 import type { ActionResult } from "@/lib/action-result";
 import { errResult, okResult } from "@/lib/action-result";
+import { parseFormScheduleInstant } from "@/lib/datetime-local";
 import { PUBLIC_TESTS_DATA_TAG } from "@/lib/tests/public-test-queries";
 
 export type TeacherQuestionInput = {
@@ -62,12 +63,14 @@ function normalizeAntiCheat(raw: string | undefined): string {
 }
 
 function parseSchedule(startsAtRaw?: string | null, endsAtRaw?: string | null) {
-  const startsAt = startsAtRaw ? new Date(startsAtRaw) : null;
-  const endsAt = endsAtRaw ? new Date(endsAtRaw) : null;
-  if (startsAt && Number.isNaN(startsAt.getTime())) {
+  const startsTrim = startsAtRaw?.trim();
+  const endsTrim = endsAtRaw?.trim();
+  const startsAt = startsTrim ? parseFormScheduleInstant(startsTrim) : null;
+  const endsAt = endsTrim ? parseFormScheduleInstant(endsTrim) : null;
+  if (startsTrim && !startsAt) {
     return { ok: false as const, error: "Boshlanish vaqti noto‘g‘ri formatda." };
   }
-  if (endsAt && Number.isNaN(endsAt.getTime())) {
+  if (endsTrim && !endsAt) {
     return { ok: false as const, error: "Yakunlanish vaqti noto‘g‘ri formatda." };
   }
   if (startsAt && endsAt && endsAt <= startsAt) {

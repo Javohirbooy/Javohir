@@ -10,6 +10,7 @@ import {
   type TeacherQuestionInput,
 } from "@/app/actions/teacher-tests";
 import { DashboardCard } from "@/components/dashboard/dashboard-card";
+import { datetimeLocalValueToUtcIso } from "@/lib/datetime-local";
 
 /** Yorqin maydon: qora `select`/`datetime` OS ichida matn va optionlarni yashirib yuboradi. */
 const OL_DASH_FIELD =
@@ -173,8 +174,8 @@ export function TeacherTestCreateForm({
       isDraft: publishIntent === "draft",
       publishIntent,
       questions,
-      startsAt: startsAt || null,
-      endsAt: endsAt || null,
+      startsAt: startsAt ? (datetimeLocalValueToUtcIso(startsAt) ?? startsAt) : null,
+      endsAt: endsAt ? (datetimeLocalValueToUtcIso(endsAt) ?? endsAt) : null,
       protectedExamMode,
       tabSwitchPolicy,
       antiCheatMode,

@@ -17,6 +17,7 @@ import { issueCertificatesForOlympiad, revokeCertificateByVerifyId } from "@/lib
 import { readOlympiadFinalizeHeartbeat, type OlympiadCronHeartbeatPayload } from "@/lib/worker/olympiad-cron-heartbeat";
 import { OLYMPIAD_FINALIZATION_REASON } from "@/lib/olympiad/finalization-constants";
 import { isOlympiadPublishIncludeAutoFinalized } from "@/lib/olympiad/feature-flags";
+import { parseFormScheduleInstant } from "@/lib/datetime-local";
 import { executeOlympiadPublishRankingInTx } from "@/lib/olympiad/publish-ranking-sql";
 import type { Prisma } from "@prisma/client";
 import type { Session } from "next-auth";
@@ -167,11 +168,11 @@ export async function createOlympiadAction(
   const v = parsed.data;
   const shuffleQuestions = formData.get("shuffleQuestions") === "on";
   const shuffleOptions = formData.get("shuffleOptions") === "on";
-  const startsAt = new Date(v.startsAt);
+  const startsAt = parseFormScheduleInstant(v.startsAt);
   const endsAtRaw = typeof v.endsAt === "string" ? v.endsAt.trim() : "";
-  const endsAt = endsAtRaw.length > 0 ? new Date(endsAtRaw) : null;
-  if (Number.isNaN(startsAt.getTime())) return { ok: false, error: "Boshlanish vaqti noto‘g‘ri." };
-  if (endsAt && Number.isNaN(endsAt.getTime())) return { ok: false, error: "Yakun vaqti noto‘g‘ri." };
+  const endsAt = endsAtRaw.length > 0 ? parseFormScheduleInstant(endsAtRaw) : null;
+  if (!startsAt) return { ok: false, error: "Boshlanish vaqti noto‘g‘ri." };
+  if (endsAtRaw.length > 0 && !endsAt) return { ok: false, error: "Yakun vaqti noto‘g‘ri." };
   if (endsAt && endsAt.getTime() <= startsAt.getTime()) {
     return { ok: false, error: "Yakun vaqti boshlanish vaqtidan keyin bo‘lishi kerak (ikkala vaqt mustaqil)." };
   }
@@ -252,10 +253,10 @@ export async function updateOlympiadScheduleAction(
     return { ok: false, error: "Ruxsat yo‘q." };
   }
 
-  const startsAt = new Date(startsRaw);
-  const endsAt = endsRaw ? new Date(endsRaw) : null;
-  if (Number.isNaN(startsAt.getTime())) return { ok: false, error: "Boshlanish vaqti noto‘g‘ri." };
-  if (endsAt && Number.isNaN(endsAt.getTime())) return { ok: false, error: "Yakun vaqti noto‘g‘ri." };
+  const startsAt = parseFormScheduleInstant(startsRaw);
+  const endsAt = endsRaw ? parseFormScheduleInstant(endsRaw) : null;
+  if (!startsAt) return { ok: false, error: "Boshlanish vaqti noto‘g‘ri." };
+  if (endsRaw && !endsAt) return { ok: false, error: "Yakun vaqti noto‘g‘ri." };
   if (endsAt && endsAt.getTime() <= startsAt.getTime()) {
     return { ok: false, error: "Yakun vaqti boshlanish vaqtidan keyin bo‘lishi kerak." };
   }
@@ -313,8 +314,9 @@ export async function addOlympiadCodeAction(formData: FormData): Promise<{ ok: t
   const norm = normalizeOlympiadCode(parsed.data.plainCode);
   const codeHash = hashOlympiadCode(norm);
   const hint = codeHintFromNormalized(norm);
-  const expiresAt = parsed.data.expiresAt ? new Date(parsed.data.expiresAt) : null;
-  if (expiresAt && Number.isNaN(expiresAt.getTime())) return { ok: false, error: "Muddat noto‘g‘ri." };
+  const expiresAtRaw = parsed.data.expiresAt?.trim();
+  const expiresAt = expiresAtRaw ? parseFormScheduleInstant(expiresAtRaw) : null;
+  if (expiresAtRaw && !expiresAt) return { ok: false, error: "Muddat noto‘g‘ri." };
 
   try {
     await prisma.olympiadCode.create({

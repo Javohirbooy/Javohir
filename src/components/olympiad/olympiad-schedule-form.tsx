@@ -2,7 +2,7 @@
 
 import { updateOlympiadScheduleAction } from "@/app/actions/olympiad-admin";
 import { Button } from "@/components/ui/button";
-import { formatDateForDatetimeLocal } from "@/lib/datetime-local";
+import { datetimeLocalValueToUtcIso, formatDateForDatetimeLocal } from "@/lib/datetime-local";
 import { useRouter } from "next/navigation";
 import { useActionState, useEffect, useState } from "react";
 
@@ -27,7 +27,20 @@ export function OlympiadScheduleForm({
   const [startsAt, setStartsAt] = useState(() => isoToDatetimeLocalValue(startsAtIso));
   const [endsAt, setEndsAt] = useState(() => (endsAtIso ? isoToDatetimeLocalValue(endsAtIso) : ""));
 
-  const [state, formAction, pending] = useActionState(updateOlympiadScheduleAction, null as ScheduleState);
+  const [state, formAction, pending] = useActionState(
+    async (prev: ScheduleState, fd: FormData) => {
+      const s = String(fd.get("startsAt") ?? "");
+      const iso = datetimeLocalValueToUtcIso(s);
+      if (iso) fd.set("startsAt", iso);
+      const e = String(fd.get("endsAt") ?? "").trim();
+      if (e) {
+        const isoE = datetimeLocalValueToUtcIso(e);
+        if (isoE) fd.set("endsAt", isoE);
+      }
+      return updateOlympiadScheduleAction(prev, fd);
+    },
+    null as ScheduleState,
+  );
 
   useEffect(() => {
     if (state && "ok" in state && state.ok) {

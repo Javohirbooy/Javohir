@@ -3,6 +3,7 @@
 import { createOlympiadAction } from "@/app/actions/olympiad-admin";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { datetimeLocalValueToUtcIso } from "@/lib/datetime-local";
 import { useRouter } from "next/navigation";
 import { useActionState, useEffect, useState } from "react";
 
@@ -16,7 +17,20 @@ export function OlympiadCreateForm({
   basePath: string;
 }) {
   const router = useRouter();
-  const [state, formAction, pending] = useActionState(createOlympiadAction, null as CreateState);
+  const [state, formAction, pending] = useActionState(
+    async (prev: CreateState, fd: FormData) => {
+      const s = String(fd.get("startsAt") ?? "");
+      const iso = datetimeLocalValueToUtcIso(s);
+      if (iso) fd.set("startsAt", iso);
+      const e = String(fd.get("endsAt") ?? "").trim();
+      if (e) {
+        const isoE = datetimeLocalValueToUtcIso(e);
+        if (isoE) fd.set("endsAt", isoE);
+      }
+      return createOlympiadAction(prev, fd);
+    },
+    null as CreateState,
+  );
   const [startsAt, setStartsAt] = useState("");
   const [endsAt, setEndsAt] = useState("");
 
