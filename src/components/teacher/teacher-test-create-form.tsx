@@ -11,6 +11,7 @@ import {
 } from "@/app/actions/teacher-tests";
 import { DashboardCard } from "@/components/dashboard/dashboard-card";
 import { datetimeLocalValueToUtcIso } from "@/lib/datetime-local";
+import { MAX_QUESTION_INLINE_IMAGE_FILE_BYTES } from "@/lib/uploads/image-limits";
 
 /** Yorqin maydon: qora `select`/`datetime` OS ichida matn va optionlarni yashirib yuboradi. */
 const OL_DASH_FIELD =
@@ -542,8 +543,8 @@ export function TeacherTestCreateForm({
                     const f = e.target.files?.[0];
                     e.target.value = "";
                     if (!f) return;
-                    if (f.size > 450_000) {
-                      setError("Rasm hajmi ~450KB dan kichik bo‘lishi kerak.");
+                    if (f.size > MAX_QUESTION_INLINE_IMAGE_FILE_BYTES) {
+                      setError(`Rasm hajmi ${Math.round(MAX_QUESTION_INLINE_IMAGE_FILE_BYTES / (1024 * 1024))} MB dan oshmasligi kerak.`);
                       return;
                     }
                     const reader = new FileReader();
@@ -554,7 +555,7 @@ export function TeacherTestCreateForm({
                     reader.readAsDataURL(f);
                   }}
                 />
-                + Rasm qo‘shish (markdown)
+                + Rasm qo‘shish (barcha rasm turlari, ~12MB gacha)
               </label>
               <div className="mt-3 grid gap-2 sm:grid-cols-2">
                 {[0, 1, 2, 3].map((oi) => (

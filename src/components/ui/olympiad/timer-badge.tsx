@@ -62,9 +62,9 @@ export function TimerBadge({
           ? "border-[#EF4444]/60 bg-[#EF4444]/20 text-rose-950 shadow-[0_0_28px_-6px_rgba(239,68,68,0.55)] dark:border-rose-400/50 dark:bg-rose-950/50 dark:text-rose-50"
           : warn
             ? "border-[#F59E0B]/70 bg-[#F59E0B]/20 text-amber-950 shadow-[0_0_24px_-6px_rgba(245,158,11,0.45)] dark:border-amber-400/50 dark:bg-amber-950/40 dark:text-amber-50"
-            : "border-slate-300/90 bg-white text-slate-950 dark:border-slate-500 dark:bg-slate-800 dark:text-slate-50",
+            : "border-emerald-400/50 bg-emerald-50 text-emerald-950 shadow-md shadow-emerald-900/15 dark:border-emerald-400/50 dark:bg-emerald-950/85 dark:text-emerald-50",
         warn && !critical && "animate-pulse motion-reduce:animate-none",
-        "outline-none focus-visible:ring-2 focus-visible:ring-sky-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950 dark:focus-visible:ring-offset-slate-900",
+        "outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-emerald-950",
         className,
       )}
       role="timer"

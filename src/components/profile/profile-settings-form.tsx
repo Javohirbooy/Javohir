@@ -95,10 +95,12 @@ export function ProfileSettingsForm({
         />
       </label>
       <label className="block space-y-2">
-        <span className="text-sm font-semibold text-slate-700 dark:text-slate-200">Yoki avatar fayl yuklash (png/jpg/webp, 2MB)</span>
+        <span className="text-sm font-semibold text-slate-700 dark:text-slate-200">
+          Yoki avatar fayl yuklash (barcha keng tarqalgan rasm formatlari, ~10MB gacha)
+        </span>
         <input
           type="file"
-          accept="image/png,image/jpeg,image/webp"
+          accept="image/*"
           disabled={uploading || isPending}
           onChange={(e) => void onAvatarFileChange(e.target.files?.[0] ?? null)}
           className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-emerald-400/80 focus:ring-4 focus:ring-teal-400/20 dark:border-slate-600 dark:bg-slate-950 dark:text-slate-100"

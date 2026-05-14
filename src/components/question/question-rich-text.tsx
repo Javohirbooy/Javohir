@@ -7,6 +7,7 @@ import rehypeSanitize from "rehype-sanitize";
 import remarkGfm from "remark-gfm";
 import remarkMath from "remark-math";
 import { questionRichTextSchema } from "@/lib/rich-text/question-sanitize-schema";
+import { MAX_DATA_IMAGE_URL_CHARS } from "@/lib/uploads/image-limits";
 import { cn } from "@/lib/utils";
 
 function safeUrl(url: string): string {
@@ -15,7 +16,7 @@ function safeUrl(url: string): string {
     return "";
   }
   if (t.startsWith("data:image/")) {
-    return t.length < 2_500_000 ? t : "";
+    return t.length <= MAX_DATA_IMAGE_URL_CHARS ? t : "";
   }
   return t;
 }

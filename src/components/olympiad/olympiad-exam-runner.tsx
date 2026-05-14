@@ -524,41 +524,43 @@ export function OlympiadExamRunner({
         </div>
       ) : null}
 
-      <header className="sticky top-16 z-40 mb-4 border-b border-white/15 bg-slate-950/90 pb-3 pt-[max(0.25rem,env(safe-area-inset-top))] backdrop-blur-xl dark:bg-slate-950/95">
+      <header className="sticky top-16 z-40 mb-4 rounded-2xl border border-emerald-400/35 bg-gradient-to-br from-emerald-900/95 via-slate-900/92 to-teal-950/95 pb-3 pt-[max(0.25rem,env(safe-area-inset-top))] shadow-lg shadow-emerald-950/30 ring-1 ring-white/10 backdrop-blur-xl">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-2">
-              <p className={cn(olympiadType.overline, "text-white/85")}>Imtihon</p>
+              <p className={cn(olympiadType.overline, "text-emerald-100 drop-shadow-[0_1px_2px_rgba(0,0,0,0.45)]")}>Imtihon</p>
               {saveFlash ? (
-                <span className="inline-flex items-center gap-1 rounded-full bg-[#22C55E]/25 px-2.5 py-0.5 text-xs font-semibold text-emerald-50 ring-1 ring-[#22C55E]/50 motion-reduce:animate-none animate-[iq-fade-up_0.35s_ease-out]">
+                <span className="inline-flex items-center gap-1 rounded-full bg-[#22C55E]/25 px-2.5 py-0.5 text-xs font-semibold text-white ring-1 ring-[#22C55E]/50 motion-reduce:animate-none animate-[iq-fade-up_0.35s_ease-out]">
                   <Check className="h-3.5 w-3.5 shrink-0" aria-hidden />
                   Saqlangan
                 </span>
               ) : saveBusy ? (
-                <span className="inline-flex items-center gap-1 text-xs font-medium text-white/85" aria-live="polite">
+                <span className="inline-flex items-center gap-1 text-xs font-medium text-emerald-50 drop-shadow-[0_1px_2px_rgba(0,0,0,0.4)]" aria-live="polite">
                   <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin" aria-hidden />
                   Saqlanmoqda…
                 </span>
               ) : (
-                <span className="inline-flex items-center gap-1.5 text-xs font-medium text-white/80">
+                <span className="inline-flex items-center gap-1.5 text-xs font-medium text-emerald-50 drop-shadow-[0_1px_2px_rgba(0,0,0,0.4)]">
                   <StatusIndicator tone="neutral" label="Avtosave holati" />
                   Tayyor
                 </span>
               )}
             </div>
-            <p className="mt-1 truncate text-sm font-semibold text-white sm:text-base">{title}</p>
+            <p className="mt-1 truncate text-sm font-semibold text-white drop-shadow-[0_1px_3px_rgba(0,0,0,0.5)] sm:text-base">{title}</p>
             <div className="mt-2 max-w-md space-y-2">
-              <OlympiadExamProgressBar value={progress} trackClassName="bg-white/15" />
+              <OlympiadExamProgressBar value={progress} trackClassName="bg-black/25 ring-1 ring-white/10" />
               <div>
-                <p className="mb-0.5 text-[10px] font-semibold uppercase tracking-wide text-white/80">Javoblar (momentum)</p>
+                <p className="mb-0.5 text-[10px] font-semibold uppercase tracking-wide text-emerald-100 drop-shadow-[0_1px_2px_rgba(0,0,0,0.45)]">
+                  Javoblar (momentum)
+                </p>
                 <OlympiadExamProgressBar
                   value={momentum}
-                  trackClassName="bg-white/12"
+                  trackClassName="bg-black/25 ring-1 ring-white/10"
                   barClassName="from-emerald-400 via-teal-400 to-cyan-400"
                 />
               </div>
             </div>
-            <div className="mt-1 flex flex-wrap items-center gap-2 text-xs font-medium text-white/85">
+            <div className="mt-1 flex flex-wrap items-center gap-2 text-xs font-semibold text-emerald-50 drop-shadow-[0_1px_2px_rgba(0,0,0,0.45)]">
               <span>
                 Savol {step + 1} / {questions.length}
               </span>
@@ -574,7 +576,7 @@ export function OlympiadExamRunner({
             <button
               type="button"
               onClick={toggleExamSound}
-              className="inline-flex min-h-[44px] min-w-[44px] items-center justify-center gap-2 rounded-xl border border-white/20 bg-white/10 px-3 text-sm font-medium text-white outline-none transition hover:bg-white/20 focus-visible:ring-2 focus-visible:ring-sky-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950"
+              className="inline-flex min-h-[44px] min-w-[44px] items-center justify-center gap-2 rounded-xl border border-emerald-300/40 bg-emerald-950/45 px-3 text-sm font-semibold text-white shadow-sm outline-none transition hover:bg-emerald-800/55 focus-visible:ring-2 focus-visible:ring-emerald-300 focus-visible:ring-offset-2 focus-visible:ring-offset-emerald-950"
               aria-pressed={soundOn}
               aria-label={soundOn ? "Avtosave ovozini o‘chirish" : "Avtosave ovozini yoqish"}
             >
@@ -584,7 +586,7 @@ export function OlympiadExamRunner({
             <button
               type="button"
               onClick={() => setFocusMode((f) => !f)}
-              className="inline-flex min-h-[44px] min-w-[44px] items-center justify-center gap-2 rounded-xl border border-white/20 bg-white/10 px-3 text-sm font-medium text-white outline-none transition hover:bg-white/20 focus-visible:ring-2 focus-visible:ring-sky-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950"
+              className="inline-flex min-h-[44px] min-w-[44px] items-center justify-center gap-2 rounded-xl border border-emerald-300/40 bg-emerald-950/45 px-3 text-sm font-semibold text-white shadow-sm outline-none transition hover:bg-emerald-800/55 focus-visible:ring-2 focus-visible:ring-emerald-300 focus-visible:ring-offset-2 focus-visible:ring-offset-emerald-950"
               aria-pressed={focusMode}
               aria-label={focusMode ? "Savollar panelini ko‘rsatish" : "Fokus rejimi"}
             >
@@ -605,15 +607,20 @@ export function OlympiadExamRunner({
       ) : null}
 
       {strict ? (
-        <GlassCard className="mb-4 border-amber-300/40 bg-amber-500/10 p-4 text-sm text-amber-950 dark:border-amber-500/30 dark:bg-amber-950/30 dark:text-amber-50">
-          <p>
+        <div className="mb-4 rounded-2xl border border-emerald-400/45 bg-gradient-to-r from-emerald-600/40 via-teal-700/35 to-emerald-800/40 p-4 text-sm text-white shadow-md shadow-black/25 ring-1 ring-emerald-300/30 backdrop-blur-sm">
+          <p className="font-medium leading-relaxed text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.35)]">
             Xavfsiz rejim: nusxa ko&apos;chirish, yangi varaq va to&apos;liq ekrandan chiqish qayd etiladi.
           </p>
-          <Button type="button" variant="secondary" className="mt-3 min-h-[44px] text-xs" onClick={requestFs}>
+          <Button
+            type="button"
+            variant="secondary"
+            className="mt-3 min-h-[44px] border border-white/30 bg-white text-emerald-900 shadow-sm hover:bg-emerald-50"
+            onClick={requestFs}
+          >
             <Maximize2 className="mr-2 h-4 w-4" />
             To&apos;liq ekran
           </Button>
-        </GlassCard>
+        </div>
       ) : null}
 
       <div className="relative z-10 flex flex-col gap-4 lg:flex-row lg:items-start">
@@ -699,7 +706,7 @@ export function OlympiadExamRunner({
       </div>
 
       <nav
-        className="fixed bottom-0 left-0 right-0 z-40 flex gap-3 border-t border-white/15 bg-slate-950/95 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] ps-[max(0.75rem,env(safe-area-inset-left))] pe-[max(0.75rem,env(safe-area-inset-right))] backdrop-blur-xl sm:hidden"
+        className="fixed bottom-0 left-0 right-0 z-40 flex gap-3 border-t border-emerald-500/25 bg-gradient-to-r from-emerald-950/98 via-slate-950/98 to-teal-950/98 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] ps-[max(0.75rem,env(safe-area-inset-left))] pe-[max(0.75rem,env(safe-area-inset-right))] shadow-[0_-8px_30px_-10px_rgba(6,78,59,0.45)] backdrop-blur-xl sm:hidden"
         aria-label="Savol navigatsiyasi"
       >
         <Button variant="secondary" type="button" className="min-h-[48px] flex-1" onClick={prev} disabled={step === 0}>

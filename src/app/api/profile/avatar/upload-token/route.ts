@@ -4,7 +4,7 @@ import { auth } from "@/auth";
 import { createUploadToken } from "@/lib/upload-signature";
 
 function canUpload(role: string | undefined): boolean {
-  return role === "TEACHER" || role === "ADMIN";
+  return role === "TEACHER" || role === "ADMIN" || role === "SUPER_ADMIN";
 }
 
 async function postImpl() {
