@@ -11,6 +11,15 @@ import {
 } from "@/app/actions/teacher-tests";
 import { DashboardCard } from "@/components/dashboard/dashboard-card";
 
+/** Yorqin maydon: qora `select`/`datetime` OS ichida matn va optionlarni yashirib yuboradi. */
+const OL_DASH_FIELD =
+  "w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm outline-none placeholder:text-slate-500 focus-visible:border-sky-500 focus-visible:ring-2 focus-visible:ring-sky-400/35 [color-scheme:light]";
+
+const OL_DASH_FIELD_MONO = `${OL_DASH_FIELD} font-mono`;
+
+const OL_DASH_FIELD_COMPACT =
+  "min-h-[44px] rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm outline-none focus-visible:border-sky-500 focus-visible:ring-2 focus-visible:ring-sky-400/35 [color-scheme:light]";
+
 export type SubjectOption = { id: string; title: string; gradeId: string; gradeLabel: string };
 export type GradeOption = { id: string; name: string; number: number };
 
@@ -257,7 +266,7 @@ export function TeacherTestCreateForm({
                   setSubjectId("");
                   setTopicId("");
                 }}
-                className="w-full rounded-xl border border-white/15 bg-slate-950/60 px-3 py-2.5 text-sm text-white outline-none ring-violet-500/30 focus:ring-2"
+                className={OL_DASH_FIELD}
               >
                 {grades.map((g) => (
                   <option key={g.id} value={g.id}>
@@ -273,7 +282,7 @@ export function TeacherTestCreateForm({
             <input
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              className="w-full rounded-xl border border-white/15 bg-slate-950/60 px-3 py-2.5 text-sm text-white outline-none ring-violet-500/30 focus:ring-2"
+              className={OL_DASH_FIELD}
               placeholder="Masalan: Algebra — 1-bob nazorati"
             />
           </label>
@@ -284,7 +293,7 @@ export function TeacherTestCreateForm({
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               rows={3}
-              className="w-full rounded-xl border border-white/15 bg-slate-950/60 px-3 py-2.5 text-sm text-white outline-none ring-violet-500/30 focus:ring-2"
+              className={OL_DASH_FIELD}
               placeholder="O‘quvchilarga ko‘rinadigan qisqa izoh"
             />
           </label>
@@ -297,7 +306,7 @@ export function TeacherTestCreateForm({
                 setSubjectId(e.target.value);
                 setTopicId("");
               }}
-              className="w-full rounded-xl border border-white/15 bg-slate-950/60 px-3 py-2.5 text-sm text-white outline-none ring-violet-500/30 focus:ring-2"
+              className={OL_DASH_FIELD}
             >
               {filteredSubjects.length === 0 ? (
                 <option value="">—</option>
@@ -315,7 +324,7 @@ export function TeacherTestCreateForm({
             <select
               value={topicId}
               onChange={(e) => setTopicId(e.target.value)}
-              className="w-full rounded-xl border border-white/15 bg-slate-950/60 px-3 py-2.5 text-sm text-white outline-none ring-violet-500/30 focus:ring-2"
+              className={OL_DASH_FIELD}
             >
               <option value="">— Tanlanmagan —</option>
               {topicChoices.map((t) => (
@@ -331,7 +340,7 @@ export function TeacherTestCreateForm({
             <input
               value={topicTitle}
               onChange={(e) => setTopicTitle(e.target.value)}
-              className="w-full rounded-xl border border-white/15 bg-slate-950/60 px-3 py-2.5 text-sm text-white outline-none ring-violet-500/30 focus:ring-2"
+              className={OL_DASH_FIELD}
               placeholder="Agar yuqorida mavzu tanlanmasa, shu yerda yozing"
             />
           </label>
@@ -341,7 +350,7 @@ export function TeacherTestCreateForm({
             <select
               value={difficulty}
               onChange={(e) => setDifficulty(e.target.value)}
-              className="w-full rounded-xl border border-white/15 bg-slate-950/60 px-3 py-2.5 text-sm text-white outline-none ring-violet-500/30 focus:ring-2"
+              className={OL_DASH_FIELD}
             >
               <option value="EASY">Oson</option>
               <option value="MEDIUM">O‘rta</option>
@@ -355,7 +364,7 @@ export function TeacherTestCreateForm({
               min={1}
               value={durationMinutes}
               onChange={(e) => setDurationMinutes(Number(e.target.value) || 1)}
-              className="w-full rounded-xl border border-white/15 bg-slate-950/60 px-3 py-2.5 text-sm text-white outline-none ring-violet-500/30 focus:ring-2"
+              className={OL_DASH_FIELD}
             />
           </label>
           <label className="space-y-2">
@@ -366,7 +375,7 @@ export function TeacherTestCreateForm({
               max={100}
               value={passScore}
               onChange={(e) => setPassScore(Number(e.target.value) || 0)}
-              className="w-full rounded-xl border border-white/15 bg-slate-950/60 px-3 py-2.5 text-sm text-white outline-none ring-violet-500/30 focus:ring-2"
+              className={OL_DASH_FIELD}
             />
           </label>
           <label className="space-y-2">
@@ -376,7 +385,7 @@ export function TeacherTestCreateForm({
               min={0}
               value={maxAttempts}
               onChange={(e) => setMaxAttempts(Number(e.target.value) || 0)}
-              className="w-full rounded-xl border border-white/15 bg-slate-950/60 px-3 py-2.5 text-sm text-white outline-none ring-violet-500/30 focus:ring-2"
+              className={OL_DASH_FIELD}
             />
           </label>
           <label className="space-y-2">
@@ -386,7 +395,7 @@ export function TeacherTestCreateForm({
               min={1}
               value={questionCountTarget}
               onChange={(e) => setQuestionCountTarget(Number(e.target.value) || 1)}
-              className="w-full rounded-xl border border-white/15 bg-slate-950/60 px-3 py-2.5 text-sm text-white outline-none ring-violet-500/30 focus:ring-2"
+              className={OL_DASH_FIELD}
             />
           </label>
 
@@ -417,7 +426,7 @@ export function TeacherTestCreateForm({
               type="datetime-local"
               value={startsAt}
               onChange={(e) => setStartsAt(e.target.value)}
-              className="w-full rounded-xl border border-white/15 bg-slate-950/60 px-3 py-2.5 text-sm text-white outline-none ring-emerald-500/25 focus:ring-2"
+              className={OL_DASH_FIELD}
             />
           </label>
           <label className="space-y-2">
@@ -426,7 +435,7 @@ export function TeacherTestCreateForm({
               type="datetime-local"
               value={endsAt}
               onChange={(e) => setEndsAt(e.target.value)}
-              className="w-full rounded-xl border border-white/15 bg-slate-950/60 px-3 py-2.5 text-sm text-white outline-none ring-emerald-500/25 focus:ring-2"
+              className={OL_DASH_FIELD}
             />
           </label>
           <label className="space-y-2">
@@ -434,7 +443,7 @@ export function TeacherTestCreateForm({
             <select
               value={antiCheatMode}
               onChange={(e) => setAntiCheatMode(e.target.value)}
-              className="w-full rounded-xl border border-white/15 bg-slate-950/60 px-3 py-2.5 text-sm text-white outline-none ring-emerald-500/25 focus:ring-2"
+              className={OL_DASH_FIELD}
             >
               <option value="OFF">Oddiy</option>
               <option value="STANDARD">Standart</option>
@@ -455,7 +464,7 @@ export function TeacherTestCreateForm({
             <select
               value={tabSwitchPolicy}
               onChange={(e) => setTabSwitchPolicy(e.target.value)}
-              className="w-full rounded-xl border border-white/15 bg-slate-950/60 px-3 py-2.5 text-sm text-white outline-none ring-emerald-500/25 focus:ring-2"
+              className={OL_DASH_FIELD}
             >
               <option value="WARNING">Faqat ogohlantirish</option>
               <option value="AUTO_FAIL">Avto-yiqilish (0 ball)</option>
@@ -520,7 +529,7 @@ export function TeacherTestCreateForm({
                 value={q.text}
                 onChange={(e) => updateQuestion(qi, { text: e.target.value })}
                 rows={4}
-                className="w-full rounded-xl border border-white/12 bg-black/30 px-3 py-2 font-mono text-sm text-white placeholder:text-white/35"
+                className={`${OL_DASH_FIELD_MONO} resize-y`}
                 placeholder="Savol matni (Markdown / LaTeX qo‘llab-quvvatlanadi)"
               />
               <label className="mt-2 inline-flex cursor-pointer items-center gap-2 text-xs font-semibold text-cyan-300/90 hover:text-cyan-200">
@@ -553,17 +562,17 @@ export function TeacherTestCreateForm({
                     value={q.options[oi] ?? ""}
                     onChange={(e) => updateOption(qi, oi, e.target.value)}
                     rows={2}
-                    className="resize-y rounded-xl border border-white/12 bg-black/30 px-3 py-2 font-mono text-sm text-white placeholder:text-white/35"
+                    className={`${OL_DASH_FIELD_MONO} resize-y`}
                     placeholder={`Variant ${oi + 1} ($...$)`}
                   />
                 ))}
               </div>
-              <label className="mt-3 flex items-center gap-2 text-sm text-white/70">
-                <span>To‘g‘ri variant</span>
+              <label className="mt-3 flex flex-wrap items-center gap-2 text-sm font-medium text-white/90">
+                <span className="shrink-0">To‘g‘ri variant</span>
                 <select
                   value={q.correctIndex}
                   onChange={(e) => updateQuestion(qi, { correctIndex: Number(e.target.value) })}
-                  className="rounded-lg border border-white/15 bg-slate-900 px-2 py-1 text-sm text-white"
+                  className={`${OL_DASH_FIELD_COMPACT} w-auto min-w-[5.5rem]`}
                 >
                   {[0, 1, 2, 3].map((i) => (
                     <option key={i} value={i}>
@@ -572,7 +581,7 @@ export function TeacherTestCreateForm({
                   ))}
                 </select>
               </label>
-              <label className="mt-3 block text-xs font-semibold uppercase tracking-wide text-white/45">
+              <label className="mt-3 block text-xs font-semibold uppercase tracking-wide text-white/80">
                 Savol balli
                 <input
                   type="number"
@@ -584,7 +593,7 @@ export function TeacherTestCreateForm({
                     const v = Number(e.target.value);
                     updateQuestion(qi, { points: Number.isFinite(v) ? v : 1 });
                   }}
-                  className="mt-1 w-full max-w-[10rem] rounded-lg border border-white/15 bg-slate-900 px-2 py-1.5 text-sm text-white"
+                  className={`${OL_DASH_FIELD_COMPACT} mt-2 w-full max-w-[10rem]`}
                 />
               </label>
             </div>
