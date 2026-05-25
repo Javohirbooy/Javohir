@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { scoreOlympiadAttempt } from "@/lib/olympiad/scoring";
+import { analyzeOlympiadAttemptAnswers, scoreOlympiadAttempt } from "@/lib/olympiad/scoring";
 
 describe("scoreOlympiadAttempt", () => {
   it("scores shuffled display picks against canonical answers", () => {
@@ -33,5 +33,21 @@ describe("scoreOlympiadAttempt", () => {
     const questions = [{ id: "q1", text: "t1", optionsJson: JSON.stringify(["A", "B"]), correctIndex: 0, points: 0 }];
     const out = scoreOlympiadAttempt(["q1"], { q1: [0, 1] }, [0], questions);
     expect(out.maxScore).toBe(1);
+  });
+
+  it("counts orphan order slots as wrong with default weight 1", () => {
+    const questions = [
+      { id: "q1", text: "t1", optionsJson: JSON.stringify(["A", "B"]), correctIndex: 0, points: 2 },
+    ];
+    const order = ["ghost", "q1"];
+    const perms = { q1: [0, 1] };
+    const displayAnswers = [0, 0];
+    const a = analyzeOlympiadAttemptAnswers(order, perms, displayAnswers, questions);
+    expect(a.maxPoints).toBe(3);
+    expect(a.correctCount).toBe(1);
+    expect(a.earnedPoints).toBe(2);
+    expect(a.rows[0]?.questionId).toBe("ghost");
+    expect(a.rows[0]?.correct).toBe(false);
+    expect(a.rows[0]?.userCanonicalIndex).toBe(-1);
   });
 });

@@ -2,6 +2,8 @@ import { Prisma } from "@prisma/client";
 import * as Sentry from "@sentry/nextjs";
 import { prisma } from "@/lib/prisma";
 import { writeAuditLog } from "@/lib/audit";
+import { pushDeadLetterFinalize } from "@/lib/queue/dead-letter";
+import { scheduleFinalizeRetry } from "@/lib/queue/retry";
 import { logStructured } from "@/lib/logger";
 import { isOlympiadMonitorRedisEventsEnabled } from "@/lib/olympiad/feature-flags";
 import { emitOlympiadMonitorEvent } from "@/lib/olympiad/olympiad-redis-events";
@@ -323,7 +325,7 @@ export async function finalizeOlympiadSessionInTx(
   return "finalized";
 }
 
-async function finalizeSessionWithDedicatedTransaction(
+export async function finalizeSessionWithDedicatedTransaction(
   sessionId: string,
   ctx: FinalizeOlympiadSessionTxContext,
 ): Promise<"finalized" | "skipped" | "repaired"> {
@@ -360,12 +362,18 @@ export async function runOlympiadOverdueFinalization(options?: {
   batchLimit?: number;
   runId?: string;
   maxRounds?: number;
-}): Promise<OlympiadFinalizeWorkerStats> {
+  /** Serverless vaqt budjeti — aylanishlar erta to‘xtaydi (deploy/restart xavfsizligi). */
+  deadlineMs?: number;
+}): Promise<OlympiadFinalizeWorkerStats & { stoppedEarly?: boolean }> {
   const started = Date.now();
+  const deadlineAt = options?.deadlineMs ? started + options.deadlineMs : null;
   const at = options?.now ?? new Date();
   const batchLimit = Math.min(Math.max(1, options?.batchLimit ?? DEFAULT_BATCH), 200);
   const maxRounds = Math.min(Math.max(1, options?.maxRounds ?? MAX_ROUNDS_PER_INVOCATION), 100);
   const runId = options?.runId ?? randomRunId();
+  let stoppedEarly = false;
+
+  const overBudget = () => deadlineAt !== null && Date.now() >= deadlineAt;
 
   let finalized = 0;
   let skipped = 0;
@@ -378,6 +386,10 @@ export async function runOlympiadOverdueFinalization(options?: {
   let staleSubmittingRepaired = 0;
 
   for (rounds = 0; rounds < maxRounds; rounds++) {
+    if (overBudget()) {
+      stoppedEarly = true;
+      break;
+    }
     const candidates = await prisma.$queryRaw<Array<{ id: string }>>`
       SELECT id FROM "OlympiadSession"
       WHERE status IN ('ACTIVE', 'SUBMITTING')
@@ -392,6 +404,10 @@ export async function runOlympiadOverdueFinalization(options?: {
     candidatesSeen += candidates.length;
 
     for (const row of candidates) {
+      if (overBudget()) {
+        stoppedEarly = true;
+        break;
+      }
       try {
         const out = await finalizeSessionWithDedicatedTransaction(row.id, {
           at,
@@ -413,13 +429,24 @@ export async function runOlympiadOverdueFinalization(options?: {
           sessionId: row.id,
           round: rounds,
         });
+        void pushDeadLetterFinalize({
+          sessionId: row.id,
+          reason: "auto_timeout_batch_error",
+          runId,
+        });
+        void scheduleFinalizeRetry(row.id, 1);
       }
     }
+    if (stoppedEarly) break;
   }
 
   const staleCutoff = new Date(at.getTime() - OLYMPIAD_STALE_SUBMITTING_LAST_SEEN_MS);
 
   for (staleSubmittingRounds = 0; staleSubmittingRounds < maxRounds; staleSubmittingRounds++) {
+    if (overBudget()) {
+      stoppedEarly = true;
+      break;
+    }
     const stuck = await prisma.$queryRaw<Array<{ id: string }>>`
       SELECT id FROM "OlympiadSession"
       WHERE status = 'SUBMITTING'
@@ -458,6 +485,13 @@ export async function runOlympiadOverdueFinalization(options?: {
           sessionId: row.id,
           round: staleSubmittingRounds,
         });
+        void pushDeadLetterFinalize({
+          sessionId: row.id,
+          reason: "stale_submitting_error",
+          runId,
+          allowActiveNotOverdue: true,
+        });
+        void scheduleFinalizeRetry(row.id, 1);
       }
     }
   }
@@ -487,6 +521,7 @@ export async function runOlympiadOverdueFinalization(options?: {
     durationMs,
     ghostActiveSessions,
     autoFinalized: finalized + repaired,
+    stoppedEarly,
   });
 
   Sentry.addBreadcrumb({
@@ -543,6 +578,7 @@ export async function runOlympiadOverdueFinalization(options?: {
     staleSubmittingRepaired,
     errors,
     durationMs,
+    stoppedEarly,
   };
 }
 

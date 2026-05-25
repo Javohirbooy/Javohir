@@ -1,9 +1,12 @@
 import Link from "next/link";
 import { listAdminOlympiadResultsTable } from "@/app/actions/olympiad-admin";
 import { DashboardCard } from "@/components/dashboard/dashboard-card";
+import { OlympiadResultsNavTabs } from "@/components/olympiad/olympiad-results-nav-tabs";
 import { Button } from "@/components/ui/button";
 import { GlassCard } from "@/components/ui/olympiad/glass-card";
+import { OlympiadDetailedExcelExportButton } from "@/components/olympiad/olympiad-detailed-excel-export-button";
 import { OlympiadResultsCsvExportButton } from "@/components/olympiad/olympiad-results-csv-export-button";
+import { olympiadResultToPoints } from "@/lib/olympiad/result-points";
 import { cn } from "@/lib/utils";
 import { olympiadType } from "@/lib/ui/design-system";
 
@@ -22,10 +25,12 @@ export async function OlympiadAdminResultsPanel({
   searchParams,
   resultsHref,
   backHref,
+  basePath,
 }: {
   searchParams: Record<string, string | undefined>;
   resultsHref: string;
   backHref: string;
+  basePath: string;
 }) {
   const page = Math.max(1, Math.floor(Number(searchParams.page) || 1));
   const data = await listAdminOlympiadResultsTable({
@@ -46,6 +51,9 @@ export async function OlympiadAdminResultsPanel({
   }
 
   const totalPages = Math.max(1, Math.ceil(data.total / PAGE_SIZE));
+  const effectiveOlympiadId =
+    searchParams.olympiadId?.trim() ||
+    (data.olympiadOptions.length === 1 ? data.olympiadOptions[0]!.id : undefined);
   const qBase: Record<string, string | undefined> = {
     olympiadId: searchParams.olympiadId,
     grade: searchParams.grade,
@@ -55,24 +63,36 @@ export async function OlympiadAdminResultsPanel({
 
   return (
     <div className="space-y-8">
+      <OlympiadResultsNavTabs basePath={basePath} active="single" />
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <Link href={backHref} className={cn(olympiadType.caption, "text-emerald-700 hover:text-emerald-600 dark:text-emerald-300")}>
             ← Olimpiadalar
           </Link>
-          <h1 className={cn(olympiadType.h1, "mt-2 text-slate-900 dark:text-white")}>Olimpiada natijalari</h1>
+          <h1 className={cn(olympiadType.h1, "mt-2 text-slate-900 dark:text-white")}>Alohida olimpiada natijalari</h1>
           <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
-            Reyting sinf bo‘yicha hisoblanadi; jadvalda barcha yozuvlar ko‘rinadi.
+            Bitta fan / bitta olimpiada. Ko‘p fanli paketlar alohida bo‘limda.
           </p>
         </div>
-        <OlympiadResultsCsvExportButton
-          filters={{
-            olympiadId: searchParams.olympiadId,
-            gradeLabel: searchParams.grade,
-            school: searchParams.school,
-            name: searchParams.q,
-          }}
-        />
+        <div className="flex flex-wrap items-center gap-2">
+          <OlympiadDetailedExcelExportButton
+            olympiadId={effectiveOlympiadId}
+            filters={{
+              olympiadId: searchParams.olympiadId,
+              gradeLabel: searchParams.grade,
+              school: searchParams.school,
+              name: searchParams.q,
+            }}
+          />
+          <OlympiadResultsCsvExportButton
+            filters={{
+              olympiadId: searchParams.olympiadId,
+              gradeLabel: searchParams.grade,
+              school: searchParams.school,
+              name: searchParams.q,
+            }}
+          />
+        </div>
       </div>
 
       <DashboardCard title="Filtrlar">
@@ -136,8 +156,8 @@ export async function OlympiadAdminResultsPanel({
             <thead>
               <tr className="border-b border-slate-200 text-xs uppercase text-slate-500 dark:border-white/10 dark:text-slate-400">
                 <th className="py-2 pr-3">Reyting</th>
+                <th className="py-2 pr-3">Ball</th>
                 <th className="py-2 pr-3">Foiz</th>
-                <th className="py-2 pr-3">Maks ball</th>
                 <th className="py-2 pr-3">Talaba</th>
                 <th className="py-2 pr-3">Sinf</th>
                 <th className="py-2 pr-3">Maktab</th>
@@ -154,11 +174,15 @@ export async function OlympiadAdminResultsPanel({
                   </td>
                 </tr>
               ) : (
-                data.rows.map((r) => (
+                data.rows.map((r) => {
+                  const pts = olympiadResultToPoints(r.score, r.maxScore);
+                  return (
                   <tr key={r.id} className="border-b border-slate-100 last:border-0 dark:border-white/5">
                     <td className="py-2 pr-3 font-mono">{r.rank ?? "—"}</td>
-                    <td className="py-2 pr-3 font-mono">{r.score ?? "—"}</td>
-                    <td className="py-2 pr-3 font-mono">{r.maxScore ?? "—"}</td>
+                    <td className="py-2 pr-3 font-mono">
+                      {pts.earnedPoints} / {pts.maxPoints}
+                    </td>
+                    <td className="py-2 pr-3 font-mono">{pts.percent}%</td>
                     <td className="py-2 pr-3">
                       {r.firstName} {r.lastName}
                     </td>
@@ -168,7 +192,8 @@ export async function OlympiadAdminResultsPanel({
                     <td className="py-2 pr-3 font-mono">{r.timeSpentSec ?? "—"}</td>
                     <td className="py-2">{r.published ? "ha" : "yo‘q"}</td>
                   </tr>
-                ))
+                  );
+                })
               )}
             </tbody>
           </table>

@@ -1,8 +1,8 @@
 /** HttpOnly cookie: opaque session token (DBda faqat hash). */
 export const OLYMPIAD_SESSION_COOKIE = "iqm_olympiad_sess";
 
-export const OLYMPIAD_JOIN_RATE_WINDOW_MS = 15 * 60 * 1000;
-export const OLYMPIAD_JOIN_RATE_MAX = 30;
+/** HttpOnly cookie: multi-fan paket urinishi (fan sessiyasidan alohida). */
+export const OLYMPIAD_BUNDLE_COOKIE = "iqm_olympiad_bundle";
 
 /** Sertifikat jamoat tekshiruvi (IP bo‘yicha, qattiq Redis rejimida talab qilinadi). */
 export const OLYMPIAD_CERT_VERIFY_RATE_WINDOW_MS = 60 * 1000;

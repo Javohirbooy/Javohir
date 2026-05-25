@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { submitExamAttempt, logExamViolation } from "@/app/actions/exam-session";
+import { normalizeMcqQuestionWeight } from "@/lib/mcq/normalize-question-weight";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { ProgressBar } from "@/components/ui/progress-bar";
@@ -18,6 +19,8 @@ export type QuestionDTO = {
   id: string;
   text: string;
   options: string[];
+  /** Savol og‘irligi (preview va server foizi mos bo‘lishi uchun). */
+  points?: number | null;
   /** Only for admin/teacher preview — never sent for live student attempts. */
   correctIndex?: number;
 };
@@ -202,11 +205,18 @@ export function TestRunner({
         return;
       }
       let correct = 0;
+      let earned = 0;
+      let maxW = 0;
       const breakdown = questions.map((q, i) => {
         const correctIndex = q.correctIndex!;
         const userIndex = answers[i] ?? -1;
+        const pts = normalizeMcqQuestionWeight(q.points);
+        maxW += pts;
         const ok = userIndex === correctIndex;
-        if (ok) correct += 1;
+        if (ok) {
+          correct += 1;
+          earned += pts;
+        }
         return {
           text: q.text,
           options: q.options,
@@ -214,7 +224,7 @@ export function TestRunner({
           userIndex,
         };
       });
-      const score = questions.length ? Math.round((correct / questions.length) * 100) : 0;
+      const score = maxW > 0 ? Math.round((earned / maxW) * 100) : 0;
       setDone({
         score,
         total: questions.length,
@@ -275,16 +285,26 @@ export function TestRunner({
                           <span className="mr-1">{i + 1}.</span>
                           <QuestionRichText content={row.text} className="inline [&_p]:inline" />
                         </div>
-                        <p className="mt-2 text-sm text-slate-600">
-                          {tf("testRunner.yourAnswer")}{" "}
-                          <span className="font-medium text-slate-900">
-                            {row.userIndex >= 0 ? row.options[row.userIndex] : tf("testRunner.dash")}
+                        <p className="mt-2 flex items-start gap-2 text-sm text-slate-600">
+                          {row.userIndex >= 0 ? (
+                            <span className="mt-0.5 shrink-0" title={tf("testRunner.selectedOptionBadge")}>
+                              <CheckCircle2 className="h-4 w-4 text-sky-600" aria-hidden />
+                            </span>
+                          ) : null}
+                          <span>
+                            {tf("testRunner.yourAnswer")}{" "}
+                            <span className="font-medium text-slate-900">
+                              {row.userIndex >= 0 ? row.options[row.userIndex] : tf("testRunner.dash")}
+                            </span>
                           </span>
                         </p>
                         {!ok ? (
-                          <p className="mt-1 text-sm text-emerald-700">
-                            {tf("testRunner.correctAnswer")}{" "}
-                            <span className="font-semibold">{row.options[row.correctIndex]}</span>
+                          <p className="mt-1 flex items-start gap-2 text-sm text-emerald-700">
+                            <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" aria-hidden />
+                            <span>
+                              {tf("testRunner.correctAnswer")}{" "}
+                              <span className="font-semibold">{row.options[row.correctIndex]}</span>
+                            </span>
                           </p>
                         ) : null}
                       </div>
@@ -381,6 +401,8 @@ export function TestRunner({
                 type="button"
                 onClick={() => selectOption(idx)}
                 disabled={terminated}
+                aria-pressed={selected}
+                title={selected ? tf("testRunner.selectedOptionBadge") : undefined}
                 className={cn(
                   "flex gap-3 rounded-2xl border-2 px-4 py-4 text-left text-sm font-semibold transition active:scale-[0.99]",
                   selected
@@ -399,6 +421,14 @@ export function TestRunner({
                 <div className="min-w-0 flex-1 pt-0.5 text-slate-800">
                   <QuestionRichText content={opt} compact />
                 </div>
+                {selected ? (
+                  <CheckCircle2
+                    className="mt-0.5 h-7 w-7 shrink-0 text-sky-600 drop-shadow-sm"
+                    aria-hidden
+                  />
+                ) : (
+                  <span className="h-7 w-7 shrink-0" aria-hidden />
+                )}
               </button>
             );
           })}

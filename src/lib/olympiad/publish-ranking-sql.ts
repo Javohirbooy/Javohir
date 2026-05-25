@@ -28,7 +28,11 @@ export async function executeOlympiadPublishRankingInTx(
     WITH ranked AS (
       SELECT r.id,
         DENSE_RANK() OVER (
-          PARTITION BY COALESCE(NULLIF(TRIM(BOTH FROM p."gradeLabel"), ''), '—')
+          PARTITION BY COALESCE(
+            NULLIF(substring(trim(p."gradeLabel") from '^([0-9]{1,2})'), ''),
+            NULLIF(TRIM(BOTH FROM p."gradeLabel"), ''),
+            '—'
+          )
           ORDER BY COALESCE(r.score, 0) DESC
         ) AS rk
       FROM "OlympiadResult" r

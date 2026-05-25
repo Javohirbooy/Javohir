@@ -1,8 +1,12 @@
 {
   "crons": [
     {
-      "path": "/api/cron/olympiad-finalize",
-      "schedule": "0 2 * * *"
+      "path": "/api/cron/tick?batch=50&rounds=25",
+      "schedule": "0 6 * * *"
+    },
+    {
+      "path": "/api/cron/olympiad-finalize?batch=100&rounds=50",
+      "schedule": "0 3 * * *"
     }
   ]
 }

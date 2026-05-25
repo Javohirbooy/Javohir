@@ -30,6 +30,7 @@ export default async function TeacherOlympiadResultsPage({ searchParams }: Props
         searchParams={flat}
         resultsHref="/oqituvchi/oimpiadalar/natijalar"
         backHref="/oqituvchi/oimpiadalar"
+        basePath="/oqituvchi/oimpiadalar"
       />
     </div>
   );

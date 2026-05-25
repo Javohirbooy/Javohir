@@ -6,6 +6,7 @@ import { deleteTest } from "@/app/actions/teacher-tests";
 import { DashboardCard } from "@/components/dashboard/dashboard-card";
 import { Badge } from "@/components/ui/badge";
 import { sessionHasPermission } from "@/lib/permissions";
+import { testTeacherAdminListSelect } from "@/lib/tests/test-query-selects";
 
 function statusBadge(t: { status: string; isDraft: boolean; isActive: boolean }) {
   if (t.status === "ARCHIVED") {
@@ -26,11 +27,7 @@ export default async function TeacherTestsPage() {
   const tests = await prisma.test.findMany({
     where: { authorUserId: session.user.id },
     orderBy: { updatedAt: "desc" },
-    include: {
-      subject: { include: { grade: true } },
-      topic: true,
-      _count: { select: { questions: true, results: true } },
-    },
+    select: testTeacherAdminListSelect,
     take: 150,
   });
 
@@ -87,9 +84,9 @@ export default async function TeacherTestsPage() {
                   </p>
                 </td>
                 <td className="px-4 py-4 text-slate-700">
-                  {t.subject.title}
+                  {t.subject?.title ?? "—"}
                   <br />
-                  <span className="text-xs text-slate-500">{t.subject.grade.name}</span>
+                  <span className="text-xs text-slate-500">{t.subject?.grade?.name ?? "—"}</span>
                 </td>
                 <td className="px-4 py-4 text-slate-600">{t.topic?.title ?? "—"}</td>
                 <td className="px-4 py-4">{statusBadge(t)}</td>

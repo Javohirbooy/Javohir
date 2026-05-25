@@ -14,6 +14,7 @@ type Row = {
   suspiciousScore: number;
   lastSeenAt: string;
   violations: { type: string; at: string }[];
+  bundleProgress?: string | null;
 };
 
 type MonitorEvent = {
@@ -333,6 +334,7 @@ const MonitorSessionRow = memo(function MonitorSessionRow({ row: r }: { row: Row
       </div>
       <p className="mt-1 text-xs text-slate-600">
         Holat: {r.sessionStatus} · ogohlantirish: {r.warningCount} · shubxa ball: {r.suspiciousScore}
+        {r.bundleProgress ? ` · paket: ${r.bundleProgress} fan` : ""}
       </p>
       {r.violations.length ? (
         <ul className="mt-2 list-inside list-disc text-xs text-slate-600">

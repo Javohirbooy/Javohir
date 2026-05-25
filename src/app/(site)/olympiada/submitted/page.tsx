@@ -15,6 +15,26 @@ export default async function OlympiadSubmittedPage() {
   if (s.status === "RULES_PENDING") redirect("/olympiada/rules");
   if (s.status === "WAITING") redirect("/olympiada/waiting-room");
 
+  if (s.bundleAttemptId) {
+    if (s.bundleAllComplete) redirect("/olympiada/bundle/results");
+    return (
+      <Card className="border-white/20 bg-white/95 p-6 text-center shadow-xl dark:bg-slate-900/90">
+        <h1 className="text-xl font-bold text-slate-900 dark:text-white">Fan yakunlandi</h1>
+        <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">
+          {s.title} — javoblaringiz qabul qilindi. Keyingi fanni tanlang.
+        </p>
+        {s.submittedAt ? (
+          <p className="mt-1 text-xs text-slate-500">Vaqt: {new Date(s.submittedAt).toLocaleString()}</p>
+        ) : null}
+        <div className="mt-6 flex flex-wrap justify-center gap-3">
+          <Button href="/olympiada/bundle" variant="primary" className="min-h-11">
+            Fanlar ro‘yxatiga qaytish
+          </Button>
+        </div>
+      </Card>
+    );
+  }
+
   return (
     <Card className="border-white/20 bg-white/95 p-6 text-center shadow-xl">
       <h1 className="text-xl font-bold text-slate-900">Javoblaringiz qabul qilindi</h1>

@@ -27,7 +27,7 @@ export default async function SubjectsPage({ searchParams }: Props) {
         onDark
         eyebrow="IQ Monitoring"
         title="Barcha fanlar — bitta platformada"
-        subtitle="Har bir fan uchun vizual identifikator, testlar va sinflar bo‘yicha kontent tuzilmasi. Filtrlash va kengaytirish uchun tayyor."
+        subtitle="Maktab dasturidagi fanlar. Testlar va monitoring faqat ro‘yxatdan o‘tgan foydalanuvchilar uchun."
       />
       <form className="mt-8">
         <div className="flex gap-2">
@@ -52,7 +52,7 @@ export default async function SubjectsPage({ searchParams }: Props) {
         {items.map((s) => (
           <Link
             key={s.slug}
-            href={`/testlar?subject=${encodeURIComponent(s.title)}`}
+            href="/kirish"
             className={cn(
               "group iq-3d-card relative flex flex-col overflow-hidden rounded-3xl border border-emerald-100 p-6 text-white shadow-2xl ring-1 transition duration-300 hover:-translate-y-1 hover:border-emerald-300/70 hover:shadow-emerald-500/15",
               `bg-gradient-to-br ${s.cardGradient}`,
@@ -71,7 +71,7 @@ export default async function SubjectsPage({ searchParams }: Props) {
             <div className="relative mt-6 flex flex-1 flex-col">
               <h2 className="text-xl font-bold tracking-tight">{s.title}</h2>
               <p className="mt-2 flex-1 text-sm leading-relaxed text-white/80">{s.description}</p>
-              <p className="mt-4 text-xs font-semibold uppercase tracking-wider text-cyan-200/90">Testlarni ko‘rish →</p>
+              <p className="mt-4 text-xs font-semibold uppercase tracking-wider text-cyan-200/90">Batafsil →</p>
             </div>
           </Link>
         ))}

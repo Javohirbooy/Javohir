@@ -15,6 +15,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { OlympiadLiveMonitor } from "@/components/olympiad/olympiad-live-monitor";
 import { isOlympiadMonitorSseEnabled } from "@/lib/olympiad/feature-flags";
+import { OlympiadDetailedExcelExportButton } from "@/components/olympiad/olympiad-detailed-excel-export-button";
 import { OlympiadExportButton } from "@/components/olympiad/olympiad-export-button";
 import { OlympiadFinalizationSection } from "@/components/olympiad/olympiad-finalization-section";
 import { OlympiadScheduleForm } from "@/components/olympiad/olympiad-schedule-form";
@@ -74,7 +75,11 @@ export async function OlympiadManageDetail({ id, basePath }: { id: string; baseP
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
+          <OlympiadDetailedExcelExportButton olympiadId={id} />
           <OlympiadExportButton olympiadId={id} />
+          <Button href={`${basePath}/natijalar?olympiadId=${encodeURIComponent(id)}`} variant="outline">
+            Natijalar jadvali
+          </Button>
         </div>
       </div>
 

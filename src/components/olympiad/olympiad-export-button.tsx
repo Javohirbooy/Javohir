@@ -1,6 +1,10 @@
 "use client";
 
 import { useState } from "react";
+import {
+  natijalarCsvFilename,
+  parseCsvContentDispositionFilename,
+} from "@/lib/olympiad/olympiad-results-csv-format";
 import { Button } from "@/components/ui/button";
 
 export function OlympiadExportButton({ olympiadId }: { olympiadId: string }) {
@@ -20,14 +24,16 @@ export function OlympiadExportButton({ olympiadId }: { olympiadId: string }) {
               return;
             }
             const blob = await res.blob();
-            const cd = res.headers.get("Content-Disposition");
-            const m = cd?.match(/filename="([^"]+)"/);
-            const filename = m?.[1] ?? `olympiad-${olympiadId}.csv`;
+            const fallback = natijalarCsvFilename();
+            const filename = parseCsvContentDispositionFilename(res.headers.get("Content-Disposition"), fallback);
             const url = URL.createObjectURL(blob);
             const a = document.createElement("a");
             a.href = url;
             a.download = filename;
+            a.rel = "noopener";
+            document.body.appendChild(a);
             a.click();
+            a.remove();
             URL.revokeObjectURL(url);
           } catch {
             setErr("Tarmoq xatosi.");

@@ -5,6 +5,7 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { TEST_GRANT_COOKIE, parseTestGrantCookie } from "@/lib/test-access";
 import { DashboardCard } from "@/components/dashboard/dashboard-card";
+import { testStudentMonitoringListSelect } from "@/lib/tests/test-query-selects";
 
 export default async function StudentMonitoringTestsPage() {
   const session = await auth();
@@ -23,7 +24,7 @@ export default async function StudentMonitoringTestsPage() {
     cookieIds.length > 0
       ? await prisma.test.findMany({
           where: { id: { in: cookieIds } },
-          include: { subject: { include: { grade: true } } },
+          select: testStudentMonitoringListSelect,
         })
       : [];
 
@@ -36,7 +37,7 @@ export default async function StudentMonitoringTestsPage() {
             isDraft: false,
             subject: { gradeId: user.gradeId },
           },
-          include: { subject: { include: { grade: true } } },
+          select: testStudentMonitoringListSelect,
           orderBy: [{ subject: { title: "asc" } }, { title: "asc" }],
         })
       : [];
@@ -81,7 +82,7 @@ export default async function StudentMonitoringTestsPage() {
                   >
                     <span className="font-semibold text-white">{t.title}</span>
                     <span className="text-sm text-emerald-200/90">
-                      {t.subject.grade.number}-sinf · {t.subject.title}
+                      {t.subject?.grade?.number ?? "?"}-sinf · {t.subject?.title ?? "—"}
                     </span>
                   </Link>
                 </li>

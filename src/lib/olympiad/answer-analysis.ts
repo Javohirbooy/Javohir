@@ -1,3 +1,5 @@
+import { normalizeMcqQuestionWeight } from "@/lib/mcq/normalize-question-weight";
+
 type QuestionRow = { id: string; text: string; optionsJson: string; correctIndex: number; points: number | null };
 
 export type OlympiadQuestionScoreRow = {
@@ -7,6 +9,8 @@ export type OlympiadQuestionScoreRow = {
   earnedPoints: number;
   correct: boolean;
   answered: boolean;
+  /** Kanonik variant indeksi (-1 — tanlanmagan yoki aniqlab bo‘lmaydi). */
+  userCanonicalIndex: number;
 };
 
 /**
@@ -36,16 +40,14 @@ export function analyzeOlympiadAttemptAnswers(
   for (let i = 0; i < order.length; i++) {
     const qid = order[i]!;
     const q = byId.get(qid);
-    if (!q) continue;
-    const opts = JSON.parse(q.optionsJson) as string[];
+    const opts = q ? (JSON.parse(q.optionsJson) as string[]) : [];
     const perm = perms[qid] ?? opts.map((_, j) => j);
     const di = displayAnswers[i] ?? -1;
-    const answered = di >= 0 && di < perm.length;
+    const answered = perm.length > 0 && di >= 0 && di < perm.length;
     if (answered) answeredCount += 1;
     const canonicalPick = answered ? perm[di]! : -1;
-    const ok = canonicalPick === q.correctIndex;
-    const rawPts = q.points;
-    const pts = rawPts != null && rawPts > 0 ? rawPts : 1;
+    const ok = q != null && canonicalPick === q.correctIndex;
+    const pts = q ? normalizeMcqQuestionWeight(q.points) : 1;
     maxPoints += pts;
     const earnedPts = ok ? pts : 0;
     if (ok) {
@@ -53,12 +55,13 @@ export function analyzeOlympiadAttemptAnswers(
       correctCount += 1;
     }
     rows.push({
-      questionId: q.id,
-      text: q.text,
+      questionId: qid,
+      text: q?.text ?? "",
       maxPoints: pts,
       earnedPoints: earnedPts,
       correct: ok,
       answered,
+      userCanonicalIndex: canonicalPick,
     });
   }
 

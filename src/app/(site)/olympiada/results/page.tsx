@@ -38,6 +38,7 @@ export default async function OlympiadResultsPage() {
               earnedPoints: r.earnedPoints,
               percentScore: r.percentScore,
               answeredCount: r.answeredCount,
+              correctCount: r.correctCount,
               questionCount: r.questionCount,
               timeSpentSec: r.timeSpentSec,
               schoolName: r.schoolName,

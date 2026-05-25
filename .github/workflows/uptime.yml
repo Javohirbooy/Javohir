@@ -1,0 +1,43 @@
+# Production uptime — Vercel Hobby (kuniga 1 marta cron) cheklovini yopadi.
+# Faqat tick chaqiriladi (keep-alive + finalize, distributed lock bilan).
+#
+# Secrets: CRON_SECRET, PRODUCTION_SITE_URL
+
+name: Production uptime
+
+on:
+  schedule:
+    - cron: "*/10 * * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: production-uptime
+  cancel-in-progress: false
+
+jobs:
+  tick:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Cron tick (keep-alive + finalize)
+        env:
+          BASE: ${{ secrets.PRODUCTION_SITE_URL }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          if [ -z "$CRON_SECRET" ] || [ -z "$BASE" ]; then
+            echo "CRON_SECRET yoki PRODUCTION_SITE_URL yo‘q — o‘tkazildi."
+            exit 0
+          fi
+          BASE="${BASE%/}"
+          code=$(curl -sS -o /tmp/cron-body.json -w "%{http_code}" -m 130 \
+            -H "Authorization: Bearer ${CRON_SECRET}" \
+            -H "User-Agent: GitHub-Actions-uptime/1" \
+            "${BASE}/api/cron/tick?batch=30&rounds=12")
+          cat /tmp/cron-body.json
+          if [ "$code" != "200" ]; then
+            echo "HTTP $code"
+            exit 1
+          fi
+          if grep -q '"skipped":true' /tmp/cron-body.json; then
+            echo "Lock held — keyingi intervalda qayta uriniladi (OK)."
+          fi

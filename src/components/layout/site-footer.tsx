@@ -26,7 +26,7 @@ export async function SiteFooter() {
           <Link className="text-slate-600 transition hover:text-emerald-700 dark:text-slate-300 dark:hover:text-emerald-300" href="/sinflar">
             {t(locale, "footer.grades")}
           </Link>
-          <Link className="text-slate-600 transition hover:text-emerald-700 dark:text-slate-300 dark:hover:text-emerald-300" href="/testlar">
+          <Link className="text-slate-600 transition hover:text-emerald-700 dark:text-slate-300 dark:hover:text-emerald-300" href="/kirish">
             {t(locale, "footer.tests")}
           </Link>
           <Link className="text-slate-600 transition hover:text-emerald-700 dark:text-slate-300 dark:hover:text-emerald-300" href="/kirish">

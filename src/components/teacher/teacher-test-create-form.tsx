@@ -11,6 +11,7 @@ import {
 } from "@/app/actions/teacher-tests";
 import { DashboardCard } from "@/components/dashboard/dashboard-card";
 import { datetimeLocalValueToUtcIso } from "@/lib/datetime-local";
+import { QuestionEditBlock } from "@/components/question/question-edit-preview";
 import { MAX_QUESTION_INLINE_IMAGE_FILE_BYTES } from "@/lib/uploads/image-limits";
 
 /** Yorqin maydon: qora `select`/`datetime` OS ichida matn va optionlarni yashirib yuboradi. */
@@ -527,12 +528,12 @@ export function TeacherTestCreateForm({
                   </button>
                 ) : null}
               </div>
-              <textarea
-                value={q.text}
-                onChange={(e) => updateQuestion(qi, { text: e.target.value })}
-                rows={4}
-                className={`${OL_DASH_FIELD_MONO} resize-y`}
-                placeholder="Savol matni (Markdown / LaTeX qo‘llab-quvvatlanadi)"
+              <QuestionEditBlock
+                text={q.text}
+                options={q.options}
+                correctIndex={q.correctIndex}
+                onTextChange={(text) => updateQuestion(qi, { text })}
+                onOptionChange={(oi, value) => updateOption(qi, oi, value)}
               />
               <label className="mt-2 inline-flex cursor-pointer items-center gap-2 text-xs font-semibold text-cyan-300/90 hover:text-cyan-200">
                 <input
@@ -557,18 +558,6 @@ export function TeacherTestCreateForm({
                 />
                 + Rasm qo‘shish (barcha rasm turlari, ~12MB gacha)
               </label>
-              <div className="mt-3 grid gap-2 sm:grid-cols-2">
-                {[0, 1, 2, 3].map((oi) => (
-                  <textarea
-                    key={oi}
-                    value={q.options[oi] ?? ""}
-                    onChange={(e) => updateOption(qi, oi, e.target.value)}
-                    rows={2}
-                    className={`${OL_DASH_FIELD_MONO} resize-y`}
-                    placeholder={`Variant ${oi + 1} ($...$)`}
-                  />
-                ))}
-              </div>
               <label className="mt-3 flex flex-wrap items-center gap-2 text-sm font-medium text-white/90">
                 <span className="shrink-0">To‘g‘ri variant</span>
                 <select

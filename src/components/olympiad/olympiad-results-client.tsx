@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { RankMedalIcon } from "@/components/ui/rank-medal";
 import { GlassCard, ResultBadge } from "@/components/ui/olympiad";
 import { cn } from "@/lib/utils";
 import { olympiadButton, olympiadType } from "@/lib/ui/design-system";
@@ -21,6 +22,7 @@ export type OlympiadResultsClientProps = {
     earnedPoints?: number | null;
     percentScore?: number | null;
     answeredCount?: number | null;
+    correctCount?: number | null;
     questionCount?: number | null;
     timeSpentSec?: number | null;
     schoolName?: string | null;
@@ -63,18 +65,10 @@ function useAnimatedScore(target: number, enabled: boolean) {
   return enabled ? Math.round(v * 10) / 10 : target;
 }
 
-function classRankMedal(rank: number | null | undefined): string | null {
-  if (rank === 1) return "🥇";
-  if (rank === 2) return "🥈";
-  if (rank === 3) return "🥉";
-  return null;
-}
-
 export function OlympiadResultsClient({ title, published, result }: OlympiadResultsClientProps) {
   const showScore = published && result;
   const pct = result?.percentScore ?? result?.score ?? 0;
   const displayScore = useAnimatedScore(pct, Boolean(showScore));
-  const medal = showScore ? classRankMedal(result?.rank) : null;
 
   return (
     <div className="mx-auto max-w-2xl space-y-6">
@@ -92,9 +86,9 @@ export function OlympiadResultsClient({ title, published, result }: OlympiadResu
           <GlassCard className="relative overflow-hidden p-6 sm:p-8">
             <div className="pointer-events-none absolute -right-8 -top-8 h-32 w-32 rounded-full bg-[#4F7CFF]/20 blur-2xl" />
             <div className="relative flex flex-col items-center text-center">
-              {medal ? (
-                <div className="mb-2 text-5xl" aria-hidden>
-                  {medal}
+              {showScore && result?.rank != null && result.rank <= 3 ? (
+                <div className="mb-2 flex justify-center">
+                  <RankMedalIcon rank={result.rank} size="lg" />
                 </div>
               ) : null}
               <p className={olympiadType.caption}>Sizning natijangiz</p>
@@ -135,7 +129,15 @@ export function OlympiadResultsClient({ title, published, result }: OlympiadResu
               <p className="mt-1 text-sm font-semibold text-slate-900 dark:text-white">{result.schoolName ?? "—"}</p>
             </GlassCard>
             <GlassCard className="p-4 text-center sm:p-5">
-              <p className={olympiadType.caption}>Javoblangan savollar</p>
+              <p className={olympiadType.caption}>To‘g‘ri javoblar</p>
+              <p className="mt-1 text-2xl font-bold text-slate-900 dark:text-white">
+                {result.correctCount != null && result.questionCount != null
+                  ? `${result.correctCount} / ${result.questionCount}`
+                  : "—"}
+              </p>
+            </GlassCard>
+            <GlassCard className="p-4 text-center sm:p-5">
+              <p className={olympiadType.caption}>Javob berilgan</p>
               <p className="mt-1 text-2xl font-bold text-slate-900 dark:text-white">
                 {result.answeredCount != null && result.questionCount != null
                   ? `${result.answeredCount} / ${result.questionCount}`
@@ -214,6 +216,7 @@ export function OlympiadResultsClient({ title, published, result }: OlympiadResu
               Sertifikat chiqarilgach, PDF va tekshiruv havolasi shu yerda paydo bo‘ladi.
             </p>
           )}
+
         </div>
       )}
 

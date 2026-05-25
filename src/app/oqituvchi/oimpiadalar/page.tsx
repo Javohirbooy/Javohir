@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { auth } from "@/auth";
 import { listOlympiadsForDashboard } from "@/app/actions/olympiad-admin";
+import { listOlympiadBundlesForAdmin } from "@/app/actions/olympiad-bundle-admin";
 import { DashboardCard } from "@/components/dashboard/dashboard-card";
 import { DashboardDbErrorFallback } from "@/components/dashboard/dashboard-db-error-fallback";
 import { Button } from "@/components/ui/button";
@@ -15,11 +16,17 @@ export default async function TeacherOlympiadsPage() {
   const session = await auth();
   requireAuth(session);
   if (!canOlympiadManage(session)) redirect("/oqituvchi");
-  const load = await tryPrismaPage("oqituvchi.olympiads_list", () => listOlympiadsForDashboard(), {
-    actorId: session.user.id,
-  });
+  const [load, bundlesLoad] = await Promise.all([
+    tryPrismaPage("oqituvchi.olympiads_list", () => listOlympiadsForDashboard(), {
+      actorId: session.user.id,
+    }),
+    tryPrismaPage("oqituvchi.olympiad_bundles", () => listOlympiadBundlesForAdmin(), {
+      actorId: session.user.id,
+    }),
+  ]);
   if (!load.ok) return <DashboardDbErrorFallback retryHref="/oqituvchi/oimpiadalar" />;
   const rows = load.data;
+  const bundles = bundlesLoad.ok ? bundlesLoad.data : [];
 
   return (
     <div className="space-y-6">
@@ -32,8 +39,30 @@ export default async function TeacherOlympiadsPage() {
           <Button href={`${BASE}/yangi`} variant="secondary">
             Yangi olimpiada
           </Button>
+          <Button href={`${BASE}/bundle/yangi`} variant="primary">
+            Yangi paket (ko‘p fan)
+          </Button>
         </div>
       </div>
+      {bundles.length > 0 ? (
+        <DashboardCard title="Ko‘p fanli paketlar">
+          <ul className="divide-y divide-slate-200 text-sm">
+            {bundles.map((b) => (
+              <li key={b.id} className="flex flex-wrap items-center justify-between gap-2 py-3">
+                <div>
+                  <Link href={`${BASE}/bundle/${b.id}`} className="font-semibold text-emerald-700 hover:underline">
+                    {b.title}
+                  </Link>
+                  <p className="text-xs text-slate-600">
+                    Kod …{b.codeHint ?? ""} · {b._count.subjects} fan · {b._count.attempts} urinish
+                  </p>
+                </div>
+                <span className="text-xs text-slate-500">{b.isActive ? "faol" : "nofaol"}</span>
+              </li>
+            ))}
+          </ul>
+        </DashboardCard>
+      ) : null}
       <DashboardCard title="Ro‘yxat">
         <ul className="divide-y divide-slate-200 text-sm">
           {rows.length === 0 ? <li className="py-4 text-slate-600">Hozircha yozuvlar yo‘q.</li> : null}

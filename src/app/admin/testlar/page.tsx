@@ -6,6 +6,7 @@ import { deleteTest } from "@/app/actions/teacher-tests";
 import { DashboardCard } from "@/components/dashboard/dashboard-card";
 import { Badge } from "@/components/ui/badge";
 import { sessionHasPermission } from "@/lib/permissions";
+import { testAdminCatalogListSelect } from "@/lib/tests/test-query-selects";
 
 export default async function AdminTestsPage() {
   const session = await auth();
@@ -13,10 +14,7 @@ export default async function AdminTestsPage() {
 
   const tests = await prisma.test.findMany({
     orderBy: { title: "asc" },
-    include: {
-      subject: { include: { grade: true } },
-      _count: { select: { questions: true, results: true } },
-    },
+    select: testAdminCatalogListSelect,
     take: 200,
   });
 
@@ -53,7 +51,7 @@ export default async function AdminTestsPage() {
               <div className="min-w-0">
                 <p className="truncate text-[15px] font-semibold leading-snug text-white">{t.title}</p>
                 <p className="mt-0.5 text-xs text-white/60">
-                  {t.subject.title} · {t.subject.grade.name} · {t.difficulty}
+                  {t.subject?.title ?? "—"} · {t.subject?.grade?.name ?? "—"} · {t.difficulty}
                 </p>
                 <div className="mt-2 flex flex-wrap gap-2">
                   <Badge className="border-white/15 bg-white/10">{t._count.questions} savol</Badge>

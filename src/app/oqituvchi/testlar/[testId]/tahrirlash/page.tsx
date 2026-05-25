@@ -2,6 +2,7 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { redirect, notFound } from "next/navigation";
 import { TeacherTestCreateForm, type TeacherTestEditInitial } from "@/components/teacher/teacher-test-create-form";
+import { subjectOptionWithGradeSelect, testFormEditSelect } from "@/lib/tests/test-query-selects";
 
 type Props = { params: Promise<{ testId: string }> };
 
@@ -17,9 +18,7 @@ export default async function TeacherEditTestPage({ params }: Props) {
 
   const test = await prisma.test.findUnique({
     where: { id: testId },
-    include: {
-      questions: { orderBy: { order: "asc" } },
-    },
+    select: testFormEditSelect,
   });
   if (!test) notFound();
   if (test.authorUserId !== session.user.id) redirect("/oqituvchi/testlar");
@@ -45,7 +44,7 @@ export default async function TeacherEditTestPage({ params }: Props) {
       gradeId: { in: gradeIds },
     },
     orderBy: [{ grade: { number: "asc" } }, { title: "asc" }],
-    include: { grade: true },
+    select: subjectOptionWithGradeSelect,
   });
 
   const subjectRows = subjects.map((s) => ({
@@ -57,7 +56,7 @@ export default async function TeacherEditTestPage({ params }: Props) {
 
   const ownSubject = await prisma.subject.findUnique({
     where: { id: test.subjectId },
-    include: { grade: true },
+    select: subjectOptionWithGradeSelect,
   });
   if (ownSubject && !subjectRows.some((s) => s.id === ownSubject.id)) {
     subjectRows.push({

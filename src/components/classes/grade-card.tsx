@@ -37,7 +37,7 @@ export function GradeCard({ number, name, colorKey }: Props) {
           <ChevronRight className="h-5 w-5" />
         </span>
       </div>
-      <p className="relative mt-5 text-sm leading-relaxed text-white/85">Fanlar, testlar va materiallar — sinf bo‘yicha tartibli.</p>
+      <p className="relative mt-5 text-sm leading-relaxed text-white/85">Maktab fanlari — sinf bo‘yicha tartibli.</p>
     </Link>
   );
 }

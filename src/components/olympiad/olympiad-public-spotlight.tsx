@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { SectionTitle } from "@/components/ui/section-title";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { RankMedalIcon } from "@/components/ui/rank-medal";
 import { Trophy, Users, Clock, Medal } from "lucide-react";
 
 export type SpotlightCardWire = {
@@ -49,13 +50,6 @@ function CountdownLine({ targetIso }: { targetIso: string }) {
   }, [targetIso]);
   if (ms == null) return <span className="text-slate-500">…</span>;
   return <span className="font-mono tabular-nums font-semibold text-sky-800">{formatRemain(ms)}</span>;
-}
-
-function medalForRank(rank: number | null) {
-  if (rank === 1) return "🥇";
-  if (rank === 2) return "🥈";
-  if (rank === 3) return "🥉";
-  return "🏅";
 }
 
 export function OlympiadPublicSpotlight(props: {
@@ -164,9 +158,7 @@ export function OlympiadPublicSpotlight(props: {
           <ul className="mt-4 divide-y divide-white/10 rounded-2xl border border-white/10 bg-white/[0.03]">
             {winners.map((w, i) => (
               <li key={`${w.displayName}-${w.olympiadTitle}-${i}`} className="flex flex-wrap items-center justify-between gap-2 px-4 py-3 text-sm">
-                <span className="text-lg" aria-hidden>
-                  {medalForRank(w.rank)}
-                </span>
+                <RankMedalIcon rank={w.rank} size="sm" className="shrink-0" />
                 <span className="min-w-0 flex-1 font-medium text-white">
                   <span className="block truncate">{w.displayName}</span>
                   <span className="block truncate text-xs text-white/55">{w.olympiadTitle}</span>

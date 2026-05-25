@@ -22,5 +22,7 @@ export async function docxBufferToMarkdown(buf: Buffer): Promise<string> {
     bulletListMarker: "-",
   });
 
-  return turndown.turndown(htmlResult.value);
+  const md = turndown.turndown(htmlResult.value);
+  // Turndown escapes ordered-list markers (`1\.`) — MCQ parser needs `1.`
+  return md.replace(/^(\d+)\\\./gm, "$1.");
 }

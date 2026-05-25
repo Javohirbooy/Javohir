@@ -34,7 +34,7 @@ export default async function ClassesPage({ searchParams }: Props) {
         onDark
         eyebrow="Sinf tuzilmasi"
         title="1–11 sinf: har biri alohida monitoring"
-        subtitle="Sinfni tanlang — fanlar, testlar va demo materiallar shu yerda jamlangan. IQ Monitoring barcha fanlar uchun bir xil professional UXni saqlaydi."
+        subtitle="Sinfni tanlang — fanlar ro‘yxati. Testlarni boshlash uchun tizimga kiring."
       />
       <form className="mt-8">
         <div className="flex gap-2">

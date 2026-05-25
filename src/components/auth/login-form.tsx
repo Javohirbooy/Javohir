@@ -170,6 +170,11 @@ export function LoginForm() {
             Email manzilingizni tekshiring — tasdiqlash havolasini yubordik.
           </p>
         ) : null}
+        {notice === "idle-timeout" ? (
+          <p className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm font-medium text-amber-900 dark:border-amber-900/40 dark:bg-amber-950/35 dark:text-amber-100">
+            1 soat davomida faoliyat bo‘lmagani uchun tizimdan chiqdingiz. Qayta kirish uchun login va parolni kiriting.
+          </p>
+        ) : null}
         <Button type="submit" className="w-full py-3 text-base font-semibold" disabled={loading}>
           {loading ? "Kirilmoqda…" : "Kirish"}
         </Button>

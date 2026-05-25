@@ -5,6 +5,7 @@ import { takeRateLimitSlot } from "@/lib/distributed-rate-limit";
 import { logStructured } from "@/lib/logger";
 import { createEdgeContext, getEdgeClientIp, nextWithRequestHeaders, withCsp } from "@/lib/edge/middleware-utils";
 import { MW_AUTH_POST_MAX_PER_IP, MW_AUTH_POST_WINDOW_MS } from "@/lib/auth-rate-limits";
+import { isProtectedTestPath, loginUrlWithCallback } from "@/lib/auth/login-redirect";
 
 /** Edge: Prisma yuklanmasin — faqat `auth.config.ts`. To‘liq auth — `auth.ts` + API route. */
 const { auth } = NextAuth(authConfig);
@@ -16,6 +17,8 @@ export default auth(async (req) => {
   if (process.env.MAINTENANCE_MODE === "1") {
     const allowed =
       pathnameEarly.startsWith("/api/health") ||
+      pathnameEarly.startsWith("/api/cron/") ||
+      pathnameEarly.startsWith("/api/internal/worker/") ||
       pathnameEarly.startsWith("/certificate/verify") ||
       pathnameEarly.startsWith("/sertifikatni-tekshirish") ||
       pathnameEarly.startsWith("/olympiada") ||
@@ -73,6 +76,11 @@ export default auth(async (req) => {
 
   const { pathname } = req.nextUrl;
   const role = req.auth?.user?.role;
+
+  if (isProtectedTestPath(pathname) && !role) {
+    const callback = `${pathname}${req.nextUrl.search}`;
+    return withCsp(NextResponse.redirect(new URL(loginUrlWithCallback(callback), req.url)), ctx);
+  }
 
   if (pathname.startsWith("/admin")) {
     if (!role) return withCsp(NextResponse.redirect(new URL("/kirish", req.url)), ctx);

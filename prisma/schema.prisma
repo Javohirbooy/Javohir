@@ -72,6 +72,7 @@ model User {
   authTokens           AuthToken[]
   olympiadsCreated     Olympiad[]                 @relation("OlympiadCreatedBy")
   olympiadsResponsible Olympiad[]                 @relation("OlympiadResponsible")
+  olympiadBundlesCreated OlympiadBundle[]         @relation("OlympiadBundleCreatedBy")
 
   @@index([role])
   @@index([status])
@@ -417,6 +418,7 @@ model Olympiad {
   sessions            OlympiadSession[]
   olympiadResults     OlympiadResult[]
   invalidCodeAttempts OlympiadInvalidCodeAttempt[]
+  bundleSubjects      OlympiadBundleSubject[]
 
   @@index([status, startsAt])
   @@index([testId])
@@ -442,24 +444,27 @@ model OlympiadCode {
 }
 
 model OlympiadParticipant {
-  id           String            @id @default(cuid())
-  olympiadId   String
-  codeId       String?
-  firstName    String
-  lastName     String
-  gradeLabel   String
-  age          Int
-  schoolName   String
-  region       String
-  phone        String?
-  deviceFpHash String?
-  createdAt    DateTime          @default(now())
-  olympiad     Olympiad          @relation(fields: [olympiadId], references: [id], onDelete: Cascade)
-  code         OlympiadCode?     @relation(fields: [codeId], references: [id], onDelete: SetNull)
-  sessions     OlympiadSession[]
-  results      OlympiadResult[]
+  id                  String                   @id @default(cuid())
+  olympiadId          String
+  codeId              String?
+  bundleParticipantId String?
+  firstName           String
+  lastName            String
+  gradeLabel          String
+  age                 Int
+  schoolName          String
+  region              String
+  phone               String?
+  deviceFpHash        String?
+  createdAt           DateTime                 @default(now())
+  olympiad            Olympiad                 @relation(fields: [olympiadId], references: [id], onDelete: Cascade)
+  code                OlympiadCode?            @relation(fields: [codeId], references: [id], onDelete: SetNull)
+  bundleParticipant   OlympiadBundleParticipant? @relation(fields: [bundleParticipantId], references: [id], onDelete: SetNull)
+  sessions            OlympiadSession[]
+  results             OlympiadResult[]
 
   @@index([olympiadId])
+  @@index([bundleParticipantId])
   // WHY: Publish ranking CTE joins on olympiad + gradeLabel for PARTITION BY; index keeps scans bounded.
   @@index([olympiadId, gradeLabel])
 }
@@ -468,6 +473,7 @@ model OlympiadSession {
   id                  String              @id @default(cuid())
   olympiadId          String
   participantId       String
+  bundleAttemptId     String?
   sessionTokenHash    String              @unique
   status              String              @default("RULES_PENDING")
   rulesAcceptedAt     DateTime?
@@ -486,10 +492,12 @@ model OlympiadSession {
   lastSeenAt          DateTime            @default(now())
   olympiad            Olympiad            @relation(fields: [olympiadId], references: [id], onDelete: Cascade)
   participant         OlympiadParticipant @relation(fields: [participantId], references: [id], onDelete: Cascade)
+  bundleAttempt       OlympiadBundleAttempt? @relation(fields: [bundleAttemptId], references: [id], onDelete: SetNull)
   attempt             OlympiadAttempt?
   violations          OlympiadViolation[]
   result              OlympiadResult?
 
+  @@index([bundleAttemptId])
   @@index([olympiadId, status])
   @@index([olympiadId, lastSeenAt])
   @@index([status, serverEndsAt])
@@ -579,4 +587,86 @@ model OlympiadInvalidCodeAttempt {
   olympiad   Olympiad? @relation(fields: [olympiadId], references: [id], onDelete: SetNull)
 
   @@index([ipHash, createdAt])
+}
+
+/// Bir kirish kodi — bir nechta fan (olympiad) testlari.
+model OlympiadBundle {
+  id          String   @id @default(cuid())
+  title       String
+  codeHash    String   @unique
+  codeHint    String?
+  description String?
+  startsAt    DateTime
+  endsAt      DateTime?
+  isActive    Boolean  @default(true)
+  createdById String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  createdBy   User     @relation("OlympiadBundleCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
+  subjects      OlympiadBundleSubject[]
+  participants  OlympiadBundleParticipant[]
+  attempts      OlympiadBundleAttempt[]
+
+  @@index([isActive, startsAt])
+  @@index([createdById])
+}
+
+model OlympiadBundleSubject {
+  id                      String         @id @default(cuid())
+  bundleId                String
+  olympiadId              String
+  orderIndex              Int            @default(0)
+  titleOverride           String?
+  durationOverrideMinutes Int?
+  bundle                  OlympiadBundle @relation(fields: [bundleId], references: [id], onDelete: Cascade)
+  olympiad                Olympiad       @relation(fields: [olympiadId], references: [id], onDelete: Restrict)
+
+  @@unique([bundleId, olympiadId])
+  @@index([bundleId, orderIndex])
+  @@index([olympiadId])
+}
+
+model OlympiadBundleParticipant {
+  id           String   @id @default(cuid())
+  bundleId     String
+  firstName    String
+  lastName     String
+  gradeLabel   String
+  age          Int
+  schoolName   String
+  region       String
+  phone        String?
+  deviceFpHash String?
+  /// JSON massiv: shu ishtirokchi uchun ochiladigan olympiadId lar (variant tanlovi).
+  assignedOlympiadIdsJson String @default("[]")
+  createdAt    DateTime @default(now())
+  bundle       OlympiadBundle @relation(fields: [bundleId], references: [id], onDelete: Cascade)
+  attempts     OlympiadBundleAttempt[]
+  olympiadParticipants OlympiadParticipant[]
+
+  @@index([bundleId])
+  @@index([bundleId, schoolName])
+  @@index([bundleId, gradeLabel])
+}
+
+/// Bitta o‘quvchining butun paket bo‘yicha urinishi (har fan alohida session).
+model OlympiadBundleAttempt {
+  id                  String   @id @default(cuid())
+  bundleParticipantId String
+  bundleId            String
+  accessTokenHash     String   @unique
+  startedAt           DateTime @default(now())
+  completedAt         DateTime?
+  totalScore          Float?
+  totalMaxScore       Float?
+  overallRank         Int?
+  classRank           Int?
+  schoolRank          Int?
+  bundleParticipant   OlympiadBundleParticipant @relation(fields: [bundleParticipantId], references: [id], onDelete: Cascade)
+  bundle              OlympiadBundle            @relation(fields: [bundleId], references: [id], onDelete: Cascade)
+  sessions            OlympiadSession[]
+
+  @@unique([bundleParticipantId, bundleId])
+  @@index([bundleId])
+  @@index([bundleId, completedAt])
 }

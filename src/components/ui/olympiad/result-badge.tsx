@@ -1,6 +1,5 @@
+import { RankMedalIcon } from "@/components/ui/rank-medal";
 import { cn } from "@/lib/utils";
-
-const medals = ["🥇", "🥈", "🥉"] as const;
 
 export function ResultBadge({
   rank,
@@ -25,8 +24,8 @@ export function ResultBadge({
     );
   }
 
-  const medal = rank <= 3 ? medals[rank - 1] : null;
   const sizeCls = size === "lg" ? "text-2xl sm:text-3xl" : size === "md" ? "text-lg sm:text-xl" : "text-sm";
+  const iconSize = size === "lg" ? "lg" : size === "sm" ? "sm" : "md";
 
   return (
     <span
@@ -36,7 +35,7 @@ export function ResultBadge({
         className,
       )}
     >
-      {medal ? <span aria-hidden>{medal}</span> : null}
+      <RankMedalIcon rank={rank} size={iconSize} />
       <span>#{rank}</span>
     </span>
   );

@@ -7,6 +7,11 @@ import { defaultSchema } from "hast-util-sanitize";
  */
 export const questionRichTextSchema: Schema = {
   ...defaultSchema,
+  protocols: {
+    ...defaultSchema.protocols,
+    src: [...(defaultSchema.protocols?.src ?? ["http", "https"]), "data"],
+    href: [...(defaultSchema.protocols?.href ?? ["http", "https"]), "data"],
+  },
   tagNames: [
     ...(defaultSchema.tagNames ?? []),
     "math",
@@ -54,5 +59,15 @@ export const questionRichTextSchema: Schema = {
     path: ["d", "fill", "stroke", "stroke-width", "className"],
     line: ["x1", "x2", "y1", "y2", "className"],
     rect: ["x", "y", "width", "height", "className"],
+    img: [
+      ...(defaultSchema.attributes?.img ?? ["src", "alt"]),
+      "src",
+      "alt",
+      "title",
+      "width",
+      "height",
+      "className",
+      "loading",
+    ],
   },
 };

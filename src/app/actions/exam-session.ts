@@ -12,6 +12,7 @@ import { writeAuditLog } from "@/lib/audit";
 import { getServerLocale } from "@/lib/i18n/resolve-locale";
 import { formatTestMetaLine } from "@/lib/i18n/t";
 import { PUBLIC_TESTS_DATA_TAG } from "@/lib/tests/public-test-queries";
+import { analyzeOlympiadAttemptAnswers } from "@/lib/olympiad/answer-analysis";
 
 const FINISHED_STATUSES = [
   "SUBMITTED",
@@ -51,7 +52,10 @@ function rebuildDisplayQuestions(
   const displayQuestions: { id: string; text: string; options: string[] }[] = [];
   for (const qid of order) {
     const q = byId.get(qid);
-    if (!q) continue;
+    if (!q) {
+      displayQuestions.push({ id: qid, text: "", options: [] });
+      continue;
+    }
     const opts = JSON.parse(q.optionsJson) as string[];
     const perm = perms[qid] ?? opts.map((_, i) => i);
     const shown = perm.map((ci) => opts[ci]!);
@@ -356,35 +360,30 @@ export async function submitExamAttempt(
   }
 
   const byId = new Map(test.questions.map((q) => [q.id, q]));
-  let earned = 0;
-  let maxPoints = 0;
-  let correct = 0;
-  const breakdown: { text: string; options: string[]; correctIndex: number; userIndex: number }[] = [];
-
-  for (let i = 0; i < order.length; i++) {
-    const qid = order[i]!;
-    const q = byId.get(qid);
-    if (!q) continue;
-    const opts = JSON.parse(q.optionsJson) as string[];
-    const perm = perms[qid] ?? opts.map((_, j) => j);
-    const di = displayAnswers[i] ?? -1;
-    const canonicalPick = di >= 0 && di < perm.length ? perm[di]! : -1;
-    const ok = canonicalPick === q.correctIndex;
-    const pts = q.points ?? 1;
-    maxPoints += pts;
-    if (ok) {
-      earned += pts;
-      correct += 1;
-    }
-    breakdown.push({
+  const analyzed = analyzeOlympiadAttemptAnswers(
+    order,
+    perms,
+    displayAnswers,
+    test.questions.map((q) => ({
+      id: q.id,
       text: q.text,
-      options: opts,
+      optionsJson: q.optionsJson,
       correctIndex: q.correctIndex,
-      userIndex: canonicalPick,
-    });
-  }
-
-  const score = maxPoints > 0 ? Math.round((earned / maxPoints) * 100) : 0;
+      points: q.points,
+    })),
+  );
+  const score = analyzed.percentScore;
+  const correct = analyzed.correctCount;
+  const breakdown = analyzed.rows.map((row) => {
+    const q = byId.get(row.questionId);
+    const opts = q ? (JSON.parse(q.optionsJson) as string[]) : [];
+    return {
+      text: row.text || q?.text || "",
+      options: opts,
+      correctIndex: q?.correctIndex ?? -1,
+      userIndex: row.userCanonicalIndex,
+    };
+  });
 
   const status =
     reason === "TIME"

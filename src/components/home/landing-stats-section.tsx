@@ -4,7 +4,7 @@ import { LandingStatsGrid } from "@/components/home/landing-stats-grid";
 import type { LandingStatItemDTO } from "@/components/home/landing-stats-types";
 import { getServerLocale } from "@/lib/i18n/resolve-locale";
 import { t } from "@/lib/i18n/t";
-import type { AppLocale } from "@/lib/i18n/constants";
+import { DEFAULT_LOCALE, type AppLocale } from "@/lib/i18n/constants";
 
 const getCachedCounts = unstable_cache(
   async () => {
@@ -49,44 +49,47 @@ function fallbackItems(locale: AppLocale): LandingStatItemDTO[] {
 }
 
 export async function LandingStatsSection() {
-  const locale = await getServerLocale();
   let items: LandingStatItemDTO[];
-
   try {
-    const { studentCount, testCount, avgRow } = await getCachedCounts();
+    const locale = await getServerLocale().catch(() => DEFAULT_LOCALE);
+    try {
+      const { studentCount, testCount, avgRow } = await getCachedCounts();
 
-    const avg = avgRow._avg.score != null ? Math.round(avgRow._avg.score) : null;
-    const hasResults = avgRow._count._all > 0;
+      const avg = avgRow._avg.score != null ? Math.round(avgRow._avg.score) : null;
+      const hasResults = avgRow._count._all > 0;
 
-    items = [
-      {
-        label: t(locale, "home.statStudents"),
-        value: String(studentCount),
-        hint: t(locale, "home.statHintStudentsOk"),
-        icon: "users",
-      },
-      {
-        label: t(locale, "home.statTests"),
-        value: String(testCount),
-        hint: t(locale, "home.statHintTestsOk"),
-        icon: "fileQuestion",
-      },
-      {
-        label: t(locale, "home.statAvg"),
-        value: hasResults && avg != null ? `${avg}%` : "—",
-        hint: hasResults ? t(locale, "home.statHintAvgSubmitted") : t(locale, "home.statHintAvgWait"),
-        icon: "target",
-      },
-      {
-        label: t(locale, "home.statGrades"),
-        value: "11",
-        hint: t(locale, "home.statHintGrades"),
-        icon: "graduationCap",
-      },
-    ];
-  } catch {
-    items = fallbackItems(locale);
+      items = [
+        {
+          label: t(locale, "home.statStudents"),
+          value: String(studentCount),
+          hint: t(locale, "home.statHintStudentsOk"),
+          icon: "users",
+        },
+        {
+          label: t(locale, "home.statTests"),
+          value: String(testCount),
+          hint: t(locale, "home.statHintTestsOk"),
+          icon: "fileQuestion",
+        },
+        {
+          label: t(locale, "home.statAvg"),
+          value: hasResults && avg != null ? `${avg}%` : "—",
+          hint: hasResults ? t(locale, "home.statHintAvgSubmitted") : t(locale, "home.statHintAvgWait"),
+          icon: "target",
+        },
+        {
+          label: t(locale, "home.statGrades"),
+          value: "11",
+          hint: t(locale, "home.statHintGrades"),
+          icon: "graduationCap",
+        },
+      ];
+    } catch {
+      items = fallbackItems(locale);
+    }
+  } catch (err) {
+    console.error("[landing-stats-section]", err);
+    items = fallbackItems(DEFAULT_LOCALE);
   }
-
   return <LandingStatsGrid items={items} />;
 }

@@ -1,17 +1,13 @@
 "use server";
 
 import { randomBytes } from "crypto";
-import { cookies, headers } from "next/headers";
+import { headers } from "next/headers";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { takeRateLimitSlot } from "@/lib/distributed-rate-limit";
 import { isStrictDistributedRateLimitPolicy } from "@/lib/redis-strict-policy";
 import { getClientIpFromHeaders, getRequestIdFromHeaders } from "@/lib/request-context";
-import { logStructuredFromRequest } from "@/lib/logger";
 import {
-  OLYMPIAD_JOIN_RATE_MAX,
-  OLYMPIAD_JOIN_RATE_WINDOW_MS,
-  OLYMPIAD_SESSION_COOKIE,
   OLYMPIAD_VIOLATION_RL_MAX,
   OLYMPIAD_VIOLATION_RL_WINDOW_MS,
 } from "@/lib/olympiad/constants";
@@ -20,6 +16,7 @@ import { hashDeviceFingerprint, hashIp, hashUserAgent } from "@/lib/olympiad/ip-
 import { olympiadJoinSchema } from "@/lib/olympiad/schemas";
 import { buildOptionPermutation, buildQuestionShuffle } from "@/lib/exam-shuffle";
 import { scoreOlympiadAttempt, analyzeOlympiadAttemptAnswers } from "@/lib/olympiad/scoring";
+import { olympiadResultToPoints } from "@/lib/olympiad/result-points";
 import { isOlympiadAnswerSigningEnabled, isOlympiadExamWatermarkEnabled, isOlympiadMultiTabDetectionEnabled } from "@/lib/olympiad/feature-flags";
 import { verifyOlympiadSignedAnswerPayload } from "@/lib/olympiad/verify-signed-exam-payload";
 import type { OlympiadAnswerSigningPayload } from "@/lib/olympiad/exam-types";
@@ -28,6 +25,13 @@ import { assertOlympiadExamStateTransition, isOlympiadExamTerminalStatus } from 
 import { emitOlympiadMonitorEvent } from "@/lib/olympiad/olympiad-redis-events";
 import { signSubmissionIntegrityV1, sha256HexUtf8, verifySubmissionIntegrityV1 } from "@/lib/olympiad/submission-integrity";
 import * as Sentry from "@sentry/nextjs";
+import { testOlympiadQuestionPackSelect } from "@/lib/tests/test-query-selects";
+import { resolveOlympiadExamWindow } from "@/lib/olympiad/bundle-exam-window";
+import {
+  loadSessionByCookie,
+  loadSessionForParticipantAction,
+  setOlympiadSessionCookie as setSessionCookie,
+} from "@/lib/olympiad/session-cookie";
 
 export type { OlympiadAnswerSigningPayload } from "@/lib/olympiad/exam-types";
 
@@ -35,19 +39,9 @@ function rng() {
   return randomBytes(4).readUInt32LE(0) / 0xffffffff;
 }
 
-async function setSessionCookie(token: string) {
-  const jar = await cookies();
-  jar.set(OLYMPIAD_SESSION_COOKIE, token, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
-    path: "/",
-    maxAge: 60 * 60 * 10,
-  });
-}
-
 export type JoinOlympiadResult =
-  | { ok: true }
+  | { ok: true; kind: "single" }
+  | { ok: true; kind: "bundle" }
   | { ok: false; error: string; code?: "RATE" | "VALIDATION" | "NOT_FOUND" };
 
 export async function joinOlympiad(formData: FormData): Promise<JoinOlympiadResult> {
@@ -78,25 +72,77 @@ export async function joinOlympiad(formData: FormData): Promise<JoinOlympiadResu
 
   const ip = await getClientIpFromHeaders();
   const ipHash = hashIp(ip);
-  const requestId = await getRequestIdFromHeaders();
-  const rl = await takeRateLimitSlot(
-    "olympiad_join",
-    ipHash,
-    OLYMPIAD_JOIN_RATE_MAX,
-    OLYMPIAD_JOIN_RATE_WINDOW_MS,
-    { requireDistributed: isStrictDistributedRateLimitPolicy(), requestId },
-  );
-  if (!rl.ok) {
-    void logStructuredFromRequest("warn", "olympiad.join_rate_limited", { ipHash: ipHash.slice(0, 8), backend: rl.backend });
-    const msg =
-      rl.backend === "redis_unavailable"
-        ? "Tizim vaqtincha himoya rejimida. Iltimos, birozdan keyin qayta urinib ko‘ring."
-        : "Juda ko‘p urinish. Birozdan keyin qayta urinib ko‘ring.";
-    return { ok: false, error: msg, code: "RATE" };
-  }
 
   const norm = normalizeOlympiadCode(input.accessCode);
   const codeHash = hashOlympiadCode(norm);
+
+  const ua = (await headers()).get("user-agent");
+  const fpRaw =
+    input.deviceFp?.trim() ||
+    (ua?.trim() ? `ua-fallback|${ua.trim().slice(0, 512)}` : "");
+  const fpHash = hashDeviceFingerprint(fpRaw);
+
+  const bundleRow = await prisma.olympiadBundle.findFirst({
+    where: { codeHash, isActive: true },
+    select: {
+      id: true,
+      startsAt: true,
+      endsAt: true,
+      subjects: {
+        orderBy: { orderIndex: "asc" },
+        select: {
+          olympiad: {
+            select: {
+              status: true,
+              test: { select: { isActive: true, isDraft: true, status: true } },
+            },
+          },
+        },
+      },
+    },
+  });
+
+  if (bundleRow) {
+    const now = new Date();
+    if (now < bundleRow.startsAt) {
+      return { ok: false, error: "Paket hali boshlanmagan.", code: "NOT_FOUND" };
+    }
+    if (bundleRow.endsAt && now > bundleRow.endsAt) {
+      return { ok: false, error: "Paket muddati tugagan.", code: "NOT_FOUND" };
+    }
+    if (bundleRow.subjects.length === 0) {
+      return { ok: false, error: "Paketda fanlar yo‘q.", code: "NOT_FOUND" };
+    }
+    const hasOpenSubject = bundleRow.subjects.some((s) => {
+      const o = s.olympiad;
+      return (
+        o.status !== "ENDED" &&
+        o.status !== "DRAFT" &&
+        o.status !== "PAUSED" &&
+        o.test.isActive &&
+        !o.test.isDraft &&
+        o.test.status === "PUBLISHED"
+      );
+    });
+    if (!hasOpenSubject) {
+      return { ok: false, error: "Paket fanlari hozir ochilmagan.", code: "NOT_FOUND" };
+    }
+
+    const { joinBundleFromParticipantInput } = await import("@/app/actions/olympiad-bundle-participant");
+    const joined = await joinBundleFromParticipantInput({
+      bundleId: bundleRow.id,
+      firstName: input.firstName,
+      lastName: input.lastName,
+      gradeLabel: input.gradeLabel,
+      age: input.age,
+      schoolName: input.schoolName,
+      region: input.region,
+      phone: input.phone,
+      deviceFpHash: fpHash,
+    });
+    if (!joined.ok) return { ok: false, error: joined.error, code: "NOT_FOUND" };
+    return { ok: true, kind: "bundle" };
+  }
 
   const codeRow = await prisma.olympiadCode.findFirst({
     where: { codeHash, isActive: true },
@@ -129,9 +175,7 @@ export async function joinOlympiad(formData: FormData): Promise<JoinOlympiadResu
     return { ok: false, error: "Test hozir mavjud emas.", code: "NOT_FOUND" };
   }
 
-  const ua = (await headers()).get("user-agent");
   const uaHash = hashUserAgent(ua);
-  const fpHash = hashDeviceFingerprint(input.deviceFp);
   if (olymp.antiCheatStrictness === "STRICT" && !fpHash) {
     return { ok: false, error: "Qurilma identifikatori talab qilinadi (brauzerda JS yoqilgan bo‘lishi kerak).", code: "VALIDATION" };
   }
@@ -141,18 +185,6 @@ export async function joinOlympiad(formData: FormData): Promise<JoinOlympiadResu
     const tokenHash = hashSessionToken(token);
 
     await prisma.$transaction(async (tx) => {
-      if (fpHash) {
-        const open = await tx.olympiadSession.findFirst({
-          where: {
-            olympiadId: olymp.id,
-            status: { in: ["RULES_PENDING", "WAITING", "ACTIVE"] },
-            participant: { deviceFpHash: fpHash },
-          },
-          select: { id: true },
-        });
-        if (open) throw new Error("DUPLICATE_DEVICE");
-      }
-
       if (olymp.participantLimit != null) {
         const cnt = await tx.olympiadParticipant.count({ where: { olympiadId: olymp.id } });
         if (cnt >= olymp.participantLimit) throw new Error("PARTICIPANT_LIMIT");
@@ -191,11 +223,8 @@ export async function joinOlympiad(formData: FormData): Promise<JoinOlympiadResu
     });
 
     await setSessionCookie(token);
-    return { ok: true };
+    return { ok: true, kind: "single" };
   } catch (e) {
-    if (String(e).includes("DUPLICATE_DEVICE")) {
-      return { ok: false, error: "Bu qurilmadan allaqachon ro‘yxatdan o‘tilgan.", code: "NOT_FOUND" };
-    }
     if (String(e).includes("PARTICIPANT_LIMIT")) {
       return { ok: false, error: "Ishtirokchilar soni to‘ldi.", code: "NOT_FOUND" };
     }
@@ -210,21 +239,6 @@ export async function joinOlympiadFormAction(
   formData: FormData,
 ): Promise<JoinOlympiadResult> {
   return joinOlympiad(formData);
-}
-
-async function loadSessionByCookie() {
-  const jar = await cookies();
-  const raw = jar.get(OLYMPIAD_SESSION_COOKIE)?.value;
-  if (!raw) return null;
-  const h = hashSessionToken(raw);
-  return prisma.olympiadSession.findFirst({
-    where: { sessionTokenHash: h },
-    include: {
-      olympiad: true,
-      participant: true,
-      attempt: true,
-    },
-  });
 }
 
 /** Server pages: cookie bilan joriy olimpiada sessiyasi (auth cookie bilan aralashmaydi). */
@@ -252,8 +266,15 @@ export async function getOlympiadGateState(): Promise<OlympiadGateState> {
   const row = await loadSessionByCookie();
   if (!row) return { ok: false, error: "Sessiya topilmadi. Qayta ro‘yxatdan o‘ting." };
   const now = Date.now();
-  const start = row.olympiad.startsAt.getTime();
-  const end = row.olympiad.endsAt?.getTime() ?? null;
+  const window = await resolveOlympiadExamWindow({
+    bundleAttemptId: row.bundleAttemptId,
+    olympiadId: row.olympiadId,
+    olympiadStartsAt: row.olympiad.startsAt,
+    olympiadEndsAt: row.olympiad.endsAt,
+    olympiadDurationMinutes: row.olympiad.durationMinutes,
+  });
+  const start = window.startsAt.getTime();
+  const end = window.endsAt?.getTime() ?? null;
   const rulesOk = Boolean(row.rulesAcceptedAt);
   const paused = row.olympiad.status === "PAUSED" || row.olympiad.status === "ENDED" || row.olympiad.status === "DRAFT";
   const canEnterWaiting = rulesOk && !paused && row.status === "RULES_PENDING";
@@ -268,10 +289,10 @@ export async function getOlympiadGateState(): Promise<OlympiadGateState> {
     ok: true,
     olympiadTitle: row.olympiad.title,
     sessionStatus: row.status,
-    startsAt: row.olympiad.startsAt.toISOString(),
-    endsAt: row.olympiad.endsAt?.toISOString() ?? null,
+    startsAt: window.startsAt.toISOString(),
+    endsAt: window.endsAt?.toISOString() ?? null,
     serverNow: new Date(now).toISOString(),
-    durationMinutes: row.olympiad.durationMinutes,
+    durationMinutes: window.durationMinutes,
     antiCheatStrictness: row.olympiad.antiCheatStrictness,
     canEnterWaiting,
     canTakeExam: canTakeExam && !isOlympiadExamTerminalStatus(row.status) && row.status !== "SUBMITTING",
@@ -307,12 +328,19 @@ export async function beginOlympiadExam(): Promise<
   if (row.olympiad.status === "PAUSED" || row.olympiad.status === "ENDED" || row.olympiad.status === "DRAFT") {
     return { ok: false, error: "Olimpiada to‘xtatilgan yoki tayyorlanmoqda." };
   }
+  const window = await resolveOlympiadExamWindow({
+    bundleAttemptId: row.bundleAttemptId,
+    olympiadId: row.olympiadId,
+    olympiadStartsAt: row.olympiad.startsAt,
+    olympiadEndsAt: row.olympiad.endsAt,
+    olympiadDurationMinutes: row.olympiad.durationMinutes,
+  });
   const now = new Date();
-  if (now.getTime() < row.olympiad.startsAt.getTime()) {
+  if (now.getTime() < window.startsAt.getTime()) {
     return { ok: false, error: "Boshlanish vaqti kelmagan." };
   }
-  if (row.olympiad.endsAt && now.getTime() > row.olympiad.endsAt.getTime()) {
-    return { ok: false, error: "Olimpiada tugagan." };
+  if (window.endsAt && now.getTime() > window.endsAt.getTime()) {
+    return { ok: false, error: row.bundleAttemptId ? "Paket muddati tugagan." : "Olimpiada tugagan." };
   }
   if (isOlympiadExamTerminalStatus(row.status) || row.status === "EXPIRED") {
     return { ok: false, error: "Sessiya yopilgan." };
@@ -328,7 +356,7 @@ export async function beginOlympiadExam(): Promise<
 
   const test = await prisma.test.findUnique({
     where: { id: row.olympiad.testId },
-    include: { questions: { orderBy: { order: "asc" } } },
+    select: testOlympiadQuestionPackSelect,
   });
   if (!test?.questions.length) return { ok: false, error: "Test mavjud emas." };
 
@@ -343,10 +371,10 @@ export async function beginOlympiadExam(): Promise<
     perms[qid] = buildOptionPermutation(opts.length, row.olympiad.shuffleOptions, rng);
   }
 
-  const durMs = row.olympiad.durationMinutes * 60 * 1000;
+  const durMs = window.durationMinutes * 60 * 1000;
   let serverEnds = new Date(now.getTime() + durMs);
-  if (row.olympiad.endsAt && row.olympiad.endsAt.getTime() < serverEnds.getTime()) {
-    serverEnds = row.olympiad.endsAt;
+  if (window.endsAt && window.endsAt.getTime() < serverEnds.getTime()) {
+    serverEnds = window.endsAt;
   }
 
   try {
@@ -396,8 +424,8 @@ export async function olympiadAutosaveBatch(
   if (!Array.isArray(items) || items.length === 0 || items.length > 15) {
     return { ok: false, error: "Noto‘g‘ri partiya." };
   }
-  const row = await loadSessionByCookie();
-  if (!row || row.id !== sessionId || row.status !== "ACTIVE") return { ok: false };
+  const row = await loadSessionForParticipantAction(sessionId);
+  if (!row || row.status !== "ACTIVE") return { ok: false };
   if (row.serverEndsAt && Date.now() > row.serverEndsAt.getTime()) return { ok: false };
 
   const signingOn = isOlympiadAnswerSigningEnabled();
@@ -531,8 +559,8 @@ export async function olympiadSubmit(
   reason: "MANUAL" | "TIME" = "MANUAL",
   signing?: OlympiadAnswerSigningPayload | null,
 ): Promise<{ ok: true; score: number } | { ok: false; error: string }> {
-  const row = await loadSessionByCookie();
-  if (!row || row.id !== sessionId) return { ok: false, error: "Sessiya yo‘q." };
+  const row = await loadSessionForParticipantAction(sessionId);
+  if (!row) return { ok: false, error: "Sessiya yo‘q." };
 
   const v = await verifyOlympiadSignedAnswerPayload(sessionId, displayAnswers, signing);
   if (!v.ok) return { ok: false, error: v.error };
@@ -700,6 +728,10 @@ export async function olympiadSubmit(
       sessionId,
       meta: { to: "FINALIZED", reason },
     });
+    if (row.bundleAttemptId) {
+      const { syncBundleAfterSubjectSubmit } = await import("@/app/actions/olympiad-bundle-participant");
+      void syncBundleAfterSubjectSubmit(sessionId);
+    }
     return { ok: true, score };
   } catch (e) {
     const msg = e instanceof Error ? e.message : "";
@@ -720,8 +752,8 @@ export async function olympiadLogViolation(
   type: string,
   detail?: Record<string, unknown>,
 ): Promise<void> {
-  const row = await loadSessionByCookie();
-  if (!row || row.id !== sessionId) return;
+  const row = await loadSessionForParticipantAction(sessionId);
+  if (!row) return;
   if (row.status !== "ACTIVE" && row.status !== "SUBMITTING") return;
   const requestId = await getRequestIdFromHeaders();
   const rl = await takeRateLimitSlot(
@@ -785,8 +817,8 @@ export async function getOlympiadExamPayload(sessionId: string): Promise<
       serverAutosaveSeq: number;
     }
 > {
-  const row = await loadSessionByCookie();
-  if (!row || row.id !== sessionId) return { ok: false, error: "Sessiya yo‘q." };
+  const row = await loadSessionForParticipantAction(sessionId);
+  if (!row) return { ok: false, error: "Sessiya yo‘q." };
   if (row.status !== "ACTIVE") return { ok: false, error: "Faol emas." };
   const attempt = await prisma.olympiadAttempt.findUnique({ where: { sessionId: row.id } });
   if (!attempt) return { ok: false, error: "Urinish yo‘q." };
@@ -803,7 +835,7 @@ export async function getOlympiadExamPayload(sessionId: string): Promise<
 
   const test = await prisma.test.findUnique({
     where: { id: row.olympiad.testId },
-    include: { questions: { orderBy: { order: "asc" } } },
+    select: testOlympiadQuestionPackSelect,
   });
   if (!test) return { ok: false, error: "Test yo‘q." };
   const order = JSON.parse(attempt.questionOrderJson) as string[];
@@ -812,15 +844,18 @@ export async function getOlympiadExamPayload(sessionId: string): Promise<
   const questions: { id: string; text: string; options: string[] }[] = [];
   for (const qid of order) {
     const q = byId.get(qid);
-    if (!q) continue;
+    if (!q) {
+      questions.push({ id: qid, text: "", options: [] });
+      continue;
+    }
     const opts = JSON.parse(q.optionsJson) as string[];
     const perm = perms[qid] ?? opts.map((_, i) => i);
     const shown = perm.map((ci) => opts[ci]!);
     questions.push({ id: q.id, text: q.text, options: shown });
   }
 
-  const saved = attempt.answersJson ? (JSON.parse(attempt.answersJson) as number[]) : questions.map(() => -1);
-  while (saved.length < questions.length) saved.push(-1);
+  const saved = attempt.answersJson ? (JSON.parse(attempt.answersJson) as number[]) : order.map(() => -1);
+  while (saved.length < order.length) saved.push(-1);
 
   const signingMode: "off" | "seq" = isOlympiadAnswerSigningEnabled() ? "seq" : "off";
 
@@ -837,7 +872,7 @@ export async function getOlympiadExamPayload(sessionId: string): Promise<
     serverEndsAt: row.serverEndsAt?.toISOString() ?? null,
     serverNow: new Date().toISOString(),
     antiCheatStrictness: row.olympiad.antiCheatStrictness,
-    initialAnswers: saved.slice(0, questions.length),
+    initialAnswers: saved.slice(0, order.length),
     signingMode,
     enableExamWatermark: isOlympiadExamWatermarkEnabled(),
     watermarkText,
@@ -897,6 +932,8 @@ export async function getOlympiadPostSubmitState(): Promise<
       status: string;
       title: string;
       submittedAt: string | null;
+      bundleAttemptId: string | null;
+      bundleAllComplete: boolean;
       result: null | {
         score: number;
         maxScore: number | null;
@@ -910,6 +947,7 @@ export async function getOlympiadPostSubmitState(): Promise<
         earnedPoints: number | null;
         percentScore: number | null;
         answeredCount: number | null;
+        correctCount: number | null;
         questionCount: number | null;
         timeSpentSec: number | null;
         schoolName: string | null;
@@ -945,6 +983,7 @@ export async function getOlympiadPostSubmitState(): Promise<
     earnedPoints: number | null;
     percentScore: number | null;
     answeredCount: number | null;
+    correctCount: number | null;
     questionCount: number | null;
     timeSpentSec: number | null;
     schoolName: string | null;
@@ -968,6 +1007,7 @@ export async function getOlympiadPostSubmitState(): Promise<
       earnedPoints: null as number | null,
       percentScore: null as number | null,
       answeredCount: null as number | null,
+      correctCount: null as number | null,
       questionCount: null as number | null,
       timeSpentSec: null as number | null,
       schoolName: row.participant.schoolName,
@@ -984,7 +1024,7 @@ export async function getOlympiadPostSubmitState(): Promise<
     if (row.attempt && result.answersJson) {
       const test = await prisma.test.findUnique({
         where: { id: row.olympiad.testId },
-        include: { questions: { orderBy: { order: "asc" } } },
+        select: testOlympiadQuestionPackSelect,
       });
       if (test) {
         try {
@@ -996,6 +1036,7 @@ export async function getOlympiadPostSubmitState(): Promise<
           base.earnedPoints = analysis.earnedPoints;
           base.percentScore = analysis.percentScore;
           base.answeredCount = analysis.answeredCount;
+          base.correctCount = analysis.correctCount;
           base.questionCount = order.length;
           const rows = analysis.rows.map((q, i) => ({
             index: i + 1,
@@ -1012,7 +1053,20 @@ export async function getOlympiadPostSubmitState(): Promise<
       }
     }
 
+    if (base.earnedPoints == null && result.maxScore != null) {
+      const pts = olympiadResultToPoints(result.score, result.maxScore);
+      base.earnedPoints = pts.earnedPoints;
+      base.percentScore = pts.percent;
+    }
+
     enriched = base;
+  }
+
+  let bundleAllComplete = false;
+  if (row.bundleAttemptId) {
+    const { buildBundleDashboard } = await import("@/lib/olympiad/bundle-dashboard");
+    const dash = await buildBundleDashboard(row.bundleAttemptId);
+    bundleAllComplete = dash?.allCompleted ?? false;
   }
 
   return {
@@ -1021,6 +1075,8 @@ export async function getOlympiadPostSubmitState(): Promise<
     status: row.status,
     title: row.olympiad.title,
     submittedAt: row.submittedAt?.toISOString() ?? null,
+    bundleAttemptId: row.bundleAttemptId,
+    bundleAllComplete,
     result: enriched,
   };
 }
@@ -1028,8 +1084,8 @@ export async function getOlympiadPostSubmitState(): Promise<
 export async function syncOlympiadTimer(
   sessionId: string,
 ): Promise<{ ok: false; error: string } | { ok: true; serverNow: string; serverEndsAt: string | null }> {
-  const row = await loadSessionByCookie();
-  if (!row || row.id !== sessionId) return { ok: false, error: "Sessiya yo‘q." };
+  const row = await loadSessionForParticipantAction(sessionId);
+  if (!row) return { ok: false, error: "Sessiya yo‘q." };
   return {
     ok: true,
     serverNow: new Date().toISOString(),

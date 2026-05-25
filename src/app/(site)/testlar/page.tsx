@@ -1,4 +1,6 @@
 import { auth } from "@/auth";
+import { loginUrlWithCallback } from "@/lib/auth/login-redirect";
+import { redirect } from "next/navigation";
 import { SectionTitle } from "@/components/ui/section-title";
 import { Card } from "@/components/ui/card";
 import { TestFilterBar } from "@/components/tests/test-filter-bar";
@@ -22,9 +24,18 @@ export const revalidate = 120;
 
 export default async function TestsIndexPage({ searchParams }: Props) {
   const locale = await getServerLocale();
-  const session = await auth();
-
   const sp = await searchParams;
+  const session = await auth();
+  if (!session?.user) {
+    const qs = new URLSearchParams();
+    if (sp.q?.trim()) qs.set("q", sp.q.trim());
+    if (sp.subject?.trim()) qs.set("subject", sp.subject.trim());
+    if (sp.grade?.trim()) qs.set("grade", sp.grade.trim());
+    if (sp.difficulty?.trim()) qs.set("difficulty", sp.difficulty.trim());
+    const path = qs.toString() ? `/testlar?${qs}` : "/testlar";
+    redirect(loginUrlWithCallback(path));
+  }
+
   const query = sp.q?.trim() || undefined;
   const subjectTitle = sp.subject?.trim() || undefined;
   const gradeRaw = sp.grade ? Number.parseInt(sp.grade, 10) : NaN;

@@ -24,7 +24,7 @@ export async function LandingSubjectsPreview() {
         {preview.map((s) => (
           <Link
             key={s.slug}
-            href={`/testlar?subject=${encodeURIComponent(s.title)}`}
+            href="/fanlar"
             className={cn(
               "group iq-3d-card relative overflow-hidden rounded-3xl border border-emerald-100 p-5 text-white shadow-xl ring-1 transition duration-300 hover:-translate-y-1 hover:shadow-2xl",
               `bg-gradient-to-br ${s.cardGradient}`,

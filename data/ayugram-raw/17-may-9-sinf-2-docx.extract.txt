@@ -1,0 +1,65 @@
+9-sinf
+1. 4800 sonining natural bo’luvchilari nechta?
+A) 21 B) 42 C) 63 D)84
+2. 9 ga karrali ikki xonali natural sonlar nechta?
+A)10 B) ll C) 12 D) 13
+3. EKUK(120,150,200)=?
+A) 600 B) 200 C) 50 D) 1200
+4. . Hisoblang: 4$\cdot 5!+0!$
+A) 20 B) 96 C) 480 D) 481
+5. Sovg’alarni qutilarga 4 tadan, 5 tadan, 6 tadan qilib solinganda, har safar 2 ta sovg’a yetmayapti. Bunga ko’ra sovg’alar kamida nechta bo’lgan?
+A) 58 B) 62 C) 118 D) 122
+6. Hisoblang. $\frac{1}{2} + \frac{1}{6} + \frac{1}{12} + \frac{1}{20}$
+A)$\frac{4}{5}$ B) $\frac{2}{5}$ C) $\frac{3}{5}$ D) $\frac{1}{5}$
+7. $a= \frac{7}{15} b= \frac{19}{45} c= \frac{37}{75}$ sonlarini o’sish tartibida joylashtiring.
+A) b < a < c B) b < c < a C)a < b < c D)c < b < a
+8.$\frac{13}{40}$ sonini o’nli kasr ko’rinishida tasvirlang.
+A) 0,26 B) 0,32 C) 0,325 D) 0,375
+9. Hisoblang: 0,0008 • 7000 + 0,0011 • 4000
+A) 10 B)1 C) 6,04 D) 4,96
+10. Hisoblang: [2,4]+ [-1,2] (Bu yerda [x] - x ning butun qismi)
+A)-1 B) 0 C) 1 D) 2
+11. $\frac{5}{12}$ qismi 60 ga teng bo’lgan sonni toping.
+A) 132 B) 144 C) 156 D)1 68
+12. 15% chegirma bilan 340 000 so’mga sotilayotgan kiyimning asl bahosini toping.
+A)380 000 B)400 000 C)420 000 D)450 000
+13. 24 sonini 3 va 5 sonlariga to’g’ri proporsional bo’laklarga bo’ling.
+A) 12;15 B) 9; 15 C) 6; 18 D) 6; 10
+14. To’g’ri to’rtburchakning eni 20% orttirilib, bo’yi 10% ga kamaytirilsa, uning yuzi qanday o’zgaradi?
+A)20% ga oshdi B)10% ga kamayadi C)8% ga oshadi D)8% ga kamayadi
+15. Soddalashtiring: $(a 4 ) 5 \cdot a 15$
+A) $a 24$ B) $a 30$ C) $a 35$ D) $a 40$
+16. $2 2222$ sonning oxirgi raqammi toping.
+A) 2 B) 4 C) 6 D) 8
+17. Qavariq 12 burchakli ko’pburchakning diagonallari nechta?
+A) 42 B) 36 C) 54 D) 52
+18. $\{a+2b-3c=14 2a-2b+3c=16)$ bo’lsa, a(2b-3c) ning qiymatini toping.
+A) 4 B) 10 C) 14 D) 40
+19. Ko’paytmani 11 ga bo’lgandagi qoldiqni toping: 12 • 17 • 23 • 37
+A) 2 B) 5 C) 7 D) 9
+20. Hisoblang.$10 \cdot 63 \cdot 18 \cdot 35$
+A) 180 B) 270 C) 630 D) 1080
+21. 120! soni nechta 0 bilan tugaydi?
+A)24 B)25 C)28 D)29
+22. Algebraik kasrlarni qisqartiring. $\frac{25a b 2}{15 a 2 b}$
+A)$\frac{3b}{5a} B) \frac{5b}{3a} C) \frac{5a}{3b} D) \frac{ab}{3}$
+23. sinx= $\frac{1}{2}$ bo’lsa, tgx ni toping.
+A) 2 B) 1 C)$\frac{1}{3}$ D) $3$
+24. So’roq o’rnidagi sonni toping.
+7 K 3 = 24
+2 K 8 = 19
+5 K 5 = 28
+6 K 4 = ?
+A)27 B) 24 C) 72 D) 30
+25. x; y$∈$ N, $x 3 =$5 • y bo’lsa, x + y ning eng kichik qiymatini toping.
+A)25 B)30 C)35 D)40
+26. Qandaydir sonni 1995 ga bo’lganda 1994 qoldiq qoladi. Bu sonni 5 ga bo’lgandagi qoldiqni toping.
+A)4 B)1 C)9 D)3
+27. Bir tomoni 17sm, perimetri esa 120 sm bo’lgan to’g’ri to’rtburchak yuzini toping.
+A)721 B)741 C)731 D)711
+28. Ko'paytuvchilarga ajrating: (3x + 2y)(3x - y) + (x + 4y)(y - 3x)
+A)2(x - y)(3x - y) B)2(x + y)(3x - y) C)2(x -y)(y- 3x) D)5(x + y)(3x- y) ![](data:image/png;base64,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)
+29. Agar ifodadagi m va n sonlar o'zaro tub natural sonlar bo'lsa, m + n ni toping.
+A) 56 B) 49 C) 69 D) 94
+30. Agar boʻlsa, ni toping.
+A) 1B) 2C) -11D) 0

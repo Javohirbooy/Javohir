@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/button";
 import { useT } from "@/components/providers/locale-provider";
-import { CheckCircle2, Layers, Timer } from "lucide-react";
+import { BarChart3, CheckCircle2, GraduationCap, LineChart } from "lucide-react";
 import type { CSSProperties } from "react";
 
 export function LandingTestPlatform() {
@@ -27,14 +27,14 @@ export function LandingTestPlatform() {
                   className="iq-stagger-in flex items-center gap-3 text-sm font-medium text-slate-800"
                   style={{ animationDelay: `${i * 75}ms` } as CSSProperties}
                 >
-                  <CheckCircle2 className="h-5 w-5 shrink-0 text-emerald-600" />
+                  <CheckCircle2 className="h-5 w-5 shrink-0 text-emerald-600" aria-hidden />
                   {p}
                 </li>
               ))}
             </ul>
             <div className="mt-10 flex flex-wrap gap-3">
-              <Button href="/testlar" variant="primary" className="rounded-2xl px-6 py-3">
-                {tf("home.testPlOpenTests")}
+              <Button href="/register" variant="primary" className="rounded-2xl px-6 py-3">
+                {tf("footer.register")}
               </Button>
               <Button href="/sinflar" variant="glass" className="rounded-2xl px-6 py-3">
                 {tf("home.testPlByGrades")}
@@ -43,32 +43,29 @@ export function LandingTestPlatform() {
           </div>
 
           <div className="iq-scale-in iq-3d-card relative rounded-3xl border border-emerald-200 bg-white/90 p-6 shadow-xl shadow-emerald-900/10 backdrop-blur-xl">
-            <div className="flex items-center justify-between border-b border-emerald-100 pb-4">
-              <div className="flex items-center gap-2 text-sm font-semibold text-emerald-900">
-                <Layers className="h-5 w-5 text-emerald-600" />
-                {tf("home.testPlDemoWindow")}
-              </div>
-              <span className="iq-3d-chip flex items-center gap-1 rounded-full bg-emerald-100 px-2.5 py-1 text-xs text-emerald-800">
-                <Timer className="h-3.5 w-3.5" />
-                12:00
+            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">{tf("home.testPlDemoWindow")}</p>
+            <div className="mt-5 flex items-center gap-3 border-b border-emerald-100 pb-4">
+              <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-emerald-100 ring-1 ring-emerald-200">
+                <GraduationCap className="h-6 w-6 text-emerald-700" aria-hidden />
               </span>
-            </div>
-            <div className="mt-5 space-y-3">
-              <div className="h-3 w-[75%] rounded-full bg-emerald-100" />
-              <div className="grid grid-cols-2 gap-2">
-                <div className="iq-3d-chip h-10 rounded-xl bg-emerald-500/20 ring-1 ring-emerald-400/45" />
-                <div className="h-10 rounded-xl bg-emerald-50 ring-1 ring-emerald-100" />
-                <div className="h-10 rounded-xl bg-emerald-50 ring-1 ring-emerald-100" />
-                <div className="h-10 rounded-xl bg-emerald-50 ring-1 ring-emerald-100" />
-              </div>
-              <div className="mt-6 flex items-center justify-between text-xs text-slate-600">
-                <span>{tf("home.testPlProgress")}</span>
-                <span>66%</span>
-              </div>
-              <div className="h-2 overflow-hidden rounded-full bg-emerald-100">
-                <div className="iq-demo-progress-bar h-full rounded-full bg-gradient-to-r from-emerald-500 to-green-500" />
+              <div>
+                <p className="text-sm font-semibold text-emerald-900">Maktab monitoringi</p>
+                <p className="text-xs text-slate-600">Umumiy natija va progress</p>
               </div>
             </div>
+            <div className="mt-5 grid grid-cols-2 gap-3">
+              <div className="rounded-2xl border border-emerald-100 bg-emerald-50/80 p-4">
+                <LineChart className="h-6 w-6 text-emerald-600" aria-hidden />
+                <p className="mt-2 text-xs font-medium text-slate-600">O‘rtacha ball</p>
+                <p className="text-lg font-bold text-emerald-800">—</p>
+              </div>
+              <div className="rounded-2xl border border-emerald-100 bg-emerald-50/80 p-4">
+                <BarChart3 className="h-6 w-6 text-emerald-600" aria-hidden />
+                <p className="mt-2 text-xs font-medium text-slate-600">Topshirilgan</p>
+                <p className="text-lg font-bold text-emerald-800">—</p>
+              </div>
+            </div>
+            <p className="mt-4 text-xs leading-relaxed text-slate-500">{tf("home.testPlDemoNote")}</p>
           </div>
         </div>
       </div>

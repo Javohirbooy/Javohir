@@ -36,5 +36,9 @@ declare module "next-auth/jwt" {
     /** Throttle DB refresh of `studentNumber` for students (ms since epoch). */
     studentNumberSyncedAt?: number;
     permissionKeys?: string[];
+    /** Oxirgi so‘rov / faollik (ms). */
+    lastActivityAt?: number;
+    /** 1 soat faoliyatsizlikdan keyin true. */
+    sessionIdleExpired?: boolean;
   }
 }

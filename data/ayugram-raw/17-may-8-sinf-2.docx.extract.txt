@@ -1,0 +1,136 @@
+8-sinf
+F.I.O ______________________________________
+1. 7, 9, 3, 2, 5. Ushbu raqamlardan jami nechta 2 xonali son tuzish mumkin? Raqamlari takrorlanishi mumkin.
+A) 25ta B) 5ta C) 20ta D) 90ta
+2. Nechta 2 xonali son 5ga bo’linadi?
+A) 18ta B) 9ta C) 20ta E D) 10ta
+3. 10 ta odam bir-biri bilan salomlashsa, nechta salomlashish bo’ladi?
+A) 10 B) 20 C) 100 D) 45
+4. $129 \cdot 11+14 \cdot 129+11 \cdot 171+14 \cdot 171$ni hisoblang.
+A)7000 B) 7500 C)3000 D)6000
+5. Uchburchakning burchaklarini nisbati 7:4:1 ga teng. Uchburchakning burchaklarini topng.
+A) 10$5°$ ; 50$°$ ; 25$°$ B) 95$°$ ; 70$°$ ; 15$°$
+C) 105$°$ ; 60$°$ ; 15$°$ D) 110$°$ ; 50$°$ ; 20$°$
+6. 5 ishchi 3 kunda 60 ta detal tayyorlaydi . 7 ishchi 8 kunda nechta detal tayyorlaydi?
+A) 210 B) 224 C) 154 D) 424
+7. Beshburchakda beshta diagonal bor, oltiburchakda-chi?
+A) 6 ta; B) 7 ta; C) 8 ta; D) 9 ta;
+8. 3$∆$4=3+4+5+6 va 5$∆$3=5+6+7 bo’lsa, 4$∆$8 ni toping.
+A) 54 B) 56 C) 58 D) 60
+9. Buva va otasining yoshlari yig`indisi 111 yilga teng. Agar ota buva yoshidan ikki marta kichik bo`lsa, har birining yoshi nechada ?
+A) 37; 72 B) 76; 35 C) 37; 74 D) 42; 84
+10. Tenglamani yeching: 8x+5=119+(7-3x)
+A) 11 B) 12 C) 1,1 D) 1,2
+11. Barcha tomonlari teng bo’lgan to’rtburchak nima deb ataladi?
+A) To’rtburchakB) ParallelagrombC) Uchburchak D) Romb
+12.Do’konda 6 xil choynak, 4 xil likopcha va 7 xil stakan bor. Har xil turdagi ikkita buyumdan (masalan, oq piyola va yashil likopcha) nechta turli to`plam yasash mumkin?
+A) 94 B) 17 C) 52 D) 104
+13. Agar uch xonali sondan 6 ni ayirsak, ayirma 7 ga bo’linadi, 8 ni ayirsak ayirma 9 ga bo’linadi. Bu sonni toping?
+A)167 B)143 C) 936 D)503
+14. х+у ning yigindisini toping.
+A) 5 B) 1 C) -1 D) 2
+15, Quyidagi nuqtalardan qaysi biri y = 15 - 3x funksiya grafigiga tegishli emas?
+A) (2;9) B) (3;6) C) (4; -3) D) (0; 15)
+16.Berilgan 4 ta sondan birinchisi 15ga teng. Har bir keyingi son avvalgisidan 10 ta ortiq. Shu 4 ta sonning yig’indisini toping.
+A) 55 B) 120 C) 60 D) 70
+17. Futbol jamoasidagi 11 kishi orasidan jamoa sardori va uning yordamchisini necha xil usulda tanlab olish mumkin?
+A) 110 B) 22 C) 55 D) 121
+18. . 6! $\cdot$ x — 5! $\cdot$ x = 4! $\cdot$ x + 144 tenglamani yeching.
+A) $\frac{1}{4}$ B) $\frac{1}{2}$ C) 1 D) 4
+19. Ifodani ikkihadning kvadrati shaklida yozing. $9x 2 -6x+1$
+A)(3x-1$) 2$ B) (3x-2$) 2$ C) (3x+1$) 2$ D) (3x+2$) 2$
+20. Ikki shahar orasidagi masofa 480 km. Xaritaning masshtabi 1: 1 000 000. Xaritada bu shaharlar orasidagi masofa qancha bo’ladi?
+A) 4,8 sm B) 24 sm C) 96 sm D) 48 sm
+21. f(1 – 2x) = 1 - 2$x 2$ bo’lsa, f($- \frac{1}{2} )$ + f(0) + f($\frac{1}{2} )$yig’indini hisoblang.
+A)0 B)$1 \frac{1}{8}$ C)$1 \frac{1}{4}$ D)3
+22. Ko’phadlarni ko’paytiring. x(x+1)(x-2)(x+2)
+A)$x 4 + x 3 +4 x 2 +4x$
+B) $x 3 + x 2 +4x-4$
+C) $x 4 + x 3 -4 x 2 -4x$
+D) $x 4 + x 3 +4x+4$
+23. To’rtta ketma-ket toq natural sonning yig’indisi - …
+A) 5 ga bo’linadi; B) 8 ga bo’linadi; C) 8 ga bo’linadi. D) 4 ga bo’linadi.
+24. Tenglamani yeching. (x - 5)(x + 4) = 0
+A) x = 5 x = 4 B) x = 3 x = 0 C) x = 5 x = -4 D) x = 5 x = 0
+25. Ikki to`g`ri chizig`ning kesishdan hosil bo`lgan uchta burchak yig`indisi 3150 ga teng. Shu burchaklarning kichigini toping?
+A)600 B)700 C)450 D)600
+26. Natural sonni 21 ga boʻlganda chiqishi mumkin boʻlgan qoldiqlar oʻrta arifmetigini toping.
+A) 11,5B) 11C) 10,5D) 10
+27. 7, 8, 12, 21, 37, … ushbu ketma-ketlikda navbatdagi sonni toping.
+A) 58 B) 73 C) 38 D) 62
+28. 0,00721 sonini standart ko’rinishida yozing.
+A) 7,21$\cdot 10 -3$ B) 72,1$\cdot 10 -5 C)0,721 \cdot 10 -2 D)7,21 \cdot 10 -5$
+29. 60 kishilik harbiy qo'shin 25 kunga yetadigan oziq-ovqat bilan ta'minlangan edi. 5 kundan keyin dushman bilan to'qnashuvda 10 kishi halok bo'ldi. Qolgan oziq-ovqat harbiy qo'shinga necha kunga yetadi?
+A) 28 B) 25 C) 24 D) 20
+30. Agar 2a - 3b = 2 va b - 2c = 7 bo’lsa, 12bc+4ab - 8ac - 6$b 2$ ifodaning qiymatini toping.
+A)-28 B)-14 C)14 D)28
+2-variant
+1.𝑎+𝑏+𝑐=30 va 𝑏+𝑐=24 bo’lsa, 𝑏+𝑐−𝑎=?
+A) 15 B) 16 C) 18 D) 20
+2. 30 soni avval 2 ga orttirildi, keyin 2 marta orttirildi. Oxirgi natija 30 dan qanchaga ortiq?
+A) 32 B) 33 C) 34 D) 36
+3.Futbol darvozasining balandligi 2 m 50 sm bo’lib, u xokkey darvozasining balandligidan 2 marta uzun. Xokkey darvozasining balandligi necha sm?
+A) 75 B) 125 C) 250 D) 500
+4.Teng tomonli uchburchakning tomoni uzunligi 30 mm ga teng. Shu uchburchakning perimetri necha cm?
+A) 90 B) 60 C) 9 D) 3
+5. 3 ta ko’ylagi va 5 ta tuflisi bo’lgan kishi necha xil usulda kiyinishi mumkin?
+A) 3 B) 8 C) 15 D) 35
+6.300 ga dala maydonining 225 ga maydoni haydaldi. Dala maydonining necha foizi haydalmay qolgan?
+A) 75% B) 50% C) 45% D) 25%
+7. 18𝑎$b 2$𝑐 − 24𝑎𝑏𝑐 ifodani ko'paytuvchiga ajrating.
+A) 3𝑎𝑏𝑐(4𝑏 − 3) B) 6𝑎𝑏𝑐(3𝑏 − 4) C) 2𝑎𝑏𝑐(3𝑏 − 4) D) 4𝑎𝑏𝑐(3𝑏 − 2)
+8. 516 ta g'ozning oyoqlari soni 254 ta otning oyoqlar sonidan nechtaga ko'p?
+A) 16 B) 2 C) 18 D) 24
+9. 2(x − 3) + 7 = 2x tenglamani yeching:
+A) 0 B) yechimga ega emas C) 1 D) cheksiz ko'p yechimi bor
+10. 2 + 3 + ⋯ . +8 + 9 yig'indini hisoblang.
+A) 45 B) 54 C) 44 D) 36
+11. Bir olianing oylik maoshi 15 000 000 . Oila oilaviy harajati uchun maoshining 60% ini ishlatadi. Qolganining 30% ni omonat uchun beradi. Oila har oy qancha omonat qo’yadi ?
+A) 1 000 000 B) 1 200 000 C) 1 800 000 D) 2 400 000
+12. O’n bir million o’n besh ming yigirma sonining o’nli yozuvida nechta 0 raqami ishtirok etadi?
+A) 2 B) 3 C) 4 D) 5
+13. Uchta nuqta to’g’ri chiziqni nechta bo’lakka bo’ladi ?
+A) 2 B) 3 C) 4 D) 9
+14. Agar a=85,09 va b=67,99 bo’lsa, quyidagilarning qaysi biri to’g’ri?
+A)b>a B) b+1>a C) a-b >1 D) a+b<100
+15. 7 kishilik jamoadan kapitan va uning yordamchisini necha xil usulda tanlab olish mumkin?
+A) 6 B) 7 C) 13 D) 42
+16. Ikki xonali son bilan uning raqamlari o’rinlarini almashtirishdan hosil bo’lgan son yig’indisi quyidagilardan qaysi biriga qoldiqsiz bo’linadi?
+A) 3 B)11 C)9 D)4
+17. Qavariq beshburchak burchaklaridan ikkitasi to’g’ri, qolganlari o’zaro 2 : 3 : 4 nisbatda. beshburchakning katta burchagini toping.
+A) 900 B) 1200 C) 1500 D) 1600
+18. Qatordagi so’zlardan qaysi biri ortiqcha? Kvadrat , romb, trapetsiya, kub.
+A) Kvadrat B) Romb C) trapetsiya D) kub
+19. 2(3x - 1) - 4(1 - x) = 7(x+3) tenglamani yeching.
+A)-4,4 B)-5 C)6 D)9
+20. Sardor TASHKENTIMO so`zini yonma-yon tarzda 10 marta yozdi. Quyidagilardan qaysi biri hosil bo`lgan so`zning biror-bir qismida aniq uchramaydi?
+A)ENTIMOT B)ASHKENTI C)MOTASHK D)KENIMO
+21. Quyidagi qatordagi qonuniyatni aniqlab, keyingi sonni toping:
+3, 4, 4, 6, 12, 15, 45, 49, …
+A)196 B)144 C) 148 D) 140
+22. a sonining 36 % 108 ning 24% iga teng a sonini toping?
+A) 36 B) 72 C) 56 D) 60
+23. Ikkita sonning yig’indsi 220 ga teng. Ularning nisbati 9 ga teng bo’lsa ,Shu sonlarning kattasini toping?
+A) 189 B) 198 C) 180 D) 200
+24. A = $2 3 \cdot 3 4 \cdot 5 \cdot 7 2$ sonining juft natural bo’luvchilari soni topilsin.
+A) 120 B) 30 C) 90 D) 60
+25. O’qituvchi o’zining sinfidagi o’quvchilariga hammasi bo’lib 54 ta daftar, ruchka va qalam tarqatdi.
+Bunda:
+• Har bir kishi uchun 1 ta qalam,
+• Har uch kishi uchun 1 ta ruchka,
+• Har olti kishi uchun 1 ta daftar berilgan.
+Sinfda nechta o’quvchi bor?
+A) 24 B) 27 C) 36 D) 30
+26. Hayvonot bog’ida ilonlar, kiyiklar va burgutlar bor. Ularning jami
+30 ta boshi va 54 ta oyog’i bor. Shuningdek, ilonlar soni kiyiklar
+va burgutlarning umumiy sonidan ikki marta kam. Hayvonot bog’ida
+nechta burgut bor?
+A) 7 B) 10 C) 11 D) 13
+27. 𝐴𝐵𝐶 uchburchakning 𝐴 uchidagi tashqi burchagi 140° ga teng, 𝐶 uchidagi ichki burchagi 60° ga teng. 𝐵 uchidagi tashqi burchagini toping.
+A) 80° B) 90° C) 100° D) 120°
+28. 5 ishchi 3 kunda 60 ta detal tayyorlaydi . 7 ishchi 8 kunda nechta detal tayyorlaydi?
+A) 210 B) 224 C) 154 D) 424
+29. Baxtishod ustoz oldinga 12 qadam va orqaga 7 qadam yurardi, u 374 qadam yurganida necha qadam oldinga yurgan boʻlardi?
+A) 106 B) 241 C) 108 D) 228
+30. Bir ishni Baxtishod ustoz 10 soatda, Ulug’bek ustoz 15 soatda, Jafar ustoz 12 soatda tugatadi. Ular uchchalasi 3 soat birga ishlagandan keyin Baxtishod ustoz ketib qolsa, qolgan ishni Ulug’bek va Jafar ustozlar necha soatda tugatishadi?
+A) 2 soat 20 daqiqa B) 2 soat C) 1 soat 40 daqiqa D) 2 soat 40 daqiqa

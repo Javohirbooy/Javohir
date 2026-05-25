@@ -359,16 +359,38 @@ export async function deleteTest(formData: FormData): Promise<void> {
 
   const test = await prisma.test.findUnique({
     where: { id: testId },
-    select: { id: true, authorUserId: true },
+    select: { id: true, authorUserId: true, title: true },
   });
   if (!test) return;
   if (!canDeleteTest(session, test)) return;
 
-  await prisma.test.delete({ where: { id: testId } });
+  /** `Olympiad.testId` → `onDelete: Restrict` — avval bog‘langan olimpiadalarni olib tashlash kerak. */
+  let olympiadRemoved = 0;
+  await prisma.$transaction(async (tx) => {
+    const del = await tx.olympiad.deleteMany({ where: { testId } });
+    olympiadRemoved = del.count;
+    await tx.test.delete({ where: { id: testId } });
+  });
+
+  try {
+    await writeAuditLog({
+      actorUserId: session.user.id,
+      action: "TEST_DELETE",
+      entityType: "Test",
+      entityId: testId,
+      metadata: { title: test.title, olympiadRemoved },
+    });
+  } catch {
+    /* audit yozilmasa ham o‘chirish qaytarilmasin */
+  }
 
   revalidatePath("/admin/testlar");
   revalidatePath("/oqituvchi/testlar");
   revalidatePath("/testlar");
+  revalidatePath("/admin/oimpiadalar");
+  revalidatePath("/admin/oimpiadalar/natijalar");
+  revalidatePath("/oqituvchi/oimpiadalar");
+  revalidatePath("/oqituvchi/oimpiadalar/natijalar");
   revalidateTag(PUBLIC_TESTS_DATA_TAG, "max");
 }
 

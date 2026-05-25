@@ -3,6 +3,7 @@ import { notFound, redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { DashboardCard } from "@/components/dashboard/dashboard-card";
+import { testResultsHeaderSelect } from "@/lib/tests/test-query-selects";
 
 type Props = { params: Promise<{ testId: string }> };
 
@@ -14,7 +15,7 @@ export default async function TeacherTestResultsPage({ params }: Props) {
 
   const test = await prisma.test.findFirst({
     where: { id: testId, authorUserId: session.user.id },
-    include: { subject: { include: { grade: true } } },
+    select: testResultsHeaderSelect,
   });
   if (!test) notFound();
 
@@ -31,7 +32,8 @@ export default async function TeacherTestResultsPage({ params }: Props) {
           <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">Test natijalari</p>
           <h1 className="mt-1 text-2xl font-extrabold text-slate-800">{test.title}</h1>
           <p className="mt-1 text-sm text-slate-600">
-            {test.subject.title} · {test.subject.grade.name} — o‘quvchilar ball bo‘yicha (eng yuqoridan)
+            {test.subject?.title ?? "—"} · {test.subject?.grade?.name ?? "—"} — o‘quvchilar ball bo‘yicha (eng
+            yuqoridan)
           </p>
         </div>
         <div className="flex flex-wrap gap-2">

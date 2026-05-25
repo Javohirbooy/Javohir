@@ -396,7 +396,12 @@ export function OlympiadExamRunner({
         }
         await flushQueueFromIdb();
         const signing = buildSigning();
-        const res = await olympiadSubmit(sessionId, payload, reason, signing);
+        let res = await olympiadSubmit(sessionId, payload, reason, signing);
+        if (!res.ok && res.error.includes("Sessiya")) {
+          await new Promise((r) => setTimeout(r, 250));
+          await flushQueueFromIdb();
+          res = await olympiadSubmit(sessionId, payload, reason, signing);
+        }
         if (!res.ok) {
           setErr(res.error);
           return;

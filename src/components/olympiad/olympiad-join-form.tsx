@@ -1,39 +1,86 @@
 "use client";
 
-import { useActionState, useEffect, useRef } from "react";
+import { useActionState, useEffect, useLayoutEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { joinOlympiadFormAction, type JoinOlympiadResult } from "@/app/actions/olympiad-participant";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 
-function buildDeviceFingerprint() {
-  if (typeof window === "undefined") return "";
+const BROWSER_DEVICE_ID_KEY = "iqm_olympiad_browser_id";
+
+/** Har bir brauzer profili uchun barqaror ID (sinf kompyuterida ketma-ket o‘quvchilar bir-birini bloklamasligi uchun). */
+function getOrCreateBrowserDeviceId(): string {
   try {
-    return [
-      navigator.userAgent,
-      String(screen.width),
-      String(screen.height),
-      String(screen.colorDepth),
-      new Intl.DateTimeFormat().resolvedOptions().timeZone,
-      navigator.language,
-    ].join("|");
+    let id = localStorage.getItem(BROWSER_DEVICE_ID_KEY);
+    if (!id) {
+      id =
+        typeof crypto !== "undefined" && "randomUUID" in crypto
+          ? crypto.randomUUID()
+          : `rnd-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+      localStorage.setItem(BROWSER_DEVICE_ID_KEY, id);
+    }
+    return id;
   } catch {
-    return "";
+    return `ephemeral-${Date.now()}`;
   }
+}
+
+function buildDeviceFingerprint(): string {
+  if (typeof window === "undefined") return "";
+  const parts: string[] = [];
+  parts.push(getOrCreateBrowserDeviceId());
+  try {
+    parts.push(navigator.userAgent || "ua");
+  } catch {
+    parts.push("ua");
+  }
+  try {
+    parts.push(`${screen.width}x${screen.height}x${screen.colorDepth}`);
+  } catch {
+    /* ignore */
+  }
+  try {
+    parts.push(new Intl.DateTimeFormat().resolvedOptions().timeZone || "tz");
+  } catch {
+    parts.push("tz");
+  }
+  try {
+    parts.push(navigator.language || "lang");
+  } catch {
+    parts.push("lang");
+  }
+  return parts.join("|");
+}
+
+function writeDeviceFingerprintToInput(el: HTMLInputElement | null) {
+  if (!el) return;
+  el.value = buildDeviceFingerprint();
 }
 
 export function OlympiadJoinForm() {
   const router = useRouter();
   const fpRef = useRef<HTMLInputElement>(null);
-  const [state, formAction, pending] = useActionState(joinOlympiadFormAction, null as JoinOlympiadResult | null);
+  const [state, formAction, pending] = useActionState(
+    async (prev: JoinOlympiadResult | null, formData: FormData) => {
+      const fp = buildDeviceFingerprint();
+      if (fp) formData.set("deviceFp", fp);
+      return joinOlympiadFormAction(prev, formData);
+    },
+    null as JoinOlympiadResult | null,
+  );
 
-  useEffect(() => {
-    if (fpRef.current) fpRef.current.value = buildDeviceFingerprint();
+  useLayoutEffect(() => {
+    writeDeviceFingerprintToInput(fpRef.current);
   }, []);
 
   useEffect(() => {
-    if (state?.ok) router.push("/olympiada/rules");
+    if (!state?.ok) return;
+    if (state.kind === "bundle") {
+      window.location.assign("/olympiada/bundle");
+      return;
+    }
+    router.push("/olympiada/rules");
   }, [state, router]);
 
   return (
@@ -41,6 +88,9 @@ export function OlympiadJoinForm() {
       <form
         action={formAction}
         className="space-y-4"
+        onSubmit={() => {
+          writeDeviceFingerprintToInput(fpRef.current);
+        }}
       >
         <input ref={fpRef} type="hidden" name="deviceFp" defaultValue="" />
         <input type="text" name="website" tabIndex={-1} autoComplete="off" className="sr-only" aria-hidden />

@@ -6,7 +6,7 @@ import type { Session } from "next-auth";
 import { sessionHasPermission } from "@/lib/permissions";
 import { teacherHasSubjectAccess } from "@/lib/teacher-scope";
 import { parseMcqTextToDraftQuestions } from "@/lib/test-import-parser";
-import { docxBufferToMarkdown } from "@/lib/docx-to-markdown";
+import { docxBufferToImportMcqText } from "@/lib/docx-buffer-to-mcq-text";
 import { writeAuditLog } from "@/lib/audit";
 import { PUBLIC_TESTS_DATA_TAG } from "@/lib/tests/public-test-queries";
 import { revalidatePath, revalidateTag } from "next/cache";
@@ -43,13 +43,12 @@ async function parseImportFile(file: File): Promise<ParseResult> {
     sourceType = "IMPORT_TXT";
   } else if (lower.endsWith(".docx")) {
     try {
-      const mammoth = await import("mammoth");
-      const raw = await mammoth.extractRawText({ buffer: buf });
-      text = await docxBufferToMarkdown(buf);
+      const imported = await docxBufferToImportMcqText(buf);
+      text = imported.mcqText;
       if (text.length > 1_200_000) {
         text = text.slice(0, 1_200_000);
       }
-      parserSource = raw.value;
+      parserSource = imported.parserSource;
       sourceType = "IMPORT_DOCX";
     } catch {
       return { ok: false, error: "DOCX o‘qib bo‘lmadi." };

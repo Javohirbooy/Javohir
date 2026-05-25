@@ -12,6 +12,7 @@ import { getServerLocale, resolveLocaleFromCookies } from "@/lib/i18n/resolve-lo
 import { formatTestMetaLine, t } from "@/lib/i18n/t";
 import { buildPublicPageMetadata, buildTestDetailMetadata } from "@/lib/seo/public-page-metadata";
 import { publicSeoEntry } from "@/lib/seo/public-seo-messages";
+import { loginUrlWithCallback } from "@/lib/auth/login-redirect";
 import { fetchCachedTestPreviewPack, fetchCachedTestSeo } from "@/lib/tests/public-test-queries";
 
 type Props = { params: Promise<{ testId: string }> };
@@ -43,6 +44,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function TestTakePage({ params }: Props) {
   const [{ testId }, session, jar] = await Promise.all([params, auth(), cookies()]);
+  if (!session?.user) {
+    redirect(loginUrlWithCallback(`/testlar/${testId}`));
+  }
   const locale = resolveLocaleFromCookies(jar);
   const grant = jar.get(TEST_GRANT_COOKIE)?.value;
 
@@ -104,9 +108,11 @@ export default async function TestTakePage({ params }: Props) {
     );
   }
 
-  const preview = !isStudentAttempt;
+  const preview = true;
   const includeSolutions =
-    preview && (session?.user?.role === "TEACHER" || session?.user?.role === "ADMIN" || session?.user?.role === "SUPER_ADMIN");
+    session.user.role === "TEACHER" ||
+    session.user.role === "ADMIN" ||
+    session.user.role === "SUPER_ADMIN";
 
   const full = await fetchCachedTestPreviewPack(testId);
   if (!full) notFound();
@@ -115,6 +121,7 @@ export default async function TestTakePage({ params }: Props) {
     id: q.id,
     text: q.text,
     options: JSON.parse(q.optionsJson) as string[],
+    points: q.points,
     ...(includeSolutions ? { correctIndex: q.correctIndex } : {}),
   }));
 

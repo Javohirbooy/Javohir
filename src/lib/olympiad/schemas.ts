@@ -61,3 +61,4 @@ export type OlympiadMonitorIntegrityQuery = z.infer<typeof olympiadMonitorIntegr
 
 /** WHY: Route params must match Prisma cuid shape before any DB work (injection + wasted queries). */
 export const olympiadIdParamSchema = z.string().trim().min(20).max(40).regex(/^c[a-z0-9]+$/i);
+export const olympiadBundleIdParamSchema = olympiadIdParamSchema;

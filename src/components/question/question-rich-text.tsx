@@ -44,6 +44,7 @@ export function QuestionRichText({ content, className, compact }: Props) {
         compact ? "prose-sm [&_p]:my-0.5 [&_p]:leading-snug" : "prose-p:leading-relaxed",
         /** KaTeX + images */
         "[&_.katex]:text-inherit [&_img]:max-h-48 [&_img]:w-auto [&_img]:rounded-lg [&_img]:object-contain",
+        !compact && "[&_img]:max-h-80 [&_img]:max-w-full",
         className,
       )}
     >

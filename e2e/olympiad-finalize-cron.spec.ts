@@ -22,10 +22,15 @@ test.describe("Olimpiada finalize cron API", () => {
       return;
     }
     expect(res.status()).toBe(200);
-    const j = (await res.json()) as { ok: boolean; runId?: string; finalized?: number };
+    const j = (await res.json()) as {
+      ok: boolean;
+      skipped?: boolean;
+      data?: { runId?: string; finalized?: number };
+    };
     expect(j.ok).toBe(true);
-    expect(typeof j.runId).toBe("string");
-    expect(typeof j.finalized).toBe("number");
+    if (j.skipped) return;
+    expect(typeof j.data?.runId).toBe("string");
+    expect(typeof j.data?.finalized).toBe("number");
   });
 
   test("200 with x-cron-secret header", async ({ request }, testInfo) => {

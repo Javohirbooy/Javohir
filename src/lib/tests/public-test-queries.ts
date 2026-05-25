@@ -88,7 +88,7 @@ export function fetchCachedTestPreviewPack(testId: string) {
           difficulty: true,
           questions: {
             orderBy: { order: "asc" },
-            select: { id: true, text: true, optionsJson: true, correctIndex: true },
+            select: { id: true, text: true, optionsJson: true, correctIndex: true, points: true },
           },
           subject: { select: { title: true, grade: { select: { number: true } } } },
         },

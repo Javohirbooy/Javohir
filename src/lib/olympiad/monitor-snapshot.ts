@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { OLYMPIAD_SUSPICIOUS_SCORE_ALERT_THRESHOLD } from "@/lib/olympiad/constants";
+import { isOlympiadExamTerminalStatus } from "@/lib/olympiad/exam-state-machine";
 
 const DISCONNECT_MS = 45_000;
 
@@ -14,6 +15,8 @@ export type OlympiadMonitorParticipantRow = {
   serverEndsAt: string | null;
   submittedAt: string | null;
   violations: { type: string; at: string }[];
+  /** Ko‘p fanli paket sessiyasi bo‘lsa — fanlar progressi */
+  bundleProgress: string | null;
 };
 
 export type OlympiadMonitorSnapshot = {
@@ -88,6 +91,24 @@ export async function getOlympiadMonitorSnapshot(params: {
   const last = page[page.length - 1];
   const nextCursor = hasMore && last ? `${last.lastSeenAt.toISOString()}|${last.id}` : null;
 
+  const bundleAttemptIds = [...new Set(page.map((r) => r.bundleAttemptId).filter((id): id is string => !!id))];
+  const bundleProgressByAttempt = new Map<string, string>();
+  if (bundleAttemptIds.length > 0) {
+    const attempts = await prisma.olympiadBundleAttempt.findMany({
+      where: { id: { in: bundleAttemptIds } },
+      select: {
+        id: true,
+        bundle: { select: { _count: { select: { subjects: true } } } },
+        sessions: { select: { status: true } },
+      },
+    });
+    for (const a of attempts) {
+      const total = a.bundle._count.subjects;
+      const done = a.sessions.filter((s) => isOlympiadExamTerminalStatus(s.status)).length;
+      bundleProgressByAttempt.set(a.id, `${done}/${total}`);
+    }
+  }
+
   const participants: OlympiadMonitorParticipantRow[] = page.map((r) => {
     const disconnected = now - r.lastSeenAt.getTime() > DISCONNECT_MS;
     let status: "active" | "disconnected" | "suspicious" = "active";
@@ -111,6 +132,7 @@ export async function getOlympiadMonitorSnapshot(params: {
         type: v.type,
         at: v.createdAt.toISOString(),
       })),
+      bundleProgress: r.bundleAttemptId ? (bundleProgressByAttempt.get(r.bundleAttemptId) ?? null) : null,
     };
   });
 

@@ -695,7 +695,9 @@ export async function listAdminOlympiadResultsTable(params: {
     ];
   }
 
-  const where: Prisma.OlympiadResultWhereInput = {};
+  const where: Prisma.OlympiadResultWhereInput = {
+    session: { bundleAttemptId: null },
+  };
   const oid = clampAdminResultFilter(params.olympiadId);
   if (oid) where.olympiadId = oid;
 
@@ -765,60 +767,3 @@ export async function listAdminOlympiadResultsTable(params: {
   return { total, rows, olympiadOptions };
 }
 
-function csvEscapeCell(v: string): string {
-  if (/[",\r\n]/.test(v)) return `"${v.replace(/"/g, '""')}"`;
-  return v;
-}
-
-export async function exportAdminOlympiadResultsCsv(filters: {
-  olympiadId?: string;
-  gradeLabel?: string;
-  school?: string;
-  name?: string;
-}): Promise<{ ok: true; csvText: string } | { ok: false; error: string }> {
-  const session = await auth();
-  if (!session?.user?.id || !canOlympiadManage(session)) return { ok: false, error: "Ruxsat yo‘q." };
-
-  // WHY: Streaming pages avoids a single 5000-row `findMany` (memory + DB load) and caps worst-case export size.
-  const MAX_CSV_ROWS = 2000;
-  const PAGE_SIZE = 100;
-  const header = ["Reyting", "Foiz", "Maks ball", "Ism", "Familiya", "Sinf", "Maktab", "Olimpiada", "Vaqt (s)", "E'lon"];
-  const lines = [header.join(",")];
-  let page = 1;
-  let totalRows = 0;
-  for (;;) {
-    if (totalRows >= MAX_CSV_ROWS) break;
-    const table = await listAdminOlympiadResultsTable({
-      olympiadId: clampAdminResultFilter(filters.olympiadId),
-      gradeLabel: clampAdminResultFilter(filters.gradeLabel),
-      school: clampAdminResultFilter(filters.school),
-      name: clampAdminResultFilter(filters.name),
-      page,
-      pageSize: PAGE_SIZE,
-    });
-    if (!table) return { ok: false, error: "Ma’lumot olinmadi." };
-    if (!table.rows.length) break;
-    for (const r of table.rows) {
-      if (totalRows >= MAX_CSV_ROWS) break;
-      lines.push(
-        [
-          csvEscapeCell(r.rank != null ? String(r.rank) : ""),
-          csvEscapeCell(r.score != null ? String(r.score) : ""),
-          csvEscapeCell(r.maxScore != null ? String(r.maxScore) : ""),
-          csvEscapeCell(r.firstName),
-          csvEscapeCell(r.lastName),
-          csvEscapeCell(r.gradeLabel),
-          csvEscapeCell(r.schoolName),
-          csvEscapeCell(r.olympiadTitle),
-          csvEscapeCell(r.timeSpentSec != null ? String(r.timeSpentSec) : ""),
-          csvEscapeCell(r.published ? "ha" : "yo‘q"),
-        ].join(","),
-      );
-      totalRows += 1;
-    }
-    if (table.rows.length < PAGE_SIZE) break;
-    page += 1;
-  }
-  const csvText = "\uFEFF" + lines.join("\r\n");
-  return { ok: true, csvText };
-}

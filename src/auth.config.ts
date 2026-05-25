@@ -1,5 +1,6 @@
 import type { NextAuthConfig } from "next-auth";
 import type { AppRole } from "@/lib/app-role";
+import { applySessionIdleToJwtToken, isSessionIdleExpired } from "@/lib/auth-session-idle";
 import { staticPermissionKeysForRole } from "@/lib/static-role-permissions";
 
 /**
@@ -42,9 +43,13 @@ export const authConfig = {
       if (token.role && (!Array.isArray(token.permissionKeys) || token.permissionKeys.length === 0)) {
         token.permissionKeys = staticPermissionKeysForRole(String(token.role));
       }
-      return token;
+
+      return applySessionIdleToJwtToken(token, { isNewSignIn: Boolean(user) });
     },
     session({ session, token }) {
+      if (isSessionIdleExpired(token)) {
+        return { ...session, expires: new Date(0).toISOString() };
+      }
       if (session.user) {
         session.user.id = token.id as string;
         session.user.name = typeof token.name === "string" ? token.name : session.user.name;

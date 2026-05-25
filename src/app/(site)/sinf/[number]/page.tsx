@@ -1,3 +1,4 @@
+import { auth } from "@/auth";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { SubjectCard } from "@/components/classes/subject-card";
@@ -22,6 +23,9 @@ export default async function GradeDetailPage({ params }: Props) {
   });
   if (!grade) notFound();
 
+  const session = await auth();
+  const canAccessTests = Boolean(session?.user);
+
   return (
     <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 lg:py-20">
       <div className="flex flex-wrap items-center gap-3">
@@ -31,8 +35,8 @@ export default async function GradeDetailPage({ params }: Props) {
       <SectionTitle
         onDark
         className="mt-10"
-        title="Fanlar va testlar"
-        subtitle="Har bir fan uchun kartochka, qisqacha tavsif va tezkor testga havola — IQ Monitoring barcha fanlar uchun bir xil professional UX."
+        title="Fanlar"
+        subtitle="Maktab dasturidagi fanlar ro‘yxati. Testlarni boshlash uchun avval tizimga kiring."
       />
       <div className="mt-10 grid gap-6 md:grid-cols-2">
         {grade.subjects.map((s) => (
@@ -42,6 +46,7 @@ export default async function GradeDetailPage({ params }: Props) {
             description={s.description}
             emoji={s.imageEmoji}
             testId={s.tests[0]?.id ?? null}
+            canAccessTests={canAccessTests}
           />
         ))}
       </div>

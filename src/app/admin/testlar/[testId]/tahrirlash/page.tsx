@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
 import { requirePermission } from "@/lib/authz";
 import { TeacherTestCreateForm, type TeacherTestEditInitial } from "@/components/teacher/teacher-test-create-form";
+import { subjectOptionWithGradeSelect, testFormEditSelect } from "@/lib/tests/test-query-selects";
 
 type Props = { params: Promise<{ testId: string }> };
 
@@ -19,15 +20,13 @@ export default async function AdminEditTestPage({ params }: Props) {
 
   const test = await prisma.test.findUnique({
     where: { id: testId },
-    include: {
-      questions: { orderBy: { order: "asc" } },
-    },
+    select: testFormEditSelect,
   });
   if (!test) notFound();
 
   const subjects = await prisma.subject.findMany({
     orderBy: [{ grade: { number: "asc" } }, { title: "asc" }],
-    include: { grade: true },
+    select: subjectOptionWithGradeSelect,
   });
 
   if (!subjects.length) {

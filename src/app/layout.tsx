@@ -7,6 +7,7 @@ import { ThemeProvider } from "@/components/providers/theme-provider";
 import { CornerClock } from "@/components/layout/corner-clock";
 import { LocaleProvider } from "@/components/providers/locale-provider";
 import { ToastProvider } from "@/components/providers/toast-provider";
+import { DEFAULT_LOCALE } from "@/lib/i18n/constants";
 import { getServerLocale } from "@/lib/i18n/resolve-locale";
 import { BRAND } from "@/lib/brand";
 import { OG_IMAGE_HEIGHT, OG_IMAGE_WIDTH } from "@/lib/og/dimensions";
@@ -73,7 +74,7 @@ export const viewport: Viewport = {
 
 export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   await connection();
-  const locale = await getServerLocale();
+  const locale = await getServerLocale().catch(() => DEFAULT_LOCALE);
   return (
     <html lang={locale} suppressHydrationWarning className={`${inter.variable} ${poppins.variable} h-full antialiased`}>
       <body className="iq-content iq-theme min-h-full font-sans text-slate-800 antialiased dark:text-slate-100">

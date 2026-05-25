@@ -30,6 +30,7 @@ export default async function AdminOlympiadResultsPage({ searchParams }: Props) 
         searchParams={flat}
         resultsHref="/admin/oimpiadalar/natijalar"
         backHref="/admin/oimpiadalar"
+        basePath="/admin/oimpiadalar"
       />
     </div>
   );

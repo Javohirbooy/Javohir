@@ -51,8 +51,8 @@ export function HeroSection() {
           <Button href="/sinflar" variant="outline" className="min-h-12 w-full min-w-0 rounded-2xl text-sm sm:min-h-14 sm:min-w-[12rem] sm:text-base">
             {tf("nav.grades")}
           </Button>
-          <Button href="/testlar" variant="outline" className="min-h-12 w-full min-w-0 rounded-2xl text-sm sm:min-h-14 sm:min-w-[12rem] sm:text-base">
-            {tf("nav.tests")}
+          <Button href="/register" variant="outline" className="min-h-12 w-full min-w-0 rounded-2xl text-sm sm:min-h-14 sm:min-w-[12rem] sm:text-base">
+            {tf("footer.register")}
           </Button>
           <Button href="/olympiada/join" variant="outline" className="min-h-12 w-full min-w-0 rounded-2xl text-sm sm:min-h-14 sm:min-w-[12rem] sm:text-base">
             <Medal className="h-5 w-5 shrink-0" aria-hidden />

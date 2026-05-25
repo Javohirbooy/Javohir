@@ -4,6 +4,9 @@ import { isUpstashConfigured } from "@/lib/upstash-redis";
 import { prisma, isDatabaseConfigured } from "@/lib/prisma";
 import { isStrictDistributedRateLimitPolicy, mustEnforceDistributedRedisAtStartup } from "@/lib/redis-strict-policy";
 import { readOlympiadFinalizeHeartbeat } from "@/lib/worker/olympiad-cron-heartbeat";
+import { readUptimeHeartbeat } from "@/lib/worker/uptime-heartbeat";
+import { readCronRunStatuses } from "@/lib/worker/cron-run-status";
+import { deadLetterDepth } from "@/lib/queue/dead-letter";
 
 type HealthBody = {
   status: "ok" | "degraded";
@@ -22,7 +25,12 @@ type HealthBody = {
     mode: "strict_distributed" | "best_effort";
     redisRequiredAtStartup: boolean;
   };
-  workers?: { olympiadFinalizeLast: unknown | null };
+  workers?: {
+    olympiadFinalizeLast: unknown | null;
+    uptimeKeepAliveLast: unknown | null;
+    cronJobs?: Partial<Record<string, unknown>>;
+  };
+  cron?: { secretConfigured: boolean; dlqDepth?: number };
 };
 
 function escapeHtml(s: string): string {
@@ -103,6 +111,7 @@ function healthHtmlPage(body: HealthBody, httpStatus: number): string {
       <div class="row"><span class="k">Redis startda majburiy</span><span class="v">${body.rateLimit?.redisRequiredAtStartup ? "Ha" : "Yo'q"}</span></div>
       <div class="row"><span class="k">Muhit</span><span class="v">${deployEnv}</span></div>
       <div class="row"><span class="k">Deploy ID</span><span class="v">${deployId}</span></div>
+      <div class="row"><span class="k">Uptime ping (oxirgi)</span><span class="v">${formatWorkerLine(body.workers?.uptimeKeepAliveLast ?? null)}</span></div>
       <div class="row"><span class="k">Olimpiada cron (oxirgi)</span><span class="v">${formatWorkerLine(body.workers?.olympiadFinalizeLast ?? null)}</span></div>
     </div>
     <details>
@@ -156,7 +165,15 @@ async function getImpl(req: Request): Promise<NextResponse> {
       mode: strictRl ? "strict_distributed" : "best_effort",
       redisRequiredAtStartup: redisStartupRequired,
     },
-    workers: { olympiadFinalizeLast: await readOlympiadFinalizeHeartbeat() },
+    workers: {
+      olympiadFinalizeLast: await readOlympiadFinalizeHeartbeat(),
+      uptimeKeepAliveLast: await readUptimeHeartbeat(),
+      cronJobs: await readCronRunStatuses(),
+    },
+    cron: {
+      secretConfigured: Boolean(process.env.CRON_SECRET?.trim()),
+      dlqDepth: await deadLetterDepth(),
+    },
   };
 
   if ((strictRl || redisStartupRequired) && !upstashOn) {

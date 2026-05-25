@@ -72,6 +72,7 @@ export const messages: Record<
       testPlByGrades: string;
       testPlDemoWindow: string;
       testPlProgress: string;
+      testPlDemoNote: string;
       trustEyebrow: string;
       trustTitle: string;
       trust1Title: string;
@@ -121,6 +122,7 @@ export const messages: Record<
       summaryTitle: string;
       yourAnswer: string;
       correctAnswer: string;
+      selectedOptionBadge: string;
       dash: string;
       errAnswerAll: string;
       errNoSession: string;
@@ -172,7 +174,7 @@ export const messages: Record<
       indexEyebrow: "IQ Monitoring",
       indexTitle: "Testlar markazi",
       indexSubtitle:
-        "Fan, sinf va murakkablik bo‘yicha filtrlash. MCQ testlar, ball va tahlil — bitta premium tajribada.",
+        "Fan, sinf va murakkablik bo‘yicha monitoring testlari. Faqat ro‘yxatdan o‘tgan o‘quvchi va xodimlar uchun.",
       filterSubject: "Fan",
       filterGrade: "Sinf",
       filterDifficulty: "Murakkablik",
@@ -199,6 +201,7 @@ export const messages: Record<
       summaryTitle: "Savollar bo‘yicha xulosa",
       yourAnswer: "Sizning javobingiz:",
       correctAnswer: "To‘g‘ri javob:",
+      selectedOptionBadge: "Tanlangan javob",
       dash: "—",
       errAnswerAll: "Barcha savollarga javob bering.",
       errNoSession: "Sessiya topilmadi. Sahifani yangilang.",
@@ -264,14 +267,15 @@ export const messages: Record<
       testPlEyebrow: "Test infratuzilmasi",
       testPlTitle: "Baholash — ishonchli va shaffof",
       testPlBody:
-        "IQ Monitoring test moduli har bir savolni tartib bilan ko‘rsatadi, natijani foiz va tahlil ko‘rinishida beradi. Ma’lumotlar real tizimga ulash uchun API va DB qatlami tayyor.",
+        "Maktab monitoring testlari: fan va sinf bo‘yicha tartibli baholash, o‘qituvchi va o‘quvchi kabinetlari. Testlarni ko‘rish va topshirish uchun ro‘yxatdan o‘ting.",
       testPlPoint1: "Fan va sinf bo‘yicha filtrlash",
       testPlPoint2: "Bloklangan savollar va foizda natija",
       testPlPoint3: "O‘qituvchi va admin uchun analytics",
-      testPlOpenTests: "Testlarni ochish",
-      testPlByGrades: "Sinflar bo‘yicha",
-      testPlDemoWindow: "Demo test oynasi",
+      testPlOpenTests: "Ro‘yxatdan o‘tish",
+      testPlByGrades: "Sinflar",
+      testPlDemoWindow: "Namuna ko‘rinish",
       testPlProgress: "Progress",
+      testPlDemoNote: "Test savollari faqat tizimga kirgandan keyin ochiladi.",
       trustEyebrow: "Ishonch",
       trustTitle: "Zamonaviy ta’lim uchun barqaror platforma",
       trust1Title: "Jamoa va rollar",
@@ -345,6 +349,7 @@ export const messages: Record<
       summaryTitle: "Разбор по вопросам",
       yourAnswer: "Ваш ответ:",
       correctAnswer: "Правильный ответ:",
+      selectedOptionBadge: "Выбранный ответ",
       dash: "—",
       errAnswerAll: "Ответьте на все вопросы.",
       errNoSession: "Сессия не найдена. Обновите страницу.",
@@ -418,8 +423,9 @@ export const messages: Record<
       testPlPoint3: "Аналитика для учителя и админа",
       testPlOpenTests: "Открыть тесты",
       testPlByGrades: "По классам",
-      testPlDemoWindow: "Демо окна теста",
+      testPlDemoWindow: "Пример интерфейса",
       testPlProgress: "Прогресс",
+      testPlDemoNote: "Вопросы теста доступны только после входа.",
       trustEyebrow: "Надёжность",
       trustTitle: "Стабильная платформа для современного обучения",
       trust1Title: "Команды и роли",
@@ -492,6 +498,7 @@ export const messages: Record<
       summaryTitle: "Question review",
       yourAnswer: "Your answer:",
       correctAnswer: "Correct answer:",
+      selectedOptionBadge: "Selected answer",
       dash: "—",
       errAnswerAll: "Answer every question.",
       errNoSession: "Session not found. Refresh the page.",
@@ -565,8 +572,9 @@ export const messages: Record<
       testPlPoint3: "Analytics for teachers and admins",
       testPlOpenTests: "Open tests",
       testPlByGrades: "By grade",
-      testPlDemoWindow: "Demo test window",
+      testPlDemoWindow: "Sample view",
       testPlProgress: "Progress",
+      testPlDemoNote: "Test questions open only after you sign in.",
       trustEyebrow: "Trust",
       trustTitle: "A dependable platform for modern learning",
       trust1Title: "Teams & roles",

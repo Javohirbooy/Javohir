@@ -12,6 +12,8 @@ export function prismaErrorMessage(error: unknown): string {
         return "Bog‘lanish xatosi.";
       case "P2024":
         return "Ma’lumotlar bazasiga ulanish vaqti tugadi. Qayta urinib ko‘ring.";
+      case "P2021":
+        return "Ma’lumotlar bazasi yangilanmagan. Administratorga migration qo‘llashni ayting.";
       default:
         return "Ma’lumotlar bazasi so‘rovi bajarilmadi.";
     }
